@@ -1,0 +1,45 @@
+[project]
+name = "tianlong"
+version = "0.1.0"
+description = "天龙八部·无量山与万劫谷：终端里的纯文字沙盒"
+requires-python = ">=3.12"
+dependencies = [
+  "anthropic>=2.8",
+  "httpx>=0.28",
+  "pydantic>=2.10",
+  "pyyaml>=6.0",
+  "jinja2>=3.1",
+  "rich>=13.0",
+  "prompt_toolkit>=3.0",
+  "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-asyncio>=0.24", "ruff>=0.6"]
+
+[project.scripts]
+tianlong = "tianlong.__main__:main"
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = [
+  "network: needs real API access (skipped by default)",
+  "slow: long-running (fuzz, baseline)",
+]
+addopts = "-m 'not network'"
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E501", "B008", "UP040"]
