@@ -1,0 +1,40 @@
+{
+  "model": "jev-1.14.0",
+  "answers": {
+    "action": {
+      "type": "choice",
+      "choice": "a01",
+      "confidence": 0.79,
+      "probabilities": {
+        "a01": 0.86,
+        "a02": 0.12,
+        "none": 0.02
+      }
+    },
+    "speak": {
+      "type": "noul",
+      "noul": 0.62
+    },
+    "weight": {
+      "type": "score",
+      "score": 1.06,
+      "confidence": 0.43,
+      "legend": {
+        "0": "无关紧要",
+        "1": "有些用处",
+        "2": "会改变局面",
+        "3": "性命攸关"
+      },
+      "probabilities": {
+        "0": 0.25,
+        "1": 0.45,
+        "2": 0.28,
+        "3": 0.02
+      }
+    }
+  },
+  "usage": {
+    "input_tokens": 524,
+    "output_tokens": 75
+  }
+}

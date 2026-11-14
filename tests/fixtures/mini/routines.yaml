@@ -1,0 +1,4 @@
+idle:
+  - when: {others_here: [self, 1]}
+    do: {verb: look}
+  - do: {verb: wait}

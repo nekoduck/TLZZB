@@ -1,0 +1,41 @@
+# 有名角色的简卡（方案 5.4 末条）。
+id: gan_guanghao
+name: 干光豪
+unknown_alias: 一个神色不定的青年剑客
+tier: named
+base_power: 2
+neili: 20
+arts:
+  wuliang_sword: 1
+literacy: 1
+aptitude: 1
+luck: 5
+roles:
+- wuliang_disciple
+- wuliang_east
+superior: zuo_zimu
+self_intro: 无量剑东宗的弟子，心里另有打算。
+values:
+- 心里只装着意中人
+- 怕事，被逼急了就狠
+drives:
+- protect:ge_guangpei
+- survive
+voice:
+  habits:
+  - 眼神躲闪，说话含糊
+  samples: []
+bottom_lines: []
+knows:
+- F_wuliang_two_sects
+- F_backhill_forbidden
+- F_lovers
+- F_elope_plan
+rel:
+  ge_guangpei:
+    trust: 80
+    affinity: 85
+  zuo_zimu:
+    fear: 40
+    regard: 3
+agenda: gan_guanghao

@@ -1,0 +1,58 @@
+# 神农帮的头目到山门下战书，围山开始。消息传给当时在山上的人（用带前提的 schedule 逐人判断是否在场）。
+id: siege
+origin: canon
+when:
+  all:
+    - {not: {flag: siege_began}}
+    - {alive: sikong_xuan}
+    - {at: [sn_chief_a, jianhu_gate]}
+roles:
+  besieger: sn_chief_a
+  defender: {pick: {where: {role: [$it, wuliang_disciple]}}}
+at: jianhu_gate
+scene: tense
+actions:
+  declare:
+    role: besieger
+    lean: true
+    loud: true
+    desc: '{besieger}在山门外高声传话，说神农帮已把山围了'
+    effects: &declare
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [.declared, true]}
+      - {learn: [$defender, F_shennong_siege, 1.0, told]}
+      - {learn: [zuo_zimu, F_shennong_siege, 1.0, told]}
+      - {learn: [xin_shuangqing, F_shennong_siege, 1.0, told]}
+      - {learn: [rong_ziju, F_shennong_siege, 1.0, told]}
+      - {learn: [gong_guangjie, F_shennong_siege, 1.0, told]}
+      - {schedule: [1, [{learn: [duan_yu, F_shennong_siege, 1.0, told]}], {any: [{at: [duan_yu, jianhu_hall]}, {at: [duan_yu, jianhu_gate]}, {at: [duan_yu, jianhu_back]}, {at: [duan_yu, mountain_path]}]}]}
+      - {schedule: [1, [{learn: [zhong_ling, F_shennong_siege, 1.0, told]}], {any: [{at: [zhong_ling, jianhu_hall]}, {at: [zhong_ling, jianhu_gate]}, {at: [zhong_ling, jianhu_back]}, {at: [zhong_ling, mountain_path]}]}]}
+      - {schedule: [1, [{learn: [ma_wude, F_shennong_siege, 1.0, told]}], {any: [{at: [ma_wude, jianhu_hall]}, {at: [ma_wude, jianhu_gate]}, {at: [ma_wude, jianhu_back]}]}]}
+      - {schedule: [1, [{learn: [gan_guanghao, F_shennong_siege, 1.0, told]}], {any: [{at: [gan_guanghao, jianhu_hall]}, {at: [gan_guanghao, jianhu_gate]}, {at: [gan_guanghao, jianhu_back]}]}]}
+      - {schedule: [1, [{learn: [ge_guangpei, F_shennong_siege, 1.0, told]}], {any: [{at: [ge_guangpei, jianhu_hall]}, {at: [ge_guangpei, jianhu_gate]}, {at: [ge_guangpei, jianhu_back]}]}]}
+      - {schedule: [1, [{learn: [player, F_shennong_siege, 1.0, told]}], {any: [{at: [player, jianhu_hall]}, {at: [player, jianhu_gate]}, {at: [player, jianhu_back]}, {at: [player, mountain_path]}]}]}
+      - {emit: {actor: $besieger, verb: declare, text: '{besieger}在山门外高声传话：神农帮已把无量山围了，剑湖宫若不让出后山，谁也别想下山', loud: true}}
+      - {trace: [jianhu_gate, 山门外的石阶上留着一串杂乱的脚印]}
+  bar_gate:
+    role: defender
+    lean: true
+    pre: {flag: .declared}
+    desc: '{defender}喝令关上山门'
+    effects:
+      - {set_flag: [.barred, true]}
+      - {emit: {actor: $defender, verb: bar_gate, text: '{defender}喝令关上山门，派人上了门楼'}}
+  defy:
+    role: defender
+    pre: {flag: .declared}
+    desc: '{defender}隔着山门回骂'
+    effects:
+      - {set_flag: [.barred, true]}
+      - {emit: {actor: $defender, verb: defy, text: '{defender}隔着山门把{besieger}骂了回去', kinds: [{k: insult, who: $besieger, by: $defender}]}}
+exit_when: {any: [{flag: .barred}, {not: {same_loc: [$besieger, $defender]}}]}
+max_turns: 6
+offscreen:
+  - when: true
+    effects: *declare
+paragraphs: []

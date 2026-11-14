@@ -1,0 +1,35 @@
+# 有名角色的简卡（方案 5.4 末条）。
+id: dali_guard_chief
+name: 镇南王府护卫首领
+unknown_alias: 一个佩刀的中年汉子
+tier: named
+base_power: 4
+neili: 50
+arts: {}
+literacy: 2
+aptitude: 1
+luck: 5
+roles:
+- dali_guard
+self_intro: 大理镇南王府派出来寻找公子的护卫首领。
+values:
+- 忠于王府
+- 对公子恭敬又着急
+drives:
+- protect:duan_yu
+- survive
+voice:
+  habits:
+  - 开口先称公子爷
+  samples: []
+bottom_lines: []
+knows:
+- F_duan_family
+- F_duan_runaway
+- F_four_evils
+- F_dali_search
+rel:
+  duan_yu:
+    trust: 70
+    affinity: 70
+agenda: dali_guard_chief

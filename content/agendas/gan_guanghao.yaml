@@ -1,0 +1,24 @@
+# 前提里写明「私情还没败露」：有人告发，这一步就作废，他另作打算（方案 3.4 例二）。
+goal: 趁乱带着葛光佩私逃出山
+steps:
+  - {id: gh_bout, text: 在练武厅随众观战, at: jianhu_hall, do: {verb: wait}, pre: {not: {status: [self, captive]}}, takes: 8, deadline: 64}
+  - id: gh_slip_out
+    text: 趁着山下大乱，溜到后山小径与葛光佩会合
+    at: back_trail
+    do: {verb: wait}
+    pre:
+      all:
+        - {flag: siege_on}
+        - {alive: ge_guangpei}
+        - {not: {status: [self, captive]}}
+        - {not: {knows: [zuo_zimu, F_lovers]}}
+        - {not: {knows: [xin_shuangqing, F_lovers]}}
+    start: 72
+    takes: 16
+    deadline: 240
+  - id: gh_flee_out
+    text: 带着她逃出山去
+    at: highroad
+    do: {verb: go, exit: out_dali}
+    pre: {all: [{alive: ge_guangpei}, {not: {status: [self, captive]}}]}
+    takes: 1

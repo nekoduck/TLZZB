@@ -1,0 +1,4 @@
+goal: 听师父的吩咐看守后院
+steps:
+  - {id: yb_bout, text: 在练武厅随众观战, at: jianhu_hall, do: {verb: wait}, pre: {not: {status: [self, captive]}}, takes: 16, deadline: 64}
+  - {id: yb_guard_back, text: 看守后院与柴房, at: jianhu_back, do: {verb: wait}, pre: {all: [{not: {status: [self, captive]}}, {alive: zuo_zimu}]}, takes: 192}

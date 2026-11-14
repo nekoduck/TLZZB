@@ -1,0 +1,39 @@
+# 有名角色的简卡（方案 5.4 末条）。
+id: rong_ziju
+name: 容子矩
+unknown_alias: 东首一位干瘦的老者
+tier: named
+base_power: 3
+neili: 30
+arts:
+  wuliang_sword: 2
+literacy: 1
+aptitude: 1
+luck: 5
+roles:
+- wuliang_disciple
+- wuliang_east
+superior: zuo_zimu
+self_intro: 无量剑东宗的一位长辈，掌门的师弟。
+values:
+- 老成持重
+- 向着本宗
+drives:
+- clan_honor
+- obey:zuo_zimu
+voice:
+  habits:
+  - 说话慢，爱叹气
+  samples: []
+bottom_lines: []
+knows:
+- F_wuliang_two_sects
+- F_backhill_forbidden
+- F_lingjiu_rules
+- F_four_evils
+rel:
+  zuo_zimu:
+    trust: 60
+    affinity: 40
+    regard: 3
+agenda: rong_ziju

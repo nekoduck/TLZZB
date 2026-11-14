@@ -1,0 +1,50 @@
+# 通用：彼此信得过的两人，一个有本事，一个肯学。真正的传授走内核的 teach / study 动词，
+# 这里只给场面：讲一段、问一句。
+id: lesson
+origin: generic
+when: true
+roles:
+  teacher:
+    pick:
+      where:
+        any:
+          - {art: [$it, wuliang_sword, 1]}
+          - {art: [$it, shennong_herbs, 1]}
+          - {art: [$it, diao_handling, 1]}
+          - {art: [$it, yijing, 1]}
+          - {art: [$it, trade, 1]}
+  student:
+    pick:
+      where:
+        all:
+          - {rel: [$it, $teacher, trust, '>=', 50]}
+          - {rel: [$teacher, $it, affinity, '>=', 40]}
+          - {not: {status: [$it, captive]}}
+          - {not: {status: [$it, lesson_recent]}}
+scene: calm
+actions:
+  explain:
+    role: teacher
+    lean: true
+    cost: 2
+    desc: '{teacher}给{student}讲一段门道'
+    effects:
+      - {set_flag: [.taught, true]}
+      - {add_status: [$student, lesson_recent, {ticks: 48}]}
+      - {rel: [$student, $teacher, trust, 5]}
+      - {emit: {actor: $teacher, verb: explain, text: '{teacher}比划着给{student}讲了一段门道', kinds: [{k: taught, who: $student, by: $teacher}]}}
+  ask_question:
+    role: student
+    lean: true
+    desc: '{student}向{teacher}请教'
+    effects:
+      - {emit: {actor: $student, verb: ask, text: '{student}向{teacher}请教不明白的地方'}}
+exit_when: {any: [{flag: .taught}, {not: {same_loc: [$teacher, $student]}}]}
+max_turns: 4
+offscreen:
+  - when: true
+    effects:
+      - {add_status: [$student, lesson_recent, {ticks: 48}]}
+      - {rel: [$student, $teacher, trust, 5]}
+      - {emit: {actor: $teacher, verb: explain, text: '{teacher}指点了{student}一阵'}}
+paragraphs: []

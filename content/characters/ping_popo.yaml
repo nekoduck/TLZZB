@@ -1,0 +1,35 @@
+# 有名角色的简卡（方案 5.4 末条）。
+id: ping_popo
+name: 平婆婆
+unknown_alias: 一个矮胖的老妇人
+tier: named
+base_power: 3
+neili: 40
+arts: {}
+literacy: 1
+aptitude: 1
+luck: 5
+roles:
+- wang_household
+superior: rui_popo
+self_intro: 和瑞婆婆一道出来追杀黑衣女子的老妇人。
+values:
+- 唯瑞婆婆马首是瞻
+- 性子急
+drives:
+- grudge:mu_wanqing
+- survive
+voice:
+  habits:
+  - 爱接别人的话头
+  samples: []
+bottom_lines: []
+knows:
+- F_mu_hunted
+rel:
+  mu_wanqing:
+    affinity: -60
+  rui_popo:
+    trust: 60
+    affinity: 40
+agenda: ping_popo

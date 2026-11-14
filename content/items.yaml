@@ -1,0 +1,167 @@
+# 物件（方案 5.1、9.6）。开局的位置写在条目里：holder，或 loc 加可选的 feature。
+# in_world: false 的是机会牌用的寻常物件，开局不在世上，由牌的 spawn 效果放出来。
+
+# ---- 玩家开局随身带的东西（方案 3.1）
+rations:
+  name: 干粮
+  unknown_alias: 一包干粮
+  holder: player
+  tags: [food]
+  props: {food: true}
+waterskin:
+  name: 水囊
+  unknown_alias: 一只水囊
+  holder: player
+  tags: [tool]
+  props: {}
+tinder:
+  name: 火折子
+  unknown_alias: 一支火折子
+  holder: player
+  tags: [tool, fire]
+  props: {}
+silver:
+  name: 碎银
+  unknown_alias: 几钱碎银
+  holder: player
+  tags: [money]
+  props: {value: 3}
+tea_sample:
+  name: 样茶
+  unknown_alias: 一包茶叶
+  holder: player
+  tags: [goods, gift]
+  props: {value: 2}
+rope:
+  name: 麻绳
+  unknown_alias: 一段麻绳
+  holder: player
+  tags: [rope, tool]
+  props: {}
+
+# ---- 原著开局的要紧东西
+zhong_ling_shoe:
+  name: 钟灵的绣鞋
+  unknown_alias: 一只小小的绣鞋
+  holder: zhong_ling
+  tags: [token]
+  props: {evidence: strong}
+duanchang_san:
+  name: 断肠散
+  unknown_alias: 一包药粉
+  holder: sikong_xuan
+  tags: [poison]
+  props:
+    inflicts: {status: poisoned_duanchang, ticks: 672}
+    lethal: true
+duanchang_antidote:
+  name: 断肠散的解药
+  unknown_alias: 一个小药瓶
+  holder: sikong_xuan
+  tags: [antidote]
+  props: {cures: [poisoned_duanchang]}
+diao_antidote:
+  name: 貂毒的解药
+  unknown_alias: 一个贴着签子的药瓶
+  loc: zhong_inner
+  feature: medicine_cabinet
+  tags: [antidote]
+  props: {cures: [poisoned_diao]}
+gold_box:
+  name: 金盒
+  unknown_alias: 一只小金盒
+  holder: gan_baobao
+  tags: [token, treasure]
+  props: {evidence: strong, value: 20}
+black_rose:
+  name: 黑玫瑰
+  unknown_alias: 一匹黑马
+  holder: mu_wanqing
+  tags: [mount, creature]
+  props: {speed: 3, flee_mod: 20}
+mu_arrows:
+  name: 毒袖箭
+  unknown_alias: 藏在袖里的短箭
+  holder: mu_wanqing
+  tags: [weapon, poison]
+  props: {power_mod: 1}
+envoy_cloak:
+  name: 圣使的斗篷
+  unknown_alias: 一件绣着鹫鸟的斗篷
+  holder: envoy_lingjiu
+  tags: [token]
+  props: {evidence: strong}
+camp_key:
+  name: 营地的钥匙
+  unknown_alias: 一把铜钥匙
+  holder: sn_chief_a
+  tags: [key]
+  props: {opens: shennong_camp#pen}
+woodshed_key:
+  name: 柴房的钥匙
+  unknown_alias: 一把铁钥匙
+  holder: wu_guangsheng
+  tags: [key]
+  props: {opens: jianhu_back#woodshed}
+gate_hammer:
+  name: 谷口的小锤
+  unknown_alias: 一柄小木锤
+  loc: valley_gate
+  feature: knock_tree
+  tags: [tool]
+  props: {}
+silk_scroll:
+  name: 帛卷
+  unknown_alias: 一卷帛书
+  loc: valley_cave
+  feature: cushion
+  tags: [manual]
+  teaches: [lingbo, beiming]
+  props: {important: true}
+
+# ---- 活物（tags 含 creature）
+shandian_diao:
+  name: 闪电貂
+  unknown_alias: 一只灰白色的小兽
+  holder: zhong_ling
+  tags: [creature]
+  props:
+    power_mod: 1
+    on_use: [{add_status: [$target, poisoned_diao, {ticks: 672}]}]   # 放貂咬人；期限以原文为准，种子取七日
+    on_obtain: [{art: [self, diao_handling, 1]}]                    # 认主：第一次到手的人得驯貂第一层
+small_snakes:
+  name: 小蛇
+  unknown_alias: 几条青色的小蛇
+  holder: zhong_ling
+  tags: [creature]
+  props: {}
+mangu_zhuha:
+  name: 莽牯朱蛤
+  unknown_alias: 一只通红的怪蛤蟆
+  loc: crag_foot
+  feature: cold_pool
+  tags: [creature, food]
+  props:                                   # 出没的地点与吃下的效果都待原文核对
+    lethal: true
+    food: true
+    on_use: [{add_status: [self, immune_poison]}]
+
+# ---- 机会牌「偶得」用的寻常物件（方案 8.5）：开局不在世上
+chopper:
+  name: 柴刀
+  unknown_alias: 一把柴刀
+  in_world: false
+  tags: [tool, weapon, opportunity]
+  props: {power_mod: 0}
+extra_rations:
+  name: 一包干粮
+  unknown_alias: 一包干粮
+  in_world: false
+  tags: [food, opportunity]
+  props: {food: true}
+primer:
+  name: 蒙童识字册子
+  unknown_alias: 一本薄薄的小册子
+  in_world: false
+  tags: [book, opportunity]
+  props: {literacy_aid: true}               # 研读识字时可当课本；不算秘籍

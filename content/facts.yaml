@@ -1,0 +1,138 @@
+# 开局那一刻为真的事实（方案 9.6）。known_by：人的 id；'*' 图内人人皆知；'role:<身份>' 有此身份的人。
+# 开局之后才发生的事不入库（运行时由事件自动生成 E<号>），只有下面几条「将来可能被人得知」的事实例外，
+# 它们开局时无人知道（known_by 为空）。
+
+F_wuliang_two_sects:
+  text: ⟦wuliang_sect⟧分⟦wuliang_east⟧、⟦wuliang_west⟧两支，每隔五年在⟦jianhu_hall⟧比一次剑，胜的一方住进剑湖宫。
+  tags: [wuliang, common]
+  gossip: true
+  known_by: ['*']
+F_tea_gift:
+  text: ⟦ma_wude⟧这回上山，是带了⟦tea_sample⟧来给⟦zuo_zimu⟧做见面礼，顺带观礼。
+  tags: [ma_caravan]
+  known_by: [ma_wude, player]
+F_duan_no_kungfu:
+  text: ⟦duan_yu⟧一点武功也不会。
+  tags: [duan]
+  known_by: [duan_yu]
+F_duan_family:
+  text: ⟦duan_yu⟧出身⟦duan_clan⟧，是⟦zhennan_wangfu⟧的公子。
+  tags: [duan_family, secret]
+  known_by: [duan_yu, dali_guard_chief]
+F_duan_runaway:
+  text: ⟦duan_yu⟧不肯学武，瞒着家里一个人跑了出来。
+  tags: [duan_family, secret]
+  known_by: [duan_yu, dali_guard_chief]
+F_lovers:
+  text: ⟦gan_guanghao⟧与⟦ge_guangpei⟧有私情，瞒着师门。
+  tags: [secret, wuliang, lovers]
+  gossip: false
+  known_by: [gan_guanghao, ge_guangpei]
+F_elope_plan:
+  text: ⟦gan_guanghao⟧与⟦ge_guangpei⟧打算趁乱从⟦back_trail⟧私逃下山。
+  tags: [secret, wuliang, lovers]
+  known_by: [gan_guanghao, ge_guangpei]
+F_backhill_forbidden:
+  text: 剑湖宫的后山是本门禁地，外人不得擅入。
+  tags: [wuliang]
+  known_by: ['role:wuliang_disciple']
+F_shennong_siege:
+  text: ⟦shennong_bang⟧要围住⟦wuliang_mount⟧，逼⟦wuliang_sect⟧让出后山。
+  tags: [shennong, siege]
+  gossip: true
+  known_by: ['role:shennong_member']
+F_shennong_orders:
+  text: ⟦shennong_bang⟧是奉了⟦lingjiu⟧的号令来取⟦wuliang_mount⟧后山的。
+  tags: [shennong, lingjiu, secret]
+  known_by: [sikong_xuan, sn_chief_a, sn_chief_b, envoy_lingjiu]
+F_lingjiu_rules:
+  text: ⟦shennong_bang⟧与⟦wuliang_sect⟧都得听⟦lingjiu⟧的号令，谁也不敢违抗。
+  tags: [lingjiu, secret]
+  known_by: [sikong_xuan, zuo_zimu, xin_shuangqing, envoy_lingjiu, rong_ziju]
+F_envoy_due:
+  text: ⟦lingjiu⟧的圣使近日要来，查问⟦shennong_bang⟧的差事办得怎样。
+  tags: [lingjiu, shennong]
+  known_by: [sikong_xuan, sn_chief_a, envoy_lingjiu]
+F_duanchang_antidote_sikong:
+  text: ⟦duanchang_san⟧的解药在⟦sikong_xuan⟧身上。
+  tags: [shennong, poison]
+  known_by: [sikong_xuan, sn_chief_a, sn_chief_b]
+F_diao_venom:
+  text: ⟦shandian_diao⟧的牙有剧毒，被它咬中的人不服解药就会送命。
+  tags: [wanjie, poison]
+  known_by: ['role:wanjie_family', jin_xier]
+F_diao_antidote_father:
+  text: 貂毒的解药只有⟦zhong_ling⟧的父亲⟦zhong_wanchou⟧那里有。
+  tags: [wanjie, poison]
+  known_by: ['role:wanjie_family', jin_xier]
+F_diao_antidote_cabinet:
+  text: ⟦diao_antidote⟧收在⟦zhong_inner⟧药房的药柜里。
+  tags: [wanjie, poison, secret]
+  known_by: [zhong_wanchou, gan_baobao]
+F_route_wanjie:
+  text: 去⟦wanjie_valley⟧要过⟦ferry_bridge⟧的铁索桥，再穿过⟦pine_wood⟧，认着树上的记号走。
+  tags: [wanjie, route]
+  known_by: ['role:wanjie_family', jin_xier]
+F_gate_knock:
+  text: 到了⟦valley_gate⟧，要拿小锤在大树上敲几下，等里头的人出来，不可硬闯。
+  tags: [wanjie, route]
+  known_by: ['role:wanjie_family', jin_xier]
+F_valley_hates_duan:
+  text: ⟦wanjie_valley⟧的主人恨透了姓段的人，姓段的不许进谷。
+  tags: [wanjie]
+  known_by: ['role:wanjie_family', jin_xier]
+F_zhong_ling_daughter:
+  text: ⟦zhong_ling⟧是⟦wanjie_valley⟧谷主⟦zhong_wanchou⟧与⟦gan_baobao⟧的女儿。
+  tags: [wanjie]
+  known_by: ['role:wanjie_family', jin_xier]
+F_gan_old_affair:
+  text: ⟦gan_baobao⟧年轻时与一个姓段的男子有过一段旧情。
+  tags: [zhong_family_private, secret]
+  known_by: [gan_baobao, zhong_wanchou]
+F_zhong_ling_birth:
+  text: ⟦gold_box⟧里收着⟦zhong_ling⟧的生辰八字。
+  tags: [zhong_family_private, secret]
+  known_by: [gan_baobao]
+F_mu_lodging:
+  text: ⟦mu_wanqing⟧借住在⟦mu_house⟧，养着一匹脚力极快的黑马。
+  tags: [mu]
+  known_by: [mu_wanqing, gan_baobao]
+F_mu_oath:
+  text: ⟦mu_wanqing⟧立过誓：第一个见到她面纱下容貌的男子，她要么嫁他，要么杀他。
+  tags: [mu_private, secret]
+  known_by: [mu_wanqing]
+F_mu_hunted:
+  text: 有一伙人奉命追杀⟦mu_wanqing⟧，正在这一带找她。
+  tags: [mu, danger]
+  known_by: [mu_wanqing, rui_popo, ping_popo]
+F_eshen_disciple_killed:
+  text: ⟦nanhai_eshen⟧的一个徒弟死在⟦mu_wanqing⟧手里。
+  tags: [four_evils, mu]
+  known_by: [nanhai_eshen, mu_wanqing]
+F_eshen_wants_heir:
+  text: ⟦nanhai_eshen⟧一心想找个根骨像自己的人收作徒弟，传他衣钵。
+  tags: [four_evils]
+  known_by: [nanhai_eshen, ye_erniang, yun_zhonghe]
+F_four_evils:
+  text: ⟦four_evils⟧武功极高，行事凶残，江湖上人人闻名色变。
+  tags: [four_evils, common]
+  gossip: true
+  known_by: [nanhai_eshen, ye_erniang, yun_zhonghe, zuo_zimu, xin_shuangqing, rong_ziju, sikong_xuan, ma_wude, mu_wanqing, dali_guard_chief, envoy_lingjiu]
+F_dali_search:
+  text: ⟦zhennan_wangfu⟧派了人四处寻找离家的⟦duan_yu⟧。
+  tags: [duan_family]
+  known_by: [dali_guard_chief]
+
+# ---- 开局无人知道、日后才可能有人得知的事
+F_zhong_ling_held:
+  text: ⟦zhong_ling⟧落在⟦shennong_bang⟧手里，被扣在⟦shennong_camp⟧。
+  tags: [shennong, wanjie, news]
+  known_by: []
+F_cave:
+  text: ⟦cliff_edge⟧下有一处山谷，谷里湖边藏着一个石洞，洞里供着一尊玉像。
+  tags: [cave, secret]
+  known_by: []
+F_scroll_contents:
+  text: ⟦silk_scroll⟧上记着两门功夫：⟦lingbo⟧与⟦beiming⟧。
+  tags: [cave, secret, manual]
+  known_by: []

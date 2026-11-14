@@ -1,0 +1,5 @@
+goal: 替帮主办事，拿下无量山
+steps:
+  - {id: sa_ultimatum, text: 到剑湖宫山门下战书, at: jianhu_gate, do: {verb: wait}, pre: {alive: sikong_xuan}, start: 34, deadline: 96, takes: 2}
+  - {id: sa_back_to_camp, text: 回营向帮主复命, at: shennong_camp, do: {verb: say, act: tell, to: sikong_xuan}, pre: {alive: sikong_xuan}, takes: 1}
+  - {id: sa_guard_pen, text: 看守营里关人的木栅, at: shennong_camp, do: {verb: wait}, pre: {all: [{has: [self, camp_key]}, {alive: sikong_xuan}]}, takes: 240}

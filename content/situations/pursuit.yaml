@@ -1,0 +1,39 @@
+# 通用：有人被追（状态 pursued），追的人与他敌对。逐段判定。
+id: pursuit
+origin: generic
+when: true
+roles:
+  quarry: {pick: {where: {all: [{status: [$it, pursued]}, {not: {status: [$it, captive]}}]}}}
+  hunter: {pick: {where: {all: [{rel: [$it, $quarry, affinity, '<=', -30]}, {not: {status: [$it, captive]}}]}}}
+scene: tense
+actions:
+  run:
+    role: quarry
+    lean: true
+    desc: '{quarry}拼命奔逃'
+    effects:
+      - check:
+          kind: flee
+          who: $quarry
+          from: [$hunter]
+          ok: [{remove_status: [$quarry, pursued]}, {set_flag: [.lost, true]}, {emit: {actor: $quarry, verb: flee, text: '{quarry}拐了几个弯，甩掉了{hunter}'}}]
+          fail: [{set_flag: [.caught, true]}, {add_status: [$quarry, captive, {source: $hunter}]}, {remove_status: [$quarry, pursued]}, {emit: {actor: $hunter, verb: catch, text: '{hunter}追上了{quarry}，把他按倒在地'}}]
+  give_up:
+    role: hunter
+    desc: '{hunter}不追了'
+    effects:
+      - {remove_status: [$quarry, pursued]}
+      - {set_flag: [.lost, true]}
+      - {emit: {actor: $hunter, verb: give_up, text: '{hunter}停下脚步，不再追了'}}
+exit_when: {any: [{flag: .lost}, {flag: .caught}, {not: {status: [$quarry, pursued]}}, {not: {same_loc: [$quarry, $hunter]}}]}
+max_turns: 4
+offscreen:
+  - when: true
+    effects:
+      - check:
+          kind: flee
+          who: $quarry
+          from: [$hunter]
+          ok: [{remove_status: [$quarry, pursued]}, {emit: {actor: $quarry, verb: flee, text: '{quarry}甩掉了{hunter}'}}]
+          fail: [{remove_status: [$quarry, pursued]}, {add_status: [$quarry, captive, {source: $hunter}]}, {emit: {actor: $hunter, verb: catch, text: '{hunter}追上并拿住了{quarry}'}}]
+paragraphs: []

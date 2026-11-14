@@ -1,0 +1,46 @@
+goal: 替灵鹫宫拿下无量山后山，保住自己的性命
+steps:
+  - id: sk_besiege
+    text: 在山下扎营，围住无量山
+    at: shennong_camp
+    do: {verb: wait}
+    pre: {not: {status: [self, captive]}}
+    takes: 24
+  - id: sk_hold_camp
+    text: 坐镇营地，拿下闯营的人
+    at: shennong_camp
+    do: {verb: wait}
+    pre: {all: [{not: {status: [self, captive]}}, {flag: siege_on}]}
+    takes: 16
+    deadline: 240
+  - id: sk_force_errand
+    text: 中了貂毒，逼俘虏去取解药，扣下人质
+    at: shennong_camp
+    do: {verb: wait}
+    pre:                                        # 没中毒、不知解药在谁家，这一步就无从谈起
+      all:
+        - {status: [self, poisoned_diao]}
+        - {knows: [self, F_diao_antidote_father]}
+    start: 64
+    takes: 4
+    deadline: 320
+  - id: sk_await
+    text: 等人取回解药
+    at: shennong_camp
+    do: {verb: wait}
+    pre: {all: [{status: [self, poisoned_diao]}, {not: {status: [self, captive]}}]}
+    takes: 136
+  - id: sk_greet_envoy
+    text: 迎候圣使，禀报差事
+    at: shennong_camp
+    do: {verb: say, act: greet, to: envoy_lingjiu}
+    pre: {all: [{onstage: envoy_lingjiu}, {alive: envoy_lingjiu}]}
+    start: 224
+    deadline: 520
+    takes: 2
+  - id: sk_hold_on
+    text: 守着营地，听候发落
+    at: shennong_camp
+    do: {verb: wait}
+    pre: {not: {status: [self, captive]}}
+    takes: 192

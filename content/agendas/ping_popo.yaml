@@ -1,0 +1,4 @@
+goal: 跟着瑞婆婆追杀木婉清
+steps:
+  - {id: pp_enter, text: 从图外赶到这一带, do: {verb: wait}, pre: {alive: self}, start: 168, takes: 1, offscreen: [{enter: [self, highroad]}]}
+  - {id: pp_follow, text: 跟着瑞婆婆行事, do: {verb: follow, target: rui_popo}, pre: {all: [{alive: rui_popo}, {onstage: rui_popo}]}, takes: 200}

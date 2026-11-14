@@ -1,0 +1,51 @@
+# 方案 5.7 的原样，只在 when 里多加两条：已了结的就不再开场（否则离场结算会每个时辰再掴一次）。
+id: bout_laugh
+origin: canon
+when:
+  all:
+    - {flag: [bout_running, true]}
+    - {same_loc: [gong_guangjie, duan_yu]}
+    - {not: {flag: slapped}}
+    - {not: {flag: apologized}}
+roles:
+  victor: gong_guangjie
+  guest: duan_yu
+scene: tense
+actions:
+  feint_win:
+    role: victor
+    lean: true
+    effects:
+      - {set_flag: [bout_over, true]}
+      - {emit: {actor: $victor, verb: feint_win, text: '{victor}卖个破绽，一剑逼得对手认输'}}
+  laugh:
+    role: guest
+    lean: true
+    pre: {flag: bout_over}
+    loud: true
+    effects:
+      - {set_flag: [guest_laughed, true]}
+      - {emit: {actor: $guest, verb: laugh, text: '{guest}失声笑了出来'}}
+  slap:
+    role: victor
+    lean: true
+    pre: {flag: guest_laughed}
+    effects:
+      - {injure: [$guest, 1]}
+      - {set_flag: [slapped, true]}
+      - {emit: {actor: $victor, verb: slap, text: '{victor}一掌掴在{guest}脸上'}}
+  apologize:
+    role: guest
+    pre: {flag: guest_laughed}
+    effects:
+      - {set_flag: [apologized, true]}
+      - {emit: {actor: $guest, verb: apologize, text: '{guest}拱手赔了个不是'}}
+exit_when: {any: [{flag: slapped}, {flag: apologized}, {not: {same_loc: [$victor, $guest]}}]}
+max_turns: 6
+offscreen:
+  - when: true
+    effects:
+      - {injure: [$guest, 1]}
+      - {set_flag: [slapped, true]}
+      - {trace: [jianhu_hall, 厅上的人还在议论方才那一记耳光]}
+paragraphs: []

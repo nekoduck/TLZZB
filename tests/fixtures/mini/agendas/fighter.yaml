@@ -1,0 +1,4 @@
+goal: 赢下比武；有人取笑就讨回面子
+steps:
+  - {id: f_watch, text: 在堂上等着比武, at: hall, do: {verb: wait}}
+  - {id: f_yard, text: 去前院歇口气, at: yard, do: {verb: wait}, start: 64}

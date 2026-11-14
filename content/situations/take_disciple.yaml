@@ -1,0 +1,62 @@
+# 南海鳄神遇见根骨合意的人（取悟性最高一档、还没被他扣下的）。
+id: take_disciple
+origin: canon
+when:
+  all:
+    - {onstage: nanhai_eshen}
+    - {alive: nanhai_eshen}
+    - {not: {status: [nanhai_eshen, captive]}}
+roles:
+  eshen: nanhai_eshen
+  chosen:
+    pick:
+      where:
+        all:
+          - {stat: [$it, aptitude, '>=', 3]}
+          - {not: {role: [$it, four_evils]}}
+          - {not: {role: [$it, 'disciple_of:nanhai_eshen']}}
+          - {not: {status: [$it, captive]}}
+at: $eshen
+scene: tense
+actions:
+  claim:
+    role: eshen
+    lean: true
+    loud: true
+    desc: '{eshen}认定{chosen}根骨像他，要收作徒弟'
+    effects: &claim
+      - {set_flag: [.claimed, true]}
+      - {add_status: [$chosen, captive, {source: $eshen}]}
+      - {learn: [$chosen, F_eshen_wants_heir, 1.0, told]}
+      - {emit: {actor: $eshen, verb: claim, text: '{eshen}绕着{chosen}转了两圈，摸摸他的后脑，大叫这是块好材料，非收作徒弟不可', loud: true}}
+  kowtow:
+    role: chosen
+    pre: {flag: .claimed}
+    desc: '{chosen}磕头拜师'
+    effects:
+      - {set_flag: [.accepted, true]}
+      - {role: [$chosen, 'disciple_of:nanhai_eshen', add]}
+      - {remove_status: [$chosen, captive]}
+      - {rel: [$eshen, $chosen, affinity, 30]}
+      - {emit: {actor: $chosen, verb: kowtow, text: '{chosen}跪下给{eshen}磕了头'}}
+  refuse:
+    role: chosen
+    lean: true
+    pre: {flag: .claimed}
+    desc: '{chosen}说什么也不肯拜师'
+    effects:
+      - {set_flag: [.refused, true]}
+      - {emit: {actor: $chosen, verb: refuse, text: '{chosen}梗着脖子，说什么也不肯磕这个头', kinds: [{k: insult, who: $eshen, by: $chosen}]}}
+  threaten:
+    role: eshen
+    lean: true
+    pre: {flag: .refused}
+    desc: '{eshen}暴跳如雷，扬言不拜师就拧断他的脖子'
+    effects:
+      - {emit: {actor: $eshen, verb: threaten, text: '{eshen}暴跳如雷，扬言不拜师就拧断{chosen}的脖子', loud: true, kinds: [{k: threaten, who: $chosen, by: $eshen}]}}
+exit_when: {any: [{flag: .accepted}, {not: {same_loc: [$eshen, $chosen]}}, {not: {alive: $chosen}}]}
+max_turns: 8
+offscreen:
+  - when: true
+    effects: *claim
+paragraphs: []

@@ -1,0 +1,60 @@
+# 莽牯朱蛤出没。出没的地点、条件与经过都待原文核对；这里取：高崖下冷水潭，一日至多露面一次。
+id: zhuha
+origin: canon
+when:
+  all:
+    - {item_at: [mangu_zhuha, crag_foot]}
+    - {not: {flag: zhuha_seen_today}}
+roles:
+  finder: {pick: {where: {all: [{alive: $it}, {not: {status: [$it, captive]}}, {not: {status: [$it, bound]}}]}}}
+at: crag_foot
+scene: calm
+actions:
+  watch:
+    role: finder
+    lean: true
+    desc: '{finder}循着咕咕声往潭边看'
+    effects:
+      - {set_flag: [.seen, true]}
+      - {set_flag: [zhuha_seen_today, true]}
+      - {schedule: [96, [{set_flag: [zhuha_seen_today, false]}]]}
+      - {emit: {actor: $finder, verb: look, text: '冷水潭边咕咕两声，一只通红的蛤蟆跳上石头，鼓着肚子瞪着{finder}'}}
+  grab:
+    role: finder
+    pre: {flag: .seen}
+    desc: '{finder}扑上去抓那只红蛤蟆'
+    effects:
+      - {set_flag: [.tried, true]}
+      - check:
+          kind: chance
+          who: $finder
+          chance: 35
+          ok:
+            - {give: [null, $finder, mangu_zhuha]}
+            - {emit: {actor: $finder, verb: grab, text: '{finder}一扑，竟把那只红蛤蟆按在了手底下'}}
+          fail:
+            - {injure: [$finder, 1]}
+            - {emit: {actor: $finder, verb: grab, text: '那蛤蟆喷出一股腥气，{finder}头晕眼花，跌坐在地，它早跳回了水里'}}
+  back_off:
+    role: finder
+    pre: {flag: .seen}
+    desc: '{finder}退开几步，不去招惹它'
+    effects:
+      - {set_flag: [.left, true]}
+      - {emit: {actor: $finder, verb: back_off, text: '{finder}退开几步，那红蛤蟆咕的一声跳回了潭里'}}
+exit_when: {any: [{flag: .left}, {flag: .tried}, {not: {item_at: [mangu_zhuha, crag_foot]}}, {not: {at: [$finder, crag_foot]}}]}
+max_turns: 4
+offscreen:
+  - when: true
+    effects:
+      - {set_flag: [zhuha_seen_today, true]}
+      - {schedule: [96, [{set_flag: [zhuha_seen_today, false]}]]}
+      - check:
+          kind: chance
+          who: $finder
+          chance: 10
+          ok:
+            - {give: [null, $finder, mangu_zhuha]}
+            - {emit: {actor: $finder, verb: grab, text: '{finder}在冷水潭边捉住了一只通红的怪蛤蟆'}}
+          fail: []
+paragraphs: []

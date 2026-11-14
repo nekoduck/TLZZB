@@ -1,0 +1,33 @@
+# 有名角色的简卡（方案 5.4 末条）。
+id: ye_erniang
+name: 叶二娘
+unknown_alias: 一个怀里抱着孩子的妇人
+tier: named
+base_power: 5
+neili: 80
+arts: {}
+literacy: 1
+aptitude: 1
+luck: 5
+roles:
+- four_evils
+self_intro: 四大恶人里排第二的女人，笑盈盈的，名声却极坏。
+values:
+- 笑里藏刀
+- 看不起老三
+drives:
+- greed
+- survive
+voice:
+  habits:
+  - 说话软绵绵，带着笑
+  samples: []
+bottom_lines: []
+knows:
+- F_eshen_wants_heir
+- F_four_evils
+rel:
+  nanhai_eshen:
+    affinity: -10
+    regard: 5
+agenda: ye_erniang

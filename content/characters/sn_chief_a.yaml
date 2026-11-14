@@ -1,0 +1,40 @@
+# 有名角色的简卡（方案 5.4 末条）。
+id: sn_chief_a
+name: 神农帮的黑须头目
+unknown_alias: 一个黑须汉子
+tier: named
+base_power: 2
+neili: 20
+arts:
+  shennong_herbs: 1
+literacy: 1
+aptitude: 1
+luck: 5
+roles:
+- shennong_member
+superior: sikong_xuan
+self_intro: 神农帮的一个头目，替帮主跑腿传话，管着营里关人的钥匙。
+values:
+- 对帮主唯命是从
+- 欺负外人不手软
+drives:
+- obey:sikong_xuan
+- survive
+voice:
+  habits:
+  - 嗓门粗，说话带着威胁
+  samples: []
+bottom_lines: []
+knows:
+- F_wuliang_two_sects
+- F_shennong_siege
+- F_shennong_orders
+- F_envoy_due
+- F_duanchang_antidote_sikong
+rel:
+  sikong_xuan:
+    trust: 50
+    affinity: 20
+    fear: 30
+    regard: 3
+agenda: sn_chief_a

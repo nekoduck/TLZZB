@@ -1,0 +1,105 @@
+# 通用：外人进了有主的地方，被主人家的人拦下盘问。开场条件写在角色位的 pick 里（when 恒真），
+# 世界层在有人的地点逐个尝试绑定。放行过的人一日之内不再被盘问（状态 vetted）。
+id: challenge
+origin: generic
+when: true
+roles:
+  keeper:
+    pick:
+      where:
+        all:
+          - {not: {status: [$it, captive]}}
+          - {not: {status: [$it, bound]}}
+          - any:
+              - all:
+                  - {role: [$it, wuliang_disciple]}
+                  - {not: {flag: [bout_running, true]}}
+                  - {any: [{at: [$it, jianhu_gate]}, {at: [$it, jianhu_hall]}, {at: [$it, jianhu_back]}]}
+              - all:
+                  - {role: [$it, shennong_member]}
+                  - {flag: siege_on}
+                  - {at: [$it, mountain_path]}
+              - all:
+                  - {any: [{role: [$it, wanjie_family]}, {role: [$it, wanjie_servant]}]}
+                  - {any: [{at: [$it, valley_gate]}, {at: [$it, zhong_hall]}, {at: [$it, zhong_inner]}]}
+  intruder:
+    pick:
+      where:
+        all:
+          - {not: {status: [$it, vetted]}}
+          - {not: {status: [$it, captive]}}
+          - {not: {status: [$it, bound]}}
+          - {not: {status: [$it, hidden]}}
+          - {not: {role: [$it, lingjiu_envoy]}}
+          - any:
+              - all:
+                  - {role: [$keeper, wuliang_disciple]}
+                  - {not: {role: [$it, wuliang_disciple]}}
+                  - {not: {role: [$it, jianhu_guest]}}
+              - all:
+                  - {role: [$keeper, shennong_member]}
+                  - {not: {role: [$it, shennong_member]}}
+              - all:
+                  - {any: [{role: [$keeper, wanjie_family]}, {role: [$keeper, wanjie_servant]}]}
+                  - {not: {role: [$it, wanjie_family]}}
+                  - {not: {role: [$it, wanjie_servant]}}
+scene: tense
+actions:
+  question:
+    role: keeper
+    lean: true
+    desc: '{keeper}拦住{intruder}，喝问来历'
+    effects:
+      - {set_flag: [.asked, true]}
+      - {emit: {actor: $keeper, verb: question, text: '{keeper}拦住{intruder}，喝问是什么人、来做什么'}}
+  explain:
+    role: intruder
+    lean: true
+    desc: '{intruder}报上来意'
+    effects:
+      - {set_flag: [.asked, true]}
+      - {emit: {actor: $intruder, verb: explain, text: '{intruder}向{keeper}报上来意'}}
+  let_pass:
+    role: keeper
+    pre: {flag: .asked}
+    desc: '{keeper}放{intruder}过去'
+    effects:
+      - {add_status: [$intruder, vetted, {ticks: 96}]}
+      - {set_flag: [.passed, true]}
+      - {emit: {actor: $keeper, verb: let_pass, text: '{keeper}打量了{intruder}几眼，侧身让开了路'}}
+  drive_off:
+    role: keeper
+    pre: {flag: .asked}
+    desc: '{keeper}喝令{intruder}离开'
+    effects:
+      - {set_flag: [.driven, true]}
+      - {rel: [$intruder, $keeper, affinity, -10]}
+      - {emit: {actor: $keeper, verb: drive_off, text: '{keeper}沉下脸，喝令{intruder}立刻离开'}}
+  seize:
+    role: keeper
+    pre: {flag: .asked}
+    desc: '{keeper}动手拿下{intruder}'
+    effects:
+      - {add_status: [$intruder, captive, {source: $keeper}]}
+      - {set_flag: [.seized, true]}
+      - {emit: {actor: $keeper, verb: seize, text: '{keeper}招呼同伴，一拥而上拿住了{intruder}', loud: true}}
+exit_when: {any: [{flag: .passed}, {flag: .driven}, {flag: .seized}, {not: {same_loc: [$keeper, $intruder]}}]}
+max_turns: 5
+offscreen:
+  - when: {stat: [$intruder, power, '>=', 4]}
+    effects:
+      - {add_status: [$intruder, vetted, {ticks: 96}]}
+      - {emit: {actor: $keeper, verb: let_pass, text: '{keeper}见{intruder}来头不小，没敢阻拦'}}
+  - when: true
+    effects:
+      - check:
+          kind: chance
+          who: $keeper
+          chance: 60
+          ok:
+            - {add_status: [$intruder, vetted, {ticks: 96}]}
+            - {emit: {actor: $keeper, verb: let_pass, text: '{keeper}盘问过{intruder}，放他过去了'}}
+          fail:
+            - {add_status: [$intruder, captive, {source: $keeper}]}
+            - {emit: {actor: $keeper, verb: seize, text: '{keeper}盘问{intruder}不得要领，把他扣了下来'}}
+paragraphs: []

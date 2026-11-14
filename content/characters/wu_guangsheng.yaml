@@ -1,0 +1,38 @@
+# 有名角色的简卡（方案 5.4 末条）。
+id: wu_guangsheng
+name: 吴光胜
+unknown_alias: 一个精瘦的剑派弟子
+tier: named
+base_power: 2
+neili: 20
+arts:
+  wuliang_sword: 1
+literacy: 1
+aptitude: 1
+luck: 5
+roles:
+- wuliang_disciple
+- wuliang_east
+superior: zuo_zimu
+self_intro: 无量剑东宗的弟子，管着柴房的钥匙。
+values:
+- 贪小便宜
+- 欺软怕硬
+drives:
+- obey:zuo_zimu
+- greed
+voice:
+  habits:
+  - 说话油滑
+  samples: []
+bottom_lines: []
+knows:
+- F_wuliang_two_sects
+- F_backhill_forbidden
+rel:
+  zuo_zimu:
+    trust: 50
+    affinity: 20
+    fear: 20
+    regard: 3
+agenda: wu_guangsheng

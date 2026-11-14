@@ -1,0 +1,6 @@
+goal: 比剑赢过东宗；山被围时守住西宗的人
+steps:
+  - {id: xs_bout, text: 坐镇练武厅看比剑, at: jianhu_hall, do: {verb: wait}, pre: {not: {status: [self, captive]}}, takes: 16, deadline: 64}
+  - {id: xs_hold_back, text: 山门被围，带西宗弟子守后院, at: jianhu_back, do: {verb: wait}, pre: {flag: siege_on}, start: 48, takes: 96}
+  - {id: xs_receive_envoy, text: 圣使到了，出来迎候, at: jianhu_hall, do: {verb: say, act: greet, to: envoy_lingjiu}, pre: {all: [{onstage: envoy_lingjiu}, {alive: envoy_lingjiu}]}, start: 224, deadline: 520, takes: 2}
+  - {id: xs_keep, text: 料理西宗的事, at: jianhu_back, do: {verb: wait}, pre: {not: {status: [self, captive]}}, takes: 192}

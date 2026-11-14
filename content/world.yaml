@@ -1,0 +1,16 @@
+# 世界规则（docs/CONTENT_FORMAT.md）。数值照方案 6.6 的种子。
+background: 北宋年间，大理国境内的无量山、澜沧江与万劫谷一带，江湖门派与山野人家杂处。
+calendar: {ticks_per_hour: 8, hours_per_day: 12, start_tick: 32}
+request:
+  weights:                      # 方案 6.6 的 W 表
+    trivial: {hostile: 20, stranger: 50, familiar: 70, trusted: 90}
+    effort:  {hostile: 0,  stranger: 30, familiar: 50, trusted: 80}
+    costly:  {hostile: -20, stranger: 10, familiar: 30, trusted: 60}
+    risky:   {hostile: -40, stranger: 0,  familiar: 20, trusted: 50}
+    betray:  {hostile: -60, stranger: -30, familiar: -10, trusted: 20}
+  may: 60
+  conditional: 40
+  labels: {trivial: 举手之劳, effort: 费事, costly: 有损己利, risky: 冒险, betray: 违背所属}
+  bands: {hostile: [-100, -30], stranger: [-30, 20], familiar: [20, 60], trusted: [60, 100]}
+  close_roles: [same_sect, master_disciple, master_servant]   # 至少抬到 familiar 的身份关系
+salience: {death: 10, harmed: 9, rescue: 8, promise: 7, exposed: 7, insult: 6, learn_key: 6, gift: 5, talk: 3, pass: 1}

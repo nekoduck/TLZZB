@@ -1,0 +1,23 @@
+F_bout:
+  text: 今日⟦hall⟧上有人比武。
+  known_by: ['*']
+F_girl_on_beam:
+  text: ⟦girl⟧藏在⟦hall⟧的房梁上。
+  known_by: [girl]
+F_fighter_temper:
+  text: ⟦fighter⟧脾气火爆，受不得人笑。
+  known_by: ['role:hall_sect']
+F_guest_family:
+  text: ⟦guest⟧出身富贵人家。
+  tags: [secret, guest_private]
+  known_by: [guest]
+F_well_secret:
+  text: ⟦yard⟧的井壁上凿着几个落脚的坑。
+F_manual_contents:
+  text: ⟦old_manual⟧上记着⟦cloud_steps⟧的步法。
+F_girl_stranger:
+  text: ⟦girl⟧与⟦fighter⟧素不相识。
+  known_by: [fighter]
+F_girl_sister:
+  text: ⟦girl⟧是⟦fighter⟧的师妹。
+  contradicts: [F_girl_stranger]

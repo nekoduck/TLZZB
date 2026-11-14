@@ -1,0 +1,152 @@
+# 私逃的两人被人撞见。「正在私逃」= 两人都已离开剑湖宫、私逃那份打算还在、还没逃出图外。
+# 离场结算：撞见的人先掷逃跑；逃得掉也只能慌不择路奔向断崖，失足坠落再掷一次（崖壁有树可挂）；
+# 逃不掉就被追上，取命之前掷一次侥幸。两人被撞见一次之后就加倍小心（lovers_witnessed），不再开场。
+id: caught_eloping
+origin: canon
+when:
+  all:
+    - {not: {flag: lovers_witnessed}}
+    - {onstage: gan_guanghao}
+    - {alive: gan_guanghao}
+    - {alive: ge_guangpei}
+    - {same_loc: [gan_guanghao, ge_guangpei]}
+    - {step: [gan_guanghao, gh_bout, done]}
+    - {step: [gan_guanghao, gh_flee_out, pending]}
+    - {not: {step: [gan_guanghao, gh_slip_out, void]}}
+    - {not: {at: [gan_guanghao, jianhu_hall]}}
+    - {not: {at: [gan_guanghao, jianhu_gate]}}
+    - {not: {at: [gan_guanghao, jianhu_back]}}
+roles:
+  eloper: gan_guanghao
+  partner: ge_guangpei
+  witness: {pick: {where: {alive: $it}}}
+at: $eloper
+scene: tense
+actions:
+  draw_on_witness:
+    role: eloper
+    lean: true
+    loud: true
+    desc: '{eloper}拔剑逼向{witness}，要杀人灭口'
+    effects:
+      - {set_flag: [.exposed, true]}
+      - {set_flag: [lovers_witnessed, true]}
+      - {learn: [$witness, F_lovers, 1.0, saw]}
+      - {emit: {actor: $eloper, verb: draw, text: '{eloper}脸色大变，拔剑朝{witness}逼过来，要杀人灭口', loud: true, kinds: [{k: threaten, who: $witness, by: $eloper}]}}
+  urge_leave:
+    role: partner
+    lean: true
+    pre: {flag: .exposed}
+    desc: '{partner}拉着{eloper}催他快走'
+    effects:
+      - {emit: {actor: $partner, verb: urge, text: '{partner}拉着{eloper}的袖子，催他别耽搁'}}
+  plead_silence:
+    role: witness
+    pre: {flag: .exposed}
+    desc: '{witness}赌咒发誓绝不说出去'
+    effects:
+      - {set_flag: [.pleaded, true]}
+      - {emit: {actor: $witness, verb: plead, text: '{witness}连声保证，绝不把看见的事说出去'}}
+  spare:
+    role: eloper
+    pre: {flag: .pleaded}
+    desc: '{eloper}收剑，放{witness}一马'
+    effects:
+      - {set_flag: [.spared, true]}
+      - {emit: {actor: $eloper, verb: spare, text: '{eloper}犹豫半晌，收了剑，狠狠瞪了{witness}一眼'}}
+  run:
+    role: witness
+    lean: true
+    lethal: true
+    pre: {flag: .exposed}
+    desc: '{witness}往断崖那边逃'
+    effects:
+      - {set_flag: [.ran, true]}
+      - check:
+          kind: flee
+          who: $witness
+          from: [$eloper]
+          ok:
+            - {move: [$witness, cliff_edge]}
+            - {emit: {actor: $witness, verb: flee, text: '{witness}没命地奔逃，慌不择路跑到断崖边，被逼得无路可退，脚下一滑跌了下去', loud: true}}
+            - check:
+                kind: fall
+                who: $witness
+                loc: cliff_edge
+                ok:
+                  - {move: [$witness, valley_floor]}
+                  - {injure: [$witness, 2]}
+                  - {learn: [$witness, 'exit:valley_floor:valley_cave', 1.0, saw]}
+                  - {emit: {actor: $witness, verb: fall, text: '{witness}一路撞着崖壁上的枝条滚落谷底，竟没摔死'}}
+                  - {trace: [cliff_edge, 崖口的石头上有一道新鲜的滑痕]}
+                fail:
+                  - {kill: [$witness, fall]}
+                  - {trace: [cliff_edge, 崖口的石头上有一道新鲜的滑痕]}
+          fail:
+            - {move: [$witness, cliff_edge]}
+            - {emit: {actor: $eloper, verb: strike, text: '{eloper}追到断崖边，一剑刺中{witness}，{witness}立足不住，翻下崖去', loud: true}}
+            - check:
+                kind: fall
+                who: $witness
+                loc: cliff_edge
+                ok:
+                  - {move: [$witness, valley_floor]}
+                  - {injure: [$witness, 2]}
+                  - {learn: [$witness, 'exit:valley_floor:valley_cave', 1.0, saw]}
+                  - {emit: {actor: $witness, verb: fall, text: '{witness}一路撞着崖壁上的枝条滚落谷底，竟没摔死'}}
+                  - {trace: [cliff_edge, 崖口的石头上有一道新鲜的滑痕]}
+                fail:
+                  - {kill: [$witness, fall]}
+                  - {trace: [cliff_edge, 崖口的石头上有一道新鲜的滑痕]}
+exit_when: {any: [{flag: .ran}, {flag: .spared}, {not: {same_loc: [$eloper, $witness]}}]}
+max_turns: 6
+offscreen:
+  - when: {stat: [$witness, power, '>=', 2]}
+    effects:
+      - {set_flag: [lovers_witnessed, true]}
+      - {learn: [$witness, F_lovers, 1.0, saw]}
+      - {emit: {actor: $witness, verb: fend_off, text: '{eloper}与{partner}被{witness}撞见，拔剑相逼，却讨不了好，只得慌忙逃走', loud: true}}
+  - when: true
+    effects:
+      - {set_flag: [lovers_witnessed, true]}
+      - {learn: [$witness, F_lovers, 1.0, saw]}
+      - {emit: {actor: $eloper, verb: draw, text: '{eloper}与{partner}被{witness}撞见，{eloper}拔剑就追', loud: true}}
+      - check:
+          kind: flee
+          who: $witness
+          from: [$eloper]
+          ok:
+            - {move: [$witness, cliff_edge]}
+            - {emit: {actor: $witness, verb: flee, text: '{witness}没命地奔逃，慌不择路跑到断崖边，被逼得无路可退，脚下一滑跌了下去', loud: true}}
+            - check:
+                kind: fall
+                who: $witness
+                loc: cliff_edge
+                ok:
+                  - {move: [$witness, valley_floor]}
+                  - {injure: [$witness, 2]}
+                  - {learn: [$witness, 'exit:valley_floor:valley_cave', 1.0, saw]}
+                  - {step: [$witness, {id: valley_cave_look, text: 在谷底摸进湖边的石洞看看, at: valley_cave, do: {verb: look}, pre: {not: {status: [self, captive]}}, takes: 2}]}
+                  - {emit: {actor: $witness, verb: fall, text: '{witness}一路撞着崖壁上的枝条滚落谷底，竟没摔死'}}
+                  - {trace: [cliff_edge, 崖口的石头上有一道新鲜的滑痕]}
+                fail:
+                  - {kill: [$witness, fall]}
+                  - {trace: [cliff_edge, 崖口的石头上有一道新鲜的滑痕]}
+          fail:
+            - {move: [$witness, cliff_edge]}
+            - {emit: {actor: $eloper, verb: strike, text: '{eloper}追到断崖边，一剑刺中{witness}，{witness}立足不住，翻下崖去', loud: true}}
+            - check:
+                kind: fall
+                who: $witness
+                loc: cliff_edge
+                ok:
+                  - {move: [$witness, valley_floor]}
+                  - {injure: [$witness, 2]}
+                  - {learn: [$witness, 'exit:valley_floor:valley_cave', 1.0, saw]}
+                  - {step: [$witness, {id: valley_cave_look, text: 在谷底摸进湖边的石洞看看, at: valley_cave, do: {verb: look}, pre: {not: {status: [self, captive]}}, takes: 2}]}
+                  - {emit: {actor: $witness, verb: fall, text: '{witness}一路撞着崖壁上的枝条滚落谷底，竟没摔死'}}
+                  - {trace: [cliff_edge, 崖口的石头上有一道新鲜的滑痕]}
+                fail:
+                  - {kill: [$witness, fall]}
+                  - {trace: [cliff_edge, 崖口的石头上有一道新鲜的滑痕]}
+paragraphs: []

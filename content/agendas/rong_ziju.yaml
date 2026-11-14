@@ -1,0 +1,5 @@
+goal: 帮掌门师兄守住门户
+steps:
+  - {id: rz_bout, text: 在练武厅陪掌门观战, at: jianhu_hall, do: {verb: wait}, pre: {not: {status: [self, captive]}}, takes: 16, deadline: 64}
+  - {id: rz_patrol, text: 山门被围，巡视前院, at: jianhu_gate, do: {verb: wait}, pre: {flag: siege_on}, start: 48, takes: 96}
+  - {id: rz_keep, text: 在门中照应, at: jianhu_hall, do: {verb: wait}, pre: {not: {status: [self, captive]}}, takes: 192}

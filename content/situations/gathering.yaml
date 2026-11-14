@@ -1,0 +1,39 @@
+# 通用：一处聚了五人以上（某人身边另有不少于四人）。闲谈，传闻在这里流动。无人敌对无法写成谓词，
+# 只要求挑出的两人彼此没有敌意。
+id: gathering
+origin: generic
+when: true
+roles:
+  talker: {pick: {where: {all: [{others_here: [$it, 4]}, {not: {status: [$it, chatted]}}, {not: {status: [$it, captive]}}, {not: {status: [$it, bound]}}]}}}
+  listener:
+    pick:
+      where:
+        all:
+          - {not: {status: [$it, captive]}}
+          - {rel: [$it, $talker, affinity, '>=', -29]}
+          - {rel: [$talker, $it, affinity, '>=', -29]}
+scene: calm
+actions:
+  chat:
+    role: talker
+    lean: true
+    desc: '{talker}和{listener}闲聊起来'
+    effects:
+      - {set_flag: [.chatted, true]}
+      - {add_status: [$talker, chatted, {ticks: 48}]}
+      - {rel: [$listener, $talker, affinity, 2]}
+      - {emit: {actor: $talker, verb: chat, text: '{talker}拉着{listener}说起这几日的见闻'}}
+  ask_news:
+    role: listener
+    lean: true
+    desc: '{listener}打听最近的消息'
+    effects:
+      - {emit: {actor: $listener, verb: ask, text: '{listener}向{talker}打听这一带最近出了什么事'}}
+exit_when: {any: [{flag: .chatted}, {not: {same_loc: [$talker, $listener]}}]}
+max_turns: 3
+offscreen:
+  - when: true
+    effects:
+      - {add_status: [$talker, chatted, {ticks: 48}]}
+      - {emit: {actor: $talker, verb: chat, text: '{talker}和{listener}闲谈了一阵'}}
+paragraphs: []

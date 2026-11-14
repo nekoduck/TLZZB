@@ -1,0 +1,34 @@
+# 有名角色的简卡（方案 5.4 末条）。
+id: rui_popo
+name: 瑞婆婆
+unknown_alias: 一个精干的老妇人
+tier: named
+base_power: 3
+neili: 40
+arts: {}
+literacy: 1
+aptitude: 1
+luck: 5
+roles:
+- wang_household
+self_intro: 奉主人之命出来追杀一个黑衣女子的老妇人。
+values:
+- 奉命行事，不问缘由
+- 下手狠，不留活口
+drives:
+- grudge:mu_wanqing
+- survive
+voice:
+  habits:
+  - 说话客气，眼神冷
+  samples: []
+bottom_lines: []
+knows:
+- F_mu_hunted
+rel:
+  mu_wanqing:
+    affinity: -60
+  ping_popo:
+    trust: 60
+    affinity: 40
+agenda: rui_popo

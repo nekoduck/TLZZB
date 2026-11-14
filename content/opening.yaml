@@ -1,0 +1,68 @@
+# 开局快照：第一日辰时（方案 3.1、3.2、9.4）。
+player:
+  id: player
+  default_name: 阿福
+  unknown_alias: 茶商伙计
+  base_power: 0
+  neili: 0
+  literacy: 1
+  aptitude: 1
+  luck: 5
+  roles: [ma_caravan_hand, jianhu_guest]
+  loc: jianhu_hall
+  superior: ma_wude
+  knows: [F_wuliang_two_sects, F_tea_gift]
+  arts: {trade: 1}
+  rel:
+    ma_wude: {trust: 40, affinity: 30}
+    duan_yu: {trust: 10, affinity: 15}
+known_terms: [ma_wude, zuo_zimu, jianhu_hall, jianhu_gate, wuliang_mount, wuliang_sect, wuliang_east, wuliang_west, pu_er,
+              rations, waterskin, tinder, silver, tea_sample, rope, trade]
+term_alias: {duan_yu: 段公子}
+chars:
+  # 剑湖宫练武厅
+  duan_yu: {loc: jianhu_hall}
+  zhong_ling: {loc: jianhu_hall, statuses: [{kind: hidden}]}     # 藏在梁上，没人看见
+  zuo_zimu: {loc: jianhu_hall}
+  xin_shuangqing: {loc: jianhu_hall}
+  rong_ziju: {loc: jianhu_hall}
+  gong_guangjie: {loc: jianhu_hall}
+  ma_wude: {loc: jianhu_hall}
+  gan_guanghao: {loc: jianhu_hall}
+  ge_guangpei: {loc: jianhu_hall}
+  yu_guangbiao: {loc: jianhu_hall}
+  wu_guangsheng: {loc: jianhu_hall}
+  # 山下
+  sikong_xuan: {loc: shennong_camp}
+  sn_chief_a: {loc: shennong_camp}
+  sn_chief_b: {loc: mountain_path}
+  # 万劫谷
+  gan_baobao: {loc: zhong_hall}
+  zhong_wanchou: {loc: zhong_hall}
+  jin_xier: {loc: valley_gate}
+  # 大路边
+  mu_wanqing: {loc: mu_house}
+  # 图外，按各自打算的第一步入场
+  envoy_lingjiu: {loc: mountain_path, onstage: false}
+  rui_popo: {loc: highroad, onstage: false}
+  ping_popo: {loc: highroad, onstage: false}
+  nanhai_eshen: {loc: highroad, onstage: false}
+  ye_erniang: {loc: highroad, onstage: false}
+  yun_zhonghe: {loc: highroad, onstage: false}
+  dali_guard_chief: {loc: highroad, onstage: false}
+extras:                                # 路人：没有卡，按 routines.yaml 行动
+  - {id: sn_guard_1, name: 神农帮帮众, unknown_alias: 一个短衣汉子, routine: shennong_guard, loc: shennong_camp, base_power: 1, roles: [shennong_member], superior: sikong_xuan}
+  - {id: sn_guard_2, name: 神农帮帮众, unknown_alias: 一个背药篓的汉子, routine: shennong_guard, loc: shennong_camp, base_power: 1, roles: [shennong_member], superior: sikong_xuan}
+  - {id: sn_guard_3, name: 神农帮帮众, unknown_alias: 一个提刀的汉子, routine: shennong_guard, loc: mountain_path, base_power: 1, roles: [shennong_member], superior: sn_chief_b}
+  - {id: sn_guard_4, name: 神农帮帮众, unknown_alias: 一个黑脸汉子, routine: shennong_guard, loc: mountain_path, base_power: 1, roles: [shennong_member], superior: sn_chief_b}
+  - {id: wl_disciple_1, name: 无量剑弟子, unknown_alias: 一个守门的年轻剑客, routine: wuliang_disciple, loc: jianhu_gate, base_power: 1, roles: [wuliang_disciple, wuliang_east], superior: zuo_zimu}
+  - {id: wl_disciple_2, name: 无量剑弟子, unknown_alias: 一个侍立的年轻剑客, routine: wuliang_disciple, loc: jianhu_hall, base_power: 1, roles: [wuliang_disciple, wuliang_east], superior: zuo_zimu}
+  - {id: wl_disciple_3, name: 无量剑弟子, unknown_alias: 一个劈柴的年轻剑客, routine: wuliang_disciple, loc: jianhu_back, base_power: 1, roles: [wuliang_disciple, wuliang_east], superior: zuo_zimu}
+  - {id: wl_disciple_4, name: 无量剑西宗弟子, unknown_alias: 一个女剑客, routine: wuliang_disciple, loc: jianhu_hall, base_power: 1, roles: [wuliang_disciple, wuliang_west], superior: xin_shuangqing}
+  - {id: wj_servant_1, name: 钟家仆役, unknown_alias: 一个哑巴似的仆人, routine: wanjie_servant, loc: zhong_hall, base_power: 0, roles: [wanjie_servant], superior: zhong_wanchou}
+  - {id: herb_gatherer_1, name: 采药人, unknown_alias: 一个背竹篓的山民, routine: herb_gatherer, loc: pine_wood, base_power: 0, roles: [herb_gatherer]}
+  - {id: merchant_1, name: 赶路的客商, unknown_alias: 一个挑担子的客商, routine: merchant, loc: ferry_bridge, base_power: 0, roles: [merchant]}
+flags: {bout_running: true}
+scheduled: []
+threads:                               # 玩家开局的牵挂
+  - {id: T_escort_home, kind: promise, text: 随东家做完客，平安下山, refs: [ma_wude], weight: 3}

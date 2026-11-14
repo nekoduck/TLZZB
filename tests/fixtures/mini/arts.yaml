@@ -1,0 +1,27 @@
+cloud_steps:
+  name: 云步
+  unknown_alias: 一种步法
+  kind: movement
+  sources: [old_manual]
+  requires: {stat: [self, literacy, '>=', 1]}
+  stages:
+    - {name: 初窥, hours: 2, effects: {flee: 20}}
+    - {name: 小成, hours: 4, effects: {flee: 40, evade: true}}
+hall_sword:
+  name: 堂中剑法
+  unknown_alias: 一路剑法
+  kind: combat
+  sources: [teacher]
+  secrecy: sect
+  teacher_roles: [hall_sect]
+  requires: {role: [self, hall_sect]}
+  stages:
+    - {name: 入门, hours: 3, power: 2}
+    - {name: 纯熟, hours: 10, power: 3}
+breath:
+  name: 吐纳术
+  unknown_alias: 一种吐纳的法子
+  kind: inner
+  sources: [teacher]
+  stages:
+    - {name: 第一层, hours: 2, effects: {neili: 25}}

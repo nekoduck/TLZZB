@@ -1,0 +1,103 @@
+# 信使与人质都用 pick 挑，玩家可以占「信使」的位；别的效果也可以用 {open: [poison_errand, 地点, {messenger: player}]} 指定。
+id: poison_errand
+origin: canon
+when:
+  all:
+    - {not: {flag: errand_sent}}
+    - {alive: sikong_xuan}
+    - {status: [sikong_xuan, poisoned_diao]}
+    - {knows: [sikong_xuan, F_diao_antidote_father]}
+    - {has: [sikong_xuan, duanchang_san]}
+roles:
+  chief: sikong_xuan
+  hostage:
+    pick:
+      where: {all: [{status: [$it, captive]}, {role: [$it, wanjie_family]}]}
+  messenger:
+    pick:
+      where:
+        all:
+          - {not: {role: [$it, shennong_member]}}
+          - {not: {role: [$it, wanjie_family]}}
+          - {any: [{status: [$it, captive]}, {role: [$it, errand_volunteer]}]}
+at: $chief
+scene: tense
+actions:
+  demand:
+    role: chief
+    lean: true
+    loud: true
+    desc: '{chief}逼{messenger}服毒去万劫谷取解药'
+    effects:
+      - {set_flag: [.demanded, true]}
+      - {learn: [$messenger, F_duanchang_antidote_sikong, 1.0, told]}
+      - {emit: {actor: $chief, verb: demand, text: '{chief}把一包药粉推到{messenger}面前：服下它，七日之内到万劫谷取回貂毒的解药，再来换你的解药'}}
+  swallow:
+    role: messenger
+    lean: true
+    lethal: true
+    pre: {flag: .demanded}
+    desc: '{messenger}服下那包药粉'
+    effects:
+      - {add_status: [$messenger, poisoned_duanchang, {ticks: 672, source: $chief}]}
+      - {remove_status: [$messenger, captive]}
+      - {set_flag: [.swallowed, true]}
+      - {set_flag: [errand_sent, true]}
+      - {emit: {actor: $messenger, verb: swallow, text: '{messenger}把那包药粉吞了下去'}}
+  refuse:
+    role: messenger
+    pre: {flag: .demanded}
+    desc: '{messenger}不肯服药'
+    effects:
+      - {set_flag: [.refused, true]}
+      - {emit: {actor: $messenger, verb: refuse, text: '{messenger}说什么也不肯服那包药'}}
+  force_down:
+    role: chief
+    lean: true
+    pre: {flag: .refused}
+    desc: '{chief}命人硬给{messenger}灌药'
+    effects:
+      - {add_status: [$messenger, poisoned_duanchang, {ticks: 672, source: $chief}]}
+      - {remove_status: [$messenger, captive]}
+      - {set_flag: [.swallowed, true]}
+      - {set_flag: [errand_sent, true]}
+      - {emit: {actor: $chief, verb: force, text: '帮众按住{messenger}，硬把药粉灌了下去'}}
+  tell_way:
+    role: hostage
+    lean: true
+    pre: {flag: .swallowed}
+    desc: '{hostage}把信物交给{messenger}，告诉他去万劫谷的走法'
+    effects: &tell_way
+      - {learn: [$messenger, F_route_wanjie, 1.0, told]}
+      - {learn: [$messenger, 'exit:pine_wood:valley_gate', 1.0, told]}
+      - {learn: [$messenger, F_gate_knock, 1.0, told]}
+      - {learn: [$messenger, F_valley_hates_duan, 1.0, told]}
+      - {learn: [$messenger, F_zhong_ling_held, 1.0, saw]}
+      - {give: [$hostage, $messenger, zhong_ling_shoe]}
+      - {set_flag: [.told, true]}
+      - {emit: {actor: $hostage, verb: tell_way, text: '{hostage}脱下一只绣鞋交给{messenger}，悄声说了去万劫谷的走法和谷口的规矩'}}
+  keep_hostage:
+    role: chief
+    lean: true
+    pre: {flag: .told}
+    desc: '{chief}命人看紧{hostage}，放{messenger}上路'
+    effects:
+      - {set_flag: [.done, true]}
+      - {emit: {actor: $chief, verb: order, text: '{chief}命人把{hostage}看紧，放{messenger}上路'}}
+exit_when: {any: [{flag: .done}, {not: {alive: $messenger}}, {all: [{flag: .told}, {not: {same_loc: [$messenger, $chief]}}]}]}
+max_turns: 8
+offscreen:
+  - when: true
+    effects:
+      - {learn: [$messenger, F_duanchang_antidote_sikong, 1.0, told]}
+      - {add_status: [$messenger, poisoned_duanchang, {ticks: 672, source: $chief}]}
+      - {remove_status: [$messenger, captive]}
+      - {set_flag: [errand_sent, true]}
+      - {emit: {actor: $chief, verb: demand, text: '{chief}逼{messenger}服下断肠散，限他七日内到万劫谷取回貂毒的解药，扣下{hostage}做人质'}}
+      - {learn: [$messenger, F_route_wanjie, 1.0, told]}
+      - {learn: [$messenger, 'exit:pine_wood:valley_gate', 1.0, told]}
+      - {learn: [$messenger, F_gate_knock, 1.0, told]}
+      - {learn: [$messenger, F_valley_hates_duan, 1.0, told]}
+      - {learn: [$messenger, F_zhong_ling_held, 1.0, saw]}
+      - {give: [$hostage, $messenger, zhong_ling_shoe]}
+paragraphs: []

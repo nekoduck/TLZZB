@@ -1,0 +1,52 @@
+id: diao_bite
+origin: canon
+when:
+  all:
+    - {not: {flag: diao_bite_done}}
+    - {status: [zhong_ling, captive]}
+    - {has: [zhong_ling, shandian_diao]}
+    - {same_loc: [zhong_ling, sikong_xuan]}
+    - {not: {status: [sikong_xuan, poisoned_diao]}}
+roles:
+  owner: zhong_ling
+  captor: sikong_xuan
+at: $owner
+scene: tense
+actions:
+  loose_diao:
+    role: owner
+    lean: true
+    loud: true
+    desc: '{owner}放出闪电貂去咬{captor}'
+    effects: &bite
+      - {add_status: [$captor, poisoned_diao, {ticks: 672, source: $owner}]}
+      - {set_flag: [diao_bite_done, true]}
+      - {learn: [$captor, F_diao_venom, 1.0, told]}
+      - {learn: [$captor, F_diao_antidote_father, 1.0, told]}
+      - {emit: {actor: $owner, verb: loose_diao, text: '{owner}袖口一抖，一道灰影扑上{captor}的手腕咬了一口；她拍手笑道，这毒天下只有她爹解得了', loud: true}}
+  grab_diao:
+    role: captor
+    desc: '{captor}伸手去抓那只小兽'
+    effects:
+      - check:
+          kind: chance
+          who: $captor
+          chance: 30
+          ok:
+            - {give: [$owner, $captor, shandian_diao]}
+            - {emit: {actor: $captor, verb: grab, text: '{captor}一把攥住了那只小兽'}}
+          fail:
+            - {emit: {actor: $captor, verb: grab, text: '{captor}抓了个空，那小兽钻回了{owner}怀里'}}
+  slap_owner:
+    role: captor
+    pre: {flag: diao_bite_done}
+    desc: '{captor}恼羞成怒，打了{owner}一掌'
+    effects:
+      - {injure: [$owner, 1]}
+      - {emit: {actor: $captor, verb: strike, text: '{captor}恼羞成怒，反手打了{owner}一掌'}}
+exit_when: {any: [{flag: diao_bite_done}, {not: {same_loc: [$owner, $captor]}}]}
+max_turns: 4
+offscreen:
+  - when: true
+    effects: *bite
+paragraphs: []

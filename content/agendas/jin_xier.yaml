@@ -1,0 +1,4 @@
+goal: 伺候主人，盼小姐平安
+steps:
+  - {id: jx_gatekeep, text: 在谷口照看来人, at: valley_gate, do: {verb: wait}, pre: {alive: zhong_wanchou}, takes: 120}
+  - {id: jx_serve, text: 在正厅伺候, at: zhong_hall, do: {verb: wait}, pre: {alive: gan_baobao}, takes: 192}

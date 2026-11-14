@@ -1,0 +1,27 @@
+# 专名与叫法、禁用词（方案 9.2、9.7）。人物、地点、物件、本事的名字由加载器自动并入。
+terms:
+  lingjiu: {name: 灵鹫宫, alias: 一个叫人害怕的去处}
+  tianshan: {name: 天山, alias: 极西的一座大山}
+  dali: {name: 大理, alias: 南边的京城}
+  zhennan_wangfu: {name: 镇南王府, alias: 京里一座大宅门}
+  duan_clan: {name: 大理段氏, alias: 一个显赫的姓氏人家}
+  wuliang_mount: {name: 无量山, alias: 这片大山}
+  wuliang_sect: {name: 无量剑, alias: 山上的一个剑派}
+  wuliang_east: {name: 无量剑东宗, alias: 剑派里的一支}
+  wuliang_west: {name: 无量剑西宗, alias: 剑派里的另一支}
+  shennong_bang: {name: 神农帮, alias: 一伙背药篓的汉子}
+  wanjie_valley: {name: 万劫谷, alias: 江那边的一处山谷}
+  lancang: {name: 澜沧江, alias: 山下那条大江}
+  four_evils: {name: 四大恶人, alias: 几个凶名在外的人物}
+  mantuo: {name: 曼陀山庄, alias: 江南的一处庄子}          # 瑞婆婆一行的来处，待原文核对
+  pu_er: {name: 普洱, alias: 产茶的地方}
+  bout_five_years: {name: 五年一度的比剑, alias: 剑派里的一场比试}
+banned_modern:
+  [手机, 电脑, 网络, 上网, 电话, 电视, 汽车, 火车, 飞机, 手枪, 步枪, 子弹, 炸弹, 电灯, 照片, 相机,
+   公里, 分钟, 秒钟, 星期, 周末, 公司, 员工, 工资, 经理, 警察, 医院, 护士, 学校, 科学, 化学,
+   细菌, 病毒, 维生素, 塑料, 咖啡, 巧克力, 沙发, 微信, 短信, 视频, 软件, 拜拜, 帅哥, 粉丝,
+   外卖, 超市, 银行卡, 信用卡, 钟表, 手表, 眼镜, 自行车, 冰箱]
+banned_game:
+  [数值, 经验, 经验值, 等级, 升级, 血量, 血条, 蓝条, 法力值, 技能, 技能点, 属性, 任务, 主线,
+   支线, 选项, 菜单, NPC, 玩家, 存档, 读档, 回合, 刻数, 判定, 骰子, 掷骰, 成功率, 概率,
+   buff, debuff, 副本, 装备栏, 背包, 道具, 掉落, 刷怪, 剧情, 结局, 系统提示]

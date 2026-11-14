@@ -1,0 +1,20 @@
+name: 雷猛
+unknown_alias: 那个黑脸汉子
+tier: soul
+base_power: 2
+neili: 10
+arts: {hall_sword: 1, breath: 1}
+literacy: 0
+aptitude: 1
+luck: 5
+roles: [hall_sect]
+self_intro: 武馆里的大弟子，脾气急。
+values: [好面子, 性子急]
+drives: [face, clan_honor]
+voice: {habits: [嗓门大], samples: []}
+bottom_lines:
+  - text: 不向人求饶
+    blocks: [{verb: say, act: plead}]
+knows: []
+rel: {guest: {trust: 0, affinity: -5}}
+agenda: fighter

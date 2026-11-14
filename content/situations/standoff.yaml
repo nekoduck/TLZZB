@@ -1,0 +1,70 @@
+# 通用：互相敌对的两人同处一地。实力相当无法写成谓词，这里只看敌意（好感不高于 -30）。
+id: standoff
+origin: generic
+when: true
+roles:
+  side_a: {pick: {where: {all: [{not: {status: [$it, standoff_recent]}}, {not: {status: [$it, captive]}}, {not: {status: [$it, bound]}}, {not: {status: [$it, hidden]}}]}}}
+  side_b:
+    pick:
+      where:
+        all:
+          - {not: {status: [$it, captive]}}
+          - {not: {status: [$it, bound]}}
+          - {not: {status: [$it, hidden]}}
+          - {any: [{rel: [$side_a, $it, affinity, '<=', -30]}, {rel: [$it, $side_a, affinity, '<=', -30]}]}
+scene: tense
+actions:
+  strike_first:
+    role: side_a
+    desc: '{side_a}抢先动手'
+    effects:
+      - {set_flag: [.fought, true]}
+      - {add_status: [$side_a, standoff_recent, {ticks: 24}]}
+      - check:
+          kind: chance
+          who: $side_a
+          chance: 50
+          ok: [{injure: [$side_b, 1]}, {emit: {actor: $side_a, verb: strike, text: '{side_a}抢先出手，{side_b}吃了亏', loud: true}}]
+          fail: [{injure: [$side_a, 1]}, {emit: {actor: $side_b, verb: strike, text: '{side_a}抢先出手，反被{side_b}打了回来', loud: true}}]
+  back_away:
+    role: side_a
+    lean: true
+    desc: '{side_a}退开几步'
+    effects:
+      - {set_flag: [.parted, true]}
+      - {add_status: [$side_a, standoff_recent, {ticks: 24}]}
+      - {emit: {actor: $side_a, verb: back_away, text: '{side_a}盯着{side_b}，慢慢退开了几步'}}
+  talk:
+    role: side_b
+    lean: true
+    desc: '{side_b}开口要谈'
+    effects:
+      - {set_flag: [.parted, true]}
+      - {add_status: [$side_a, standoff_recent, {ticks: 24}]}
+      - {open: [parley, $side_a, {asker: $side_b, other: $side_a}]}
+      - {emit: {actor: $side_b, verb: talk, text: '{side_b}按住兵刃，说有话好好讲'}}
+  glare:
+    role: side_b
+    desc: '{side_b}冷眼相对'
+    effects:
+      - {emit: {actor: $side_b, verb: glare, text: '{side_b}冷冷地看着{side_a}，一言不发', kinds: [{k: threaten, who: $side_a, by: $side_b}]}}
+exit_when: {any: [{flag: .fought}, {flag: .parted}, {not: {same_loc: [$side_a, $side_b]}}]}
+max_turns: 5
+offscreen:
+  - when: true
+    effects:
+      - {add_status: [$side_a, standoff_recent, {ticks: 24}]}
+      - check:
+          kind: chance
+          who: $side_a
+          chance: 50
+          ok:
+            - {emit: {actor: $side_a, verb: back_away, text: '{side_a}与{side_b}对峙良久，各自退开'}}
+          fail:
+            - check:
+                kind: chance
+                who: $side_a
+                chance: 50
+                ok: [{injure: [$side_b, 1]}, {emit: {actor: $side_a, verb: strike, text: '{side_a}与{side_b}动起手来，{side_b}受了伤'}}]
+                fail: [{injure: [$side_a, 1]}, {emit: {actor: $side_b, verb: strike, text: '{side_a}与{side_b}动起手来，{side_a}受了伤'}}]
+paragraphs: []

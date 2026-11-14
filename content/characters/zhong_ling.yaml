@@ -1,0 +1,40 @@
+id: zhong_ling
+name: 钟灵
+unknown_alias: 梁上那少女
+tier: soul
+base_power: 1
+neili: 10
+arts: {diao_handling: 2}
+literacy: 1
+aptitude: 2
+luck: 10
+roles: [wanjie_family]
+superior: zhong_wanchou
+initiative: 4
+self_intro: 万劫谷钟家的女儿，偷跑出来玩，身边带着一只闪电貂和几条小蛇。
+values: [贪玩好奇, 护短, 嘴快心软, 不把江湖规矩当回事]
+drives: [curiosity, 'protect:friends', survive]
+voice:
+  habits: [说话带笑, 爱反问, 称呼人直来直去]
+  samples: []
+bottom_lines:
+  - text: 不丢下刚认下的朋友独自逃命
+    blocks: [{verb: flee, when: {friend_here: [self, 30]}}]
+  - text: 不向外人说家里爹妈的私事
+    blocks: [{verb: say, act: tell, fact_tag: zhong_family_private}]
+choices:
+  - situation: 朋友执意去跟一帮恶人讲道理
+    did: 拦不住就跟着去，出了事放貂帮他
+    para: null
+  - situation: 看见有人仗势欺负一个不会武功的人
+    did: 躲在暗处出声取笑欺负人的一方，替弱者出头
+    para: null
+  - situation: 自己落在敌人手里
+    did: 嘴上不肯服软，把家里能救命的东西说出来吓唬对方
+    para: null
+knows: [F_wuliang_two_sects, F_diao_venom, F_diao_antidote_father, F_route_wanjie, F_gate_knock, F_valley_hates_duan, F_zhong_ling_daughter, 'exit:pine_wood:valley_gate']
+rel:
+  gan_baobao: {trust: 70, affinity: 80}
+  zhong_wanchou: {trust: 60, affinity: 60}
+  jin_xier: {trust: 50, affinity: 40}
+agenda: zhong_ling

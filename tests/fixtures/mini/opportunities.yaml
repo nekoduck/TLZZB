@@ -1,0 +1,5 @@
+rain:
+  pre: {not: {flag: rain}}
+  effects: [{set_flag: [rain, true]}]
+  cooldown: 96
+  once: false

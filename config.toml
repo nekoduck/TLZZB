@@ -2,12 +2,12 @@
 
 [jev]
 base_url = 'https://api.typesafe.ai'   # 经转发平台时改这里和 model
-model = 'jev-1.13.0'
+model = 'jev-1.14.0'         # M0 比较后改用 1.14（D-012）
 api_key_env = 'JEV_API_KEY'
 api_key_env_fallbacks = ['JEV_KEY']    # 见 DECISIONS.md D-004
 timeout_s = 2.0
 max_parallel = 16
-lang = 'zh'                 # 问题用中文还是英文，M0 比较后定
+lang = 'zh'                 # M0 比较：中英打平，取中文（D-013）
 
 [jev.thresholds]            # 种子值，M3 用标注数据校准
 choice_confidence = 0.55
@@ -29,6 +29,7 @@ cards = 'jev_first'         # J6
 [claude]
 api_key_env = 'ANTHROPIC_API_KEY'
 max_retries = 2
+server_fallback = true      # 见 D-019
 
 [models.C1]
 model = 'claude-haiku-5-5'

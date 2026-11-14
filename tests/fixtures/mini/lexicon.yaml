@@ -1,0 +1,4 @@
+terms:
+  out_road: {name: 山外大路, alias: 一条出山的路}
+banned_modern: [手机, 电脑]
+banned_game: [血量, 经验值, 等级, NPC]

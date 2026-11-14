@@ -1,0 +1,5 @@
+goal: 找到段公子，带他回大理
+steps:
+  - {id: dg_enter, text: 从大理赶到这一带, do: {verb: wait}, pre: {alive: self}, start: 896, takes: 1, offscreen: [{enter: [self, highroad]}]}
+  - {id: dg_ask_around, text: 沿路打听公子的下落, at: mountain_path, do: {verb: say, act: ask}, pre: {not: {same_loc: [self, duan_yu]}}, takes: 4}
+  - {id: dg_bring_home, text: 找到公子，请他回府, at: jianhu_hall, do: {verb: say, act: request, to: duan_yu}, pre: {all: [{alive: duan_yu}, {onstage: duan_yu}]}, takes: 2}

@@ -1,0 +1,114 @@
+# 段誉开局时的打算（方案 3.3）。每一步的 pre 是它真正的前提：前提不成立，这一步作废，他重新打算。
+# 坠崖与谷底的事不在他的计划里，由情境 caught_eloping、cave_find 发生。
+goal: 游山玩水；见人相杀就要劝；中了毒就设法取回解药
+steps:
+  - id: dy_watch_bout
+    text: 在剑湖宫看比剑
+    at: jianhu_hall
+    do: {verb: wait}
+    pre: {all: [{not: {status: [self, captive]}}, {not: {status: [self, bound]}}]}
+    takes: 16
+    deadline: 64
+  - id: dy_plead_shennong
+    text: 去山下劝神农帮罢手
+    at: shennong_camp
+    do: {verb: say, act: request, to: sikong_xuan}
+    pre:                                        # 他得先知道山下有这回事，帮主也还在（被拿住了也还能开口）
+      all:
+        - {knows: [self, F_shennong_siege]}
+        - {alive: sikong_xuan}
+    start: 40
+    deadline: 192
+    takes: 2
+  - id: dy_held
+    text: 被神农帮扣在营里，听候发落
+    at: shennong_camp
+    do: {verb: wait}
+    pre: {any: [{status: [self, captive]}, {status: [self, poisoned_duanchang]}]}
+    takes: 24
+  - id: dy_errand_wanjie
+    text: 服了毒，去万劫谷报信，取解药换回人质
+    at: zhong_hall
+    do: {verb: say, act: tell, to: gan_baobao, fact: F_zhong_ling_held}
+    pre:                                        # 这几条有一条不成立，他就没有理由去
+      all:
+        - {status: [self, poisoned_duanchang]}
+        - {status: [zhong_ling, captive]}
+        - {knows: [self, F_zhong_ling_held]}
+        - {alive: gan_baobao}
+    deadline: 752
+    takes: 2
+  - id: dy_borrow_horse
+    text: 照钟夫人的指点，去向木姑娘借马
+    at: mu_house
+    do: {verb: say, act: request, to: mu_wanqing}
+    pre:
+      all:
+        - {has: [self, gold_box]}
+        - {knows: [self, F_mu_lodging]}
+        - {alive: mu_wanqing}
+        - {at: [mu_wanqing, mu_house]}
+    takes: 2
+    offscreen:
+      - {give: [mu_wanqing, self, black_rose]}
+      - {emit: {actor: mu_wanqing, verb: lend, text: '⟦mu_wanqing⟧冷着脸把⟦black_rose⟧借给了{self}'}}
+  - id: dy_ride_south
+    text: 骑上快马，连夜沿大路往南赶
+    at: highroad
+    do: {verb: wait}
+    pre: {all: [{has: [self, gold_box]}, {has: [self, black_rose]}]}
+    takes: 8
+  - id: dy_warn_mu
+    text: 路上遇伏，掉头回去给木姑娘报信
+    at: mu_house
+    do: {verb: say, act: warn, to: mu_wanqing, fact: F_mu_hunted}
+    pre: {all: [{knows: [self, F_mu_hunted]}, {alive: mu_wanqing}]}
+    takes: 1
+    offscreen:
+      - {rel: [mu_wanqing, self, trust, 20]}
+      - {rel: [mu_wanqing, self, affinity, 20]}
+      - {emit: {actor: self, verb: warn, text: '{self}折回来，告诉⟦mu_wanqing⟧有人在路上等着截她'}}
+  - id: dy_hold_crag
+    text: 跟着木姑娘突围，退上高崖
+    at: high_crag
+    do: {verb: follow, target: mu_wanqing}
+    pre: {all: [{alive: mu_wanqing}, {same_loc: [self, mu_wanqing]}]}
+    takes: 48
+  - id: dy_back_wuliang
+    text: 随木姑娘回无量山，向神农帮讨解药
+    at: shennong_camp
+    do: {verb: say, act: request, to: sikong_xuan}
+    pre: {all: [{status: [self, poisoned_duanchang]}, {alive: sikong_xuan}, {not: {status: [self, captive]}}]}
+    start: 300
+    takes: 2
+  - id: dy_take_antidote
+    text: 服下断肠散的解药
+    do: {verb: use, item: duanchang_antidote}
+    pre: {all: [{has: [self, duanchang_antidote]}, {status: [self, poisoned_duanchang]}]}
+    takes: 1
+  - id: dy_free_zhong
+    text: 把钟姑娘从营里救出来
+    at: shennong_camp
+    do: {verb: release, target: zhong_ling}
+    pre:
+      all:
+        - {status: [zhong_ling, captive]}
+        - {at: [zhong_ling, shennong_camp]}
+        - {any: [{step: [mu_wanqing, mw_cow_camp, done]}, {not: {alive: sikong_xuan}}]}
+    takes: 1
+    offscreen:
+      - {remove_status: [zhong_ling, captive]}
+      - {remove_status: [self, captive]}
+      - {add_status: [zhong_ling, vetted, {ticks: 96}]}
+      - {add_status: [self, vetted, {ticks: 96}]}
+      - {emit: {actor: self, verb: release, text: '{self}解开了⟦zhong_ling⟧，带她出了⟦shennong_camp⟧'}}
+  - id: dy_study_scroll
+    text: 照着帛卷研读那门步法
+    do: {verb: study, item: silk_scroll, art: lingbo}
+    pre: {has: [self, silk_scroll]}
+    takes: 88
+  - id: dy_wander
+    text: 四处走走看看
+    do: {verb: wait}
+    pre: {not: {status: [self, captive]}}
+    takes: 96

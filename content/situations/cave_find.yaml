@@ -1,0 +1,67 @@
+# 帛卷还在洞里、有人在洞里，才会开场。卷轴被人拿走，这件事就不再发生。
+id: cave_find
+origin: canon
+when:
+  all:
+    - {item_at: [silk_scroll, valley_cave]}
+roles:
+  finder: {pick: {where: {all: [{at: [$it, valley_cave]}, {not: {status: [$it, captive]}}]}}}
+at: valley_cave
+scene: calm
+actions:
+  read_wall:
+    role: finder
+    lean: true
+    pre: {stat: [$finder, literacy, '>=', 2]}
+    desc: '{finder}细看石壁上的刻字'
+    effects:
+      - {set_flag: [.read, true]}
+      - {learn: [$finder, F_cave, 1.0, saw]}
+      - {emit: {actor: $finder, verb: read, text: '{finder}凑近石壁，认出上面刻的字：要人对着玉像磕足了头，方有所得'}}
+  kowtow:
+    role: finder
+    lean: true
+    pre: {flag: .read}
+    cost: 8
+    desc: '{finder}对着玉像一个接一个地磕头'
+    effects: &kowtow
+      - {give: [null, $finder, silk_scroll]}
+      - {learn: [$finder, F_cave, 1.0, saw]}
+      - {learn: [$finder, F_scroll_contents, 1.0, saw]}
+      - {learn: [$finder, 'exit:valley_floor:ferry_bridge', 1.0, saw]}
+      - {set_flag: [.found, true]}
+      - {emit: {actor: $finder, verb: kowtow, text: '{finder}对着玉像磕了许多个头，蒲团磕破了，里头露出一卷帛书，帛书末尾写着出谷的路'}}
+  search_cushion:
+    role: finder
+    cost: 2
+    desc: '{finder}翻看玉像前的蒲团'
+    effects:
+      - check:
+          kind: chance
+          who: $finder
+          chance: 40
+          ok:
+            - {give: [null, $finder, silk_scroll]}
+            - {learn: [$finder, F_cave, 1.0, saw]}
+            - {set_flag: [.found, true]}
+            - {emit: {actor: $finder, verb: search, text: '{finder}撕开破旧的蒲团，从里头摸出一卷帛书'}}
+          fail:
+            - {emit: {actor: $finder, verb: search, text: '{finder}把蒲团翻来覆去看了一遍，只摸到一手灰'}}
+exit_when: {any: [{not: {item_at: [silk_scroll, valley_cave]}}, {not: {at: [$finder, valley_cave]}}]}
+max_turns: 8
+offscreen:
+  - when: {stat: [$finder, literacy, '>=', 2]}
+    effects: *kowtow
+  - when: true
+    effects:
+      - check:
+          kind: chance
+          who: $finder
+          chance: 30
+          ok:
+            - {give: [null, $finder, silk_scroll]}
+            - {learn: [$finder, F_cave, 1.0, saw]}
+            - {emit: {actor: $finder, verb: search, text: '{finder}在洞里翻找，从蒲团里摸出一卷帛书'}}
+          fail:
+            - {learn: [$finder, F_cave, 1.0, saw]}
+paragraphs: []

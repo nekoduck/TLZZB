@@ -1,0 +1,39 @@
+# 有名角色的简卡（方案 5.4 末条）。
+id: xin_shuangqing
+name: 辛双清
+unknown_alias: 上首那位道姑打扮的女子
+tier: named
+base_power: 3
+neili: 40
+arts:
+  wuliang_sword: 2
+literacy: 2
+aptitude: 1
+luck: 5
+roles:
+- wuliang_disciple
+- wuliang_west
+- wuliang_head
+- lingjiu_vassal
+self_intro: 无量剑西宗的掌门，这一回带着弟子来比剑。
+values:
+- 争强好胜，不肯输给东宗
+- 处事冷静，心思细
+drives:
+- clan_honor
+- survive
+voice:
+  habits:
+  - 说话简短，不动声色
+  samples: []
+bottom_lines: []
+knows:
+- F_wuliang_two_sects
+- F_backhill_forbidden
+- F_lingjiu_rules
+- F_four_evils
+rel:
+  zuo_zimu:
+    affinity: -10
+    regard: 3
+agenda: xin_shuangqing

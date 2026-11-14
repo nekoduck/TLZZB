@@ -1,0 +1,83 @@
+id: beam_girl
+origin: canon
+when:
+  all:
+    - {flag: slapped}
+    - {not: {flag: beam_girl_done}}
+    - {alive: zhong_ling}
+    - {at: [zhong_ling, jianhu_hall]}
+    - {same_loc: [zhong_ling, gong_guangjie]}
+roles:
+  beam: zhong_ling
+  victim: duan_yu
+  bully: gong_guangjie
+at: jianhu_hall
+scene: tense
+actions:
+  jeer:
+    role: beam
+    lean: true
+    loud: true
+    desc: '{beam}在梁上出声，取笑{bully}欺负不会武功的人'
+    effects:
+      - {remove_status: [$beam, hidden]}
+      - {set_flag: [.jeered, true]}
+      - {set_flag: [beam_girl_done, true]}
+      - {emit: {actor: $beam, verb: jeer, text: '梁上传来一声清脆的笑，{beam}晃着两条腿，取笑{bully}欺负不会武功的人', loud: true, kinds: [{k: insult, who: $bully, by: $beam}]}}
+  loose_diao:
+    role: beam
+    pre: {all: [{flag: .jeered}, {has: [$beam, shandian_diao]}]}
+    desc: '{beam}放出袖里的小兽去扑{bully}'
+    effects:
+      - {set_flag: [.diao_loose, true]}
+      - check:
+          kind: chance
+          who: $beam
+          chance: 70
+          ok:
+            - {injure: [$bully, 1]}
+            - {emit: {actor: $beam, verb: loose_diao, text: '一道灰影从梁上窜下，在{bully}手背上咬了一口又窜了回去'}}
+          fail:
+            - {emit: {actor: $bully, verb: parry, text: '{bully}挥剑逼开了从梁上扑下的一道灰影'}}
+  threaten_beam:
+    role: bully
+    lean: true
+    pre: {flag: .jeered}
+    desc: '{bully}仰头喝骂，要梁上的人下来'
+    effects:
+      - {set_flag: [.threatened, true]}
+      - {emit: {actor: $bully, verb: threaten, text: '{bully}仰头喝骂，要{beam}下来说个明白', kinds: [{k: threaten, who: $beam, by: $bully}]}}
+  befriend:
+    role: beam
+    lean: true
+    pre: {flag: .jeered}
+    desc: '{beam}跳下梁来，同{victim}搭话'
+    effects:
+      - {rel: [$beam, $victim, affinity, 25]}
+      - {rel: [$beam, $victim, trust, 10]}
+      - {rel: [$victim, $beam, affinity, 25]}
+      - {rel: [$victim, $beam, trust, 10]}
+      - {set_flag: [.befriended, true]}
+      - {emit: {actor: $beam, verb: befriend, text: '{beam}跳下梁来，挨着{victim}说说笑笑，两人就此相识'}}
+  thank:
+    role: victim
+    lean: true
+    pre: {flag: .jeered}
+    desc: '{victim}朝梁上作揖道谢'
+    effects:
+      - {rel: [$victim, $beam, affinity, 10]}
+      - {emit: {actor: $victim, verb: thank, text: '{victim}朝梁上的{beam}作了个揖'}}
+exit_when: {any: [{flag: .befriended}, {not: {same_loc: [$beam, $victim]}}]}
+max_turns: 6
+offscreen:
+  - when: true
+    effects:
+      - {remove_status: [$beam, hidden]}
+      - {set_flag: [beam_girl_done, true]}
+      - {rel: [$beam, $victim, affinity, 25]}
+      - {rel: [$beam, $victim, trust, 10]}
+      - {rel: [$victim, $beam, affinity, 25]}
+      - {rel: [$victim, $beam, trust, 10]}
+      - {emit: {actor: $beam, verb: befriend, text: '{beam}从梁上出声替{victim}出头，两人就此相识'}}
+      - {trace: [jianhu_hall, 有人说方才厅梁上藏着个小姑娘]}
+paragraphs: []

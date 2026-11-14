@@ -1,0 +1,44 @@
+goal: 看热闹；护着新认下的朋友；最后平安回家
+steps:
+  - id: zl_watch
+    text: 躲在梁上看比剑
+    at: jianhu_hall
+    do: {verb: wait}
+    pre: {not: {status: [self, captive]}}
+    takes: 8
+    deadline: 64
+  - id: zl_follow_duan
+    text: 跟着段公子下山
+    do: {verb: follow, target: duan_yu}
+    pre:                                        # 得先认下这个朋友
+      all:
+        - {alive: duan_yu}
+        - {rel: [self, duan_yu, affinity, '>=', 10]}
+        - {not: {status: [self, captive]}}
+    takes: 2
+    deadline: 192
+  - id: zl_guard_duan
+    text: 陪着段公子去营里，见势不妙就放貂护他
+    at: shennong_camp
+    do: {verb: wait}
+    pre: {all: [{has: [self, shandian_diao]}, {alive: sikong_xuan}]}
+    takes: 8
+    deadline: 240
+  - id: zl_wait_rescue
+    text: 被扣作人质，等人来救
+    at: shennong_camp
+    do: {verb: wait}
+    pre: {status: [self, captive]}
+    takes: 480
+  - id: zl_go_home
+    text: 回万劫谷见娘
+    at: zhong_hall
+    do: {verb: say, act: greet, to: gan_baobao}
+    pre: {all: [{not: {status: [self, captive]}}, {alive: gan_baobao}]}
+    takes: 2
+  - id: zl_stay_home
+    text: 在家里待着
+    at: zhong_hall
+    do: {verb: wait}
+    pre: {not: {status: [self, captive]}}
+    takes: 96

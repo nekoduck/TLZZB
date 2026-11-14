@@ -1,0 +1,5 @@
+goal: 随老三来这一带，各图各的好处
+steps:
+  - {id: ye_enter, text: 从图外赶到这一带, do: {verb: wait}, pre: {alive: self}, start: 416, takes: 1, offscreen: [{enter: [self, highroad]}]}
+  - {id: ye_tag_along, text: 跟着南海鳄神看热闹, do: {verb: follow, target: nanhai_eshen}, pre: {all: [{alive: nanhai_eshen}, {onstage: nanhai_eshen}]}, takes: 96}
+  - {id: ye_roam, text: 在大路一带转悠, at: highroad, do: {verb: wait}, pre: {not: {status: [self, captive]}}, takes: 192}

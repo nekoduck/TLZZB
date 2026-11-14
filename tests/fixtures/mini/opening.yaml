@@ -1,0 +1,24 @@
+player:
+  id: player
+  default_name: 阿木
+  unknown_alias: 跑腿的小伙计
+  base_power: 0
+  neili: 0
+  literacy: 1
+  aptitude: 1
+  luck: 5
+  roles: [errand_boy]
+  loc: hall
+  knows: [F_bout]
+  rel: {guest: {trust: 10, affinity: 15}}
+known_terms: [hall]
+term_alias: {guest: 白公子}
+chars:
+  fighter: {loc: hall}
+  guest: {loc: hall}
+  girl: {loc: hall, statuses: [{kind: hidden, source: beam}]}
+flags: {bout_running: true}
+scheduled:
+  - {at: 40, effects: [{set_flag: [bell_rang, true]}], pre: null}
+threads:
+  - {id: T_home, kind: wish, text: 平平安安回家, weight: 2}

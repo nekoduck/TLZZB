@@ -1,0 +1,58 @@
+id: bout_laugh
+origin: canon
+when:
+  all:
+    - {flag: [bout_running, true]}
+    - {same_loc: [fighter, guest]}
+roles:
+  victor: fighter
+  guest: guest
+scene: tense
+actions:
+  feint_win:
+    role: victor
+    lean: true
+    pre: {not: {flag: .bout_over}}
+    desc: '{victor}卖个破绽，结束比武'
+    effects:
+      - {set_flag: [.bout_over, true]}
+      - {emit: {actor: $victor, verb: feint_win, text: '{victor}卖个破绽，一招逼得对手认输'}}
+  laugh:
+    role: guest
+    lean: true
+    pre: {all: [{flag: .bout_over}, {not: {flag: .guest_laughed}}]}
+    loud: true
+    effects:
+      - {set_flag: [.guest_laughed, true]}
+      - emit:
+          actor: $guest
+          verb: laugh
+          loud: true
+          text: '{guest}忍不住笑出了声'
+          kinds: [{k: insult, who: $victor, by: $guest}]
+  slap:
+    role: victor
+    lean: true
+    pre: {flag: .guest_laughed}
+    effects:
+      - {injure: [$guest, 1]}
+      - {set_flag: [.slapped, true]}
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [bout_slapped, true]}
+      - {emit: {actor: $victor, verb: slap, text: '{victor}一掌打在{guest}脸上'}}
+  apologize:
+    role: guest
+    pre: {flag: .guest_laughed}
+    effects:
+      - {set_flag: [.apologized, true]}
+      - {set_flag: [bout_running, false]}
+      - {emit: {actor: $guest, verb: apologize, text: '{guest}拱手赔了个不是'}}
+exit_when: {any: [{flag: .slapped}, {flag: .apologized}, {not: {same_loc: [$victor, $guest]}}]}
+max_turns: 6
+offscreen:
+  - when: true
+    effects:
+      - {injure: [$guest, 1]}
+      - {set_flag: [bout_slapped, true]}
+      - {set_flag: [bout_running, false]}
+      - {trace: [hall, 堂上的人还在议论方才那一记耳光]}

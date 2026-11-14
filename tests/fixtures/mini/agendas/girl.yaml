@@ -1,0 +1,3 @@
+goal: 在梁上看热闹
+steps:
+  - {id: gi_watch, text: 趴在梁上看热闹, at: hall, do: {verb: wait}}

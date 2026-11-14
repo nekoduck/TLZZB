@@ -1,0 +1,53 @@
+# 通用：一方有求于另一方，双方都不想动手。只由别的情境用 open 开场（如 standoff 的 talk），
+# 或由世界层在有人提出请求时开场；自己不会凭空开场。
+id: parley
+origin: generic
+when: false
+roles:
+  asker: {pick: {where: {not: {status: [$it, bound]}}}}
+  other: {pick: {where: {not: {status: [$it, bound]}}}}
+scene: calm
+actions:
+  propose:
+    role: asker
+    lean: true
+    desc: '{asker}说出自己的条件'
+    effects:
+      - {set_flag: [.proposed, true]}
+      - {emit: {actor: $asker, verb: propose, text: '{asker}把自己想要的和肯拿出来的都摆到了桌面上'}}
+  accept:
+    role: other
+    pre: {flag: .proposed}
+    desc: '{other}点头答应'
+    effects:
+      - {set_flag: [.settled, true]}
+      - {rel: [$asker, $other, trust, 10]}
+      - {rel: [$other, $asker, trust, 10]}
+      - {emit: {actor: $other, verb: agree, text: '{other}想了想，点头答应了'}}
+  counter:
+    role: other
+    lean: true
+    pre: {flag: .proposed}
+    desc: '{other}开出自己的条件'
+    effects:
+      - {set_flag: [.countered, true]}
+      - {emit: {actor: $other, verb: bargain, text: '{other}不置可否，另开了条件'}}
+  walk_away:
+    role: other
+    desc: '{other}不谈了'
+    effects:
+      - {set_flag: [.broken, true]}
+      - {rel: [$asker, $other, affinity, -5]}
+      - {emit: {actor: $other, verb: walk_away, text: '{other}摆摆手，不肯再谈'}}
+exit_when: {any: [{flag: .settled}, {flag: .broken}, {not: {same_loc: [$asker, $other]}}]}
+max_turns: 6
+offscreen:
+  - when: true
+    effects:
+      - check:
+          kind: chance
+          who: $asker
+          chance: 50
+          ok: [{rel: [$asker, $other, trust, 10]}, {rel: [$other, $asker, trust, 10]}, {emit: {actor: $other, verb: agree, text: '{asker}与{other}谈妥了条件'}}]
+          fail: [{emit: {actor: $other, verb: walk_away, text: '{asker}与{other}谈不拢，各自走开'}}]
+paragraphs: []

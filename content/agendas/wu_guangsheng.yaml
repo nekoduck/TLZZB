@@ -1,0 +1,4 @@
+goal: 听师父的吩咐看管柴房
+steps:
+  - {id: ws_bout, text: 在练武厅随众观战, at: jianhu_hall, do: {verb: wait}, pre: {not: {status: [self, captive]}}, takes: 16, deadline: 64}
+  - {id: ws_guard_shed, text: 拿着钥匙守在柴房边, at: jianhu_back, do: {verb: wait}, pre: {all: [{has: [self, woodshed_key]}, {alive: zuo_zimu}]}, takes: 192}
