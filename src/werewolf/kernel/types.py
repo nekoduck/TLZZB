@@ -12,6 +12,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 Seat = int  # 1..9
+Viewer = Seat | Literal['judge']  # 'judge' 是裁判视角，全可见；只给会话层落盘、复盘和测试用
 
 
 # --------------------------------------------------------------------------- 身份与阵营
@@ -91,6 +92,28 @@ class GameConfig(BaseModel):
     allow_empty_kill: bool = True  # 狼人可以空刀
 
 
+# --------------------------------------------------------------------------- 神态与狼队分工
+
+# 神态的词表。Speech.emote、SpeechPlan.emote、Reaction.emote 都只能取这里的键；内核拒收表外的键。
+EMOTES: dict[str, str] = {
+    'nod': '点头',
+    'frown': '皱眉',
+    'sneer': '冷笑',
+    'shock': '一愣',
+    'think': '沉吟',
+    'laugh': '笑了',
+    'angry': '拍桌',
+    'sweat': '冒汗',
+    'silent': '沉默',
+    'stare': '盯着看',
+    'sigh': '叹气',
+    'shrug': '摊手',
+}
+
+# 狼人在首夜随提议一起报的打法意愿。内核只存不解释；怎样据此分工见 ARCHITECTURE 4.2。
+WolfStance = Literal['jump_seer', 'charge', 'deep']
+
+
 # --------------------------------------------------------------------------- 言语行为
 
 
@@ -121,9 +144,13 @@ class ActKind(StrEnum):
 
 
 class SpeechAct(BaseModel):
-    """一条言语行为。它是「某人说过这句话」，永远不是事实。"""
+    """一条言语行为。它是「某人说过这句话」，永远不是事实。
 
-    model_config = ConfigDict(extra='forbid')
+    `revalidate_instances` 让带私有标注的子类实例（mind 的 PlannedAct）进不了 Speech：
+    只有 `SpeechPlan.public_acts()` 产出的纯 SpeechAct 能通过校验。
+    """
+
+    model_config = ConfigDict(extra='forbid', revalidate_instances='subclass-instances')
 
     kind: ActKind
     target: Seat | None = None
@@ -134,22 +161,26 @@ class SpeechAct(BaseModel):
 
 
 SpeechKind = Literal['day', 'pk', 'last_words']
-SpeechSource = Literal['human', 'claude', 'jev_select', 'template', 'fallback']
+SpeechSource = Literal['human', 'ai']
+# 公开发言事件上允许出现的标记。台词走了哪一档、核对是否失败，只写进 decisions.jsonl 与复盘，不上公开事件。
+SPEECH_FLAGS: frozenset[str] = frozenset({'injection', 'stage_direction', 'truncated'})
 
 
 class Speech(BaseModel):
-    """一次发言。`acts` 进公开的声明账本；`text` 只给人看，内核不从文字里读事实。"""
+    """一次发言。`acts` 进公开的声明账本；`text` 只给人看，内核不从文字里读事实。
+
+    `text` 只存在于内核的事件日志、发给浏览器的消息和落盘文件里；视图与喂给心智的事件一律是
+    去掉文字的副本（`kernel.events.strip_text`），所以任何带底牌的模型调用都碰不到别人的原话。
+    """
 
     model_config = ConfigDict(extra='forbid')
 
     text: str = Field(max_length=600)
     acts: list[SpeechAct] = Field(default_factory=list, max_length=12)
     tone: Tone = Tone.CALM
-    emote: str | None = None  # 神态动作，如「皱眉」「按住桌面」
-    source: SpeechSource = 'template'
-    # 例如 'injection'（夹带冒充法官或系统的话）、'stage_direction'（括号里写没发生的动作）、
-    # 'truncated'、'check_failed'（台词核对不过，已换成模板）
-    flags: list[str] = Field(default_factory=list)
+    emote: str | None = None  # EMOTES 的键
+    source: SpeechSource = 'ai'
+    flags: list[str] = Field(default_factory=list)  # 只能取 SPEECH_FLAGS 里的值
 
 
 # --------------------------------------------------------------------------- 事件
@@ -183,7 +214,12 @@ Visibility = Literal['public', 'wolves', 'seats', 'judge']
 
 
 class Event(BaseModel):
-    """事件日志里的一条。只有内核能造事件（`kernel/events.py`）。字段含义见 ARCHITECTURE 3.3 的表。"""
+    """事件日志里的一条。只有内核能造事件（`kernel/events.py`）。字段含义见 ARCHITECTURE 3.3 的表。
+
+    `data` 只放 JSON 原生值（映射的键是字符串，座位出现在列表或值里），必须满足
+    `Event.model_validate_json(ev.model_dump_json()) == ev`。发牌阶段的事件 `day = 0`；
+    第 n 夜与随后的白天 `day = n`。
+    """
 
     model_config = ConfigDict(extra='forbid')
 
@@ -196,6 +232,17 @@ class Event(BaseModel):
     data: dict[str, Any] = Field(default_factory=dict)
     vis: Visibility = 'public'
     vis_seats: list[Seat] = Field(default_factory=list)  # vis == 'seats' 时有效
+
+
+def strip_text(ev: Event) -> Event:
+    """发言事件去掉文字后的副本；其他事件原样返回。视图与喂给心智的事件都用它。"""
+    if ev.type != EventType.SPEECH:
+        return ev
+    speech = dict(ev.data.get('speech') or {})
+    if not speech.get('text'):
+        return ev
+    speech['text'] = ''
+    return ev.model_copy(update={'data': {**ev.data, 'speech': speech}})
 
 
 # --------------------------------------------------------------------------- 请求与动作
@@ -234,8 +281,13 @@ class Request(BaseModel):
     phase: Phase
     options: list[Option] = Field(default_factory=list)
     speech_kind: SpeechKind | None = None  # 仅 SPEAK
-    # 附带信息：witch_act {'victim': 3 | None}；wolf_kill {'proposals': {seat: option_id}}；
-    # vote {'round': 'main' | 'pk', 'candidates': [...]}；speak {'index': 2, 'total': 7, 'after': 'night' | 'vote'}
+    # 附带信息（只含 JSON 原生值，映射的键都是字符串）：
+    #   wolf_propose  {'first_night': bool}
+    #   wolf_kill     {'proposals': [{'seat': 3, 'option_id': 'kill:5', 'target': 5, 'note': '…', 'stance': 'charge'}]}
+    #   witch_act     {'victim': 3 | None, 'victim_known': bool, 'antidote': bool, 'poison': bool}
+    #   hunter_shoot  {'after': 'night' | 'vote'}
+    #   vote          {'round': 'main' | 'pk', 'candidates': [seat]}
+    #   speak         {'index': 2, 'total': 7, 'after': 'night' | 'vote' | None, 'rivals': [seat]}  # rivals 仅 PK
     context: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -247,10 +299,15 @@ class Action(BaseModel):
     option_id: str | None = None  # 选择类请求
     speech: Speech | None = None  # SPEAK
     note: str | None = Field(default=None, max_length=80)  # WOLF_PROPOSE 给队友的一句话
+    stance: WolfStance | None = None  # WOLF_PROPOSE / WOLF_KILL：首夜报的打法意愿
 
 
 class IllegalAction(Exception):
-    """动作没过内核校验。`code`：unknown_request / wrong_seat / not_an_option / missing_speech / bad_speech / game_over。"""
+    """动作没过内核校验，状态不变。
+
+    `code`：unknown_request（不存在或已答过）/ wrong_seat / not_an_option / missing_speech /
+    bad_speech（空、超长、座位越界、神态或标记不在表里）/ game_over。
+    """
 
     def __init__(self, code: str, message: str = '') -> None:
         super().__init__(f'{code}: {message}' if message else code)
@@ -297,11 +354,28 @@ class WolfInfo(BaseModel):
     kills: list[tuple[int, Seat | None]] = Field(default_factory=list)  # (夜, 目标)；空刀是 None
 
 
-class View(BaseModel):
-    """某个座位此刻知道的一切。心智、模型提示、发给真人的画面，都只能从它来。
+class PublicView(BaseModel):
+    """全桌都知道的局面：只含公开事件（文字已去掉）。写台词、解析真人发言、导演定节奏，只许用它。"""
 
-    不变量（`kernel/invariants.py` 与测试都查）：除 `known_roles` 之外，视图里不出现任何别人的身份；
-    `events` 只含对该座位可见的事件。
+    model_config = ConfigDict(extra='forbid')
+
+    day: int
+    phase: Phase
+    players: list[PlayerPublic]
+    events: list[Event] = Field(default_factory=list)
+
+    def living(self) -> list[Seat]:
+        return [p.seat for p in self.players if p.alive]
+
+    def dead(self) -> list[Seat]:
+        return [p.seat for p in self.players if not p.alive]
+
+
+class View(BaseModel):
+    """某个座位此刻知道的一切。心智与带底牌的模型调用只能从它来。
+
+    它必须只由「配置的公开部分 + 对该座位可见的事件」算得出：`kernel.views.build_view(config, seat, events)`
+    是纯函数，`Game.view(seat)` 就是用它算的。`events` 里的发言事件不带文字。
     """
 
     model_config = ConfigDict(extra='forbid')
@@ -326,11 +400,9 @@ class View(BaseModel):
     def dead(self) -> list[Seat]:
         return [p.seat for p in self.players if not p.alive]
 
-    def name(self, seat: Seat) -> str:
-        for p in self.players:
-            if p.seat == seat:
-                return p.name
-        return f'{seat}号'
+    def public(self) -> PublicView:
+        return PublicView(day=self.day, phase=self.phase, players=self.players,
+                          events=[e for e in self.events if e.vis == 'public'])
 
 
 class GameResult(BaseModel):

@@ -10,7 +10,7 @@ timeout_s = 3.0
 max_parallel = 16
 lang = 'zh'
 
-[jev.thresholds]
+[jev.thresholds]            # tianlong 的通用门槛；狼人杀只用 sample_floor 之外的自有设置（见 [werewolf.*]）
 choice_confidence = 0.55
 choice_margin = 0.15
 needs_thought = 0.60
@@ -71,14 +71,23 @@ check = 'jev'                # 台词核对：jev / rules
 reflect = 'jev'              # 夜间反思的数值部分：jev / rules
 monologue = 'claude'         # 夜里的内心独白：claude / off
 
-[werewolf.mind]
-top_k = 4                    # 交给模型的候选至多几项（效用最高的几项）
-jev_weight = 0.5             # 模型概率在混合分布里的分量，0 = 只看规则
-temperature = 0.35           # 效用转概率的温度
-mood_temperature = 0.5       # 心情差时温度再加多少（心情越差越容易选到低分项）
-reflect_weight = 0.25        # 反思对怀疑度的混合权重
-reflect_cap = 0.20           # 一次反思至多把某人的怀疑度挪动多少
-mercy_first_night = 0.5      # 首夜刀真人的效用折扣，0 = 不照顾
+[werewolf.check]
+block = 0.5                  # 台词核对：Jev 任一道是非题的概率到这个数就算不过
+injection = 0.8              # 解析真人发言：冒充题的概率到这个数才记 injection
+
+[werewolf.mind]              # 字段与默认值的权威定义在 mind/types.py 的 MindTuning；这里只写要覆盖的
+top_k = 4
+min_rule_prob = 0.05
+temperature = 0.5
+mood_temperature = 0.6
+decisive_gap = 2.5
+jev_weight = 0.4
+commit_bonus = 1.5
+speaker_cap = 1.2
+reflect_weight = 0.25
+reflect_cap = 0.15
+mercy_first_night = 0.5
+seer_kill_bias = 0.8
 
 [werewolf.limits]
 decide_timeout_s = 4.0
@@ -86,3 +95,5 @@ speech_timeout_s = 20.0
 max_speech_chars = 180
 human_speech_chars = 500
 ack_timeout_s = 45.0         # 等前端演完一段发言，最多等多久
+confirm_parse = true         # 真人的自由发言先预览、确认后才提交
+quote_chars = 80             # 真人原话进台词简报时截到多长
