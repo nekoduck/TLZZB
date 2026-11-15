@@ -37,7 +37,10 @@ ASK_TYPES = (
     "stop_doing",
     "take_place_of",
     "let_pass",
+    "accompany",
     "help",
+    "cure",
+    "protect",
     "other",
 )
 GOLD_DEFAULTS: dict[str, Any] = {
@@ -239,9 +242,11 @@ def test_classify_structure_and_ids() -> None:
             assert g["to"], f"{iid}: speech needs a 'to'"
         else:
             assert g["to"] == [], iid
+        here = player_here(st)
         for t in g["to"]:
             if t != "*":
                 assert_char(st, t, iid)
+                assert t in here and perception.visible_to(st.chars[st.player], st.chars[t]), f"{iid}: {t} not here"
         assert g["to"] == ["*"] or "*" not in g["to"], iid
         for key in ("target", "target2"):
             if g[key] is not None:
@@ -256,19 +261,7 @@ def test_classify_structure_and_ids() -> None:
         if g["asks"] is None:
             assert g["cls"] is None and g["urgent"] is False, iid
         else:
-            a = g["asks"]
-            assert a["type"] in ASK_TYPES, iid
-            assert set(a) <= {"type", "target", "item", "art", "place", "fact", "note"}, iid
-            if a.get("target") is not None:
-                assert_char(st, a["target"], iid)
-            if a.get("item") is not None:
-                assert_item(st, a["item"], iid)
-            if a.get("art") is not None:
-                assert_art(defs, a["art"], iid)
-            if a.get("place") is not None:
-                assert_loc(st, a["place"], iid)
-            if a.get("fact") is not None:
-                assert_fact(st, a["fact"], iid)
+            check_asks(defs, st, g["asks"], iid)
         if g["cls"] is not None:
             assert g["cls"] in weights, iid
         assert isinstance(g["urgent"], bool), iid
@@ -285,6 +278,10 @@ def test_classify_structure_and_ids() -> None:
             assert s in GOLD_KEYS - {"kind"}, iid
         for alt in item.get("alt", []):
             assert set(alt) <= GOLD_KEYS, iid
+            if alt.get("asks"):
+                check_asks(defs, st, alt["asks"], iid)
+            if alt.get("act"):
+                assert alt["act"] in speech.ACTS, iid
         for a in item.get("attempts", []):
             assert isinstance(a, str) and a, iid
         if "intended" in item["gold"]:
@@ -383,7 +380,10 @@ ASK_ACTION = {
     "stop_doing": lambda a: {"verb": "wait", "params": {}},
     "take_place_of": lambda a: {"verb": "release", "params": {"target": a["target"]}},
     "let_pass": lambda a: {"verb": "wait", "params": {}},
+    "accompany": lambda a: {"verb": "wait", "params": {}},
     "help": lambda a: {"verb": "help", "params": {"target": a["target"]}},
+    "cure": lambda a: {"verb": "use", "params": {"item": a["item"], "target": a["target"]}},
+    "protect": lambda a: {"verb": "block", "params": {"target": a["target"]}},
     "other": lambda a: {"verb": "wait", "params": {}},
 }
 

@@ -4,7 +4,7 @@
 
 | 文件 | 方案 | 条数 | 评的是什么 |
 | --- | --- | --- | --- |
-| `data/scenes.yaml` | — | 33 个场景 | 其余各集共用的场景库 |
+| `data/scenes.yaml` | — | 34 个场景 | 其余各集共用的场景库 |
 | `data/classify.yaml` | 11.6 归类集 | 300 | J1 / C1 输入归类 |
 | `data/decisions.yaml` | 11.6 抉择集 | 80 | J2 / C2 与原著做法的一致率 |
 | `data/narration_checks.yaml` | 11.6 核对集 | 100 句（一半违规） | J5 叙述核对 |
@@ -64,7 +64,7 @@ items:
 | `art` | 本事 id 或 null | `study`、`practice`、`teach` 的本事 |
 | `name` | 情境动作名或 null | `verb: setpiece` 时的动作名（如 `explain`） |
 | `act` | 言语行为或 null | 方案 6.6 的十六种（`kernel.speech.ACTS`） |
-| `to` | 人 id 的列表 | 说给谁听；`['*']` 表示对众人。没说话时为 `[]` |
+| `to` | 人 id 的列表 | 说给谁听；`['*']` 表示对众人。没说话时为 `[]`。C1 的 `Intent.to` 照解析器的约定用空表表示对众人，比较时 `act` 不为 null 的条目里 `['*']` 与 `[]` 等价 |
 | `asks` | 映射或 null | 这句话求对方做的事，见 2.4。`act` 为 `request` 时必有 |
 | `claims` | 列表 | 这句话断言了的事，见 2.5 |
 | `cls` | `trivial` `effort` `costly` `risky` `betray` 或 null | 所求之事对对方算哪一类（举手之劳、费事、有损己利、冒险、违背所属）。没有 `asks` 时为 null |
@@ -123,11 +123,14 @@ asks: {type: other, note: 替他给家里捎信}
 | `come_along` | 跟我一道走（我领头） | `{verb: follow, params: {target: player}}` |
 | `stop_doing` | 别再做某事（`target` 是正在做的人，可省） | `{verb: wait, params: {}}` |
 | `take_place_of` | 让我替下某个人质 | `{verb: release, params: {target}}`，另加玩家顶替（见 `poison_errand` 的 `errand_volunteer`） |
-| `let_pass` | 放我过去 | `{verb: wait, params: {}}` |
-| `help` | 帮帮某人 | `{verb: help, params: {target}}` |
+| `let_pass` | 放我过去（`place` 是我要去的地方） | `{verb: wait, params: {}}`，另带放行 |
+| `accompany` | 让我跟某人一道走（`target` 是那个人，对方不拦着） | `{verb: wait, params: {}}`，另带放行 |
+| `help` | 照料某人 | `{verb: help, params: {target}}` |
+| `cure` | 给某人服药解毒（`target`、`item`） | `{verb: use, params: {item, target}}` |
+| `protect` | 替我挡住某人（`target` 是对我有敌意的人） | `{verb: block, params: {target}}` |
 | `other` | 候选里没有的事 | `{verb: wait, params: {}}` |
 
-这张对应表只是参考，`tests/evals/test_datasets.py` 的 `ASK_ACTION` 照它写；解析器生成候选时可以有自己的写法，跑手按 `type` 与 id 对齐即可。
+种类与要点的名字和解析器的请求候选（`parser/candidates.py` 的 `AskCand.type` 与 `slots`）一致，跑手按 `type` 加 `target`、`item`、`art`、`place` 去对候选；`fact`、`note` 只供人读。对应表的右栏只是参考，`tests/evals/test_datasets.py` 的 `ASK_ACTION` 照它写；候选里本来没有的事（比如对方手里没有那件东西），所有 `ask_<i>` 都应答「否」。
 
 `cls` 的标注口径：不费什么事（指路、让一让、说句话、给看一眼）为 `trivial`；要花工夫（带路、教寻常手艺、跑腿）为 `effort`；舍掉自己的东西或好处（给值钱的东西、放走人质）为 `costly`；要对方担性命之险（替你动手、陪你闯营）为 `risky`；要对方违背自己所属的一方（外传门派武功、违抗上头的号令、私放敌人）为 `betray`。拿不准的条目在 `skip` 里列了 `cls`。
 
@@ -135,7 +138,7 @@ asks: {type: other, note: 替他给家里捎信}
 
 - 事实 id：这句话断言了事实库里的这件事（不论真假、不论玩家知不知道）。玩家角色不知道的「小说知识」照样标出来，内核会判成 `unsourced`。
 - `self_unlisted`：声称自己做过某事，而日志里没有（C1 规则 5）。
-- `self:<动词>`：声称自己做过的事对得上 setup 里玩家做的那件事：取 setup 事件里 `actor == 'player'`、`verb == <动词>` 的最后一条，跑手换成它的事件 id（`E<id>`）。
+- `self:<动词>`：声称自己做过的事对得上 setup 里玩家做的那件事：取 setup 事件里 `actor == 'player'`、`verb == <动词>` 的最后一条，跑手换成它的事件引用（解析器写 `event:<id>`，内核的 `claim_verdict` 也认 `E<id>`）。
 
 只标断言，不标疑问；预言后事、说的是世上还没发生的事，事实库里没有对应的，`claims` 为空（6.7 的 `opinion`）。被「只算第一句话」丢掉的部分里的断言不算。
 
@@ -151,7 +154,7 @@ asks: {type: other, note: 替他给家里捎信}
 
 | J1 题 | 正确答案 |
 | --- | --- |
-| `kind` | `act` `say` `both` `meta` `unclear` 照抄；`impossible` 投影成 `act`（或 `both`，若同时有 `act`），并且 `verb` 答「都不是」 |
+| `kind` | `act` `say` `both` `meta` 照抄；`impossible` 投影成 `act`（或 `both`，若同时有 `act`），并且 `verb` 答「都不是」；`unclear` 不计这一题，只看下面的「读得出意思」 |
 | 「这句话里有说出口的话」（D-014 的 noul） | `act` 不为 null |
 | 「这句话读得出意思」（D-014 的 noul） | `kind != unclear` |
 | `verb` | `gold.verb`；为 null 时答「都不是」 |

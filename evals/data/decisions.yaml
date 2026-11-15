@@ -310,7 +310,7 @@ items:
     canon: a1
     confidence: high
     source: card:duan_yu.bottom_lines[2]
-    note: a1 与 a4 都是不肯，a1 是情境动作；记 a1，a4 也算像这个人。
+    note: 「梗着脖子不肯」与「讲道理说不学打人的功夫」都是不肯；前者是情境动作，记为原著做法，后者也算像这个人（accept）。
     accept: [a2]
     para: null
   # ================================================================ 钟灵
@@ -1146,7 +1146,7 @@ items:
     canon: a2
     confidence: high
     source: card:mu_wanqing.choices[1]
-    note: a1 的动作写成 follow 只是近似；要点是带着他一起走。
+    note: 「骂他多事却带着他突围」的动作写成 follow 只是近似；要点是带着他一起走。
     para: null
   - id: d64
     char: mu_wanqing
