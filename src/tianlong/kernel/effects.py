@@ -466,7 +466,8 @@ class Run:
         if ticks >= REST_UNIT:
             c.statuses = [s for s in c.statuses if s.kind != "exhausted"]
         inj = get_status(c, "injured")
-        if inj is not None and has_status(c, "tended"):
+        if inj is not None and (has_status(c, "tended") or inj.level == 1):
+            # 有人照料时每 16 刻减一级；轻伤（1 级）独自歇满 16 刻也能好（D-077）。
             heal = ticks // REST_UNIT
             if heal >= inj.level:
                 c.statuses = [s for s in c.statuses if s.kind != "injured"]
@@ -760,7 +761,8 @@ def injure(run: Run, c: Character, level: int, *, by: str | None) -> None:
     if s is None:
         c.statuses.append(Status(kind="injured", level=max(1, min(INJURY_MAX, level)), source=by))
     else:
-        s.level = max(1, min(INJURY_MAX, s.level + level))
+        # 伤上加伤（D-076）：更重的一击把伤势提到那一级；不比现有的重，则再加一级。
+        s.level = max(1, min(INJURY_MAX, level if level > s.level else s.level + 1))
         s.source = by or s.source
     lvl = get_status(c, "injured").level  # type: ignore[union-attr]
     text = f"⟦{c.id}⟧受了伤" if lvl < INJURY_MAX else f"⟦{c.id}⟧受了重伤"
