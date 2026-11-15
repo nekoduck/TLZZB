@@ -108,6 +108,19 @@ def test_ws_origin_check(app_factory):
         assert recv(ws)['t'] == 'hello'  # dev 下允许没有 Origin
 
 
+def test_ws_extra_origins(cfg, tmp_path):
+    """经反向代理访问时可以显式放行别的来源（精确匹配）；其余来源照样拒绝。"""
+    settings, ww = cfg
+    app = create_app(settings, ww, offline=True, dev=False, speed='instant', runs_dir=tmp_path / 'runs',
+                     player_factory=random_factory, extra_origins=('https://game.example/',))
+    with TestClient(app) as client:
+        with client.websocket_connect('/ws', headers={'origin': 'https://game.example'}) as ws:
+            assert recv(ws)['t'] == 'hello'
+        for origin in ('https://other.example', 'https://game.example.evil.test', '*'):
+            with pytest.raises(WebSocketDisconnect), client.websocket_connect('/ws', headers={'origin': origin}) as ws:
+                ws.receive_json()
+
+
 def test_ws_bad_messages(app_factory):
     with TestClient(app_factory()) as client, client.websocket_connect('/ws', headers=ORIGIN) as ws:
         recv(ws)

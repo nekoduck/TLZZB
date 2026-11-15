@@ -156,11 +156,13 @@ def allowed_origins(port: int) -> set[str]:
 
 def create_app(settings: Settings, ww: WerewolfSettings, *, offline: bool = False, dev: bool = False,
                speed: Speed | None = None, runs_dir: Path | None = None,
-               player_factory: PlayerFactory | None = None, time_scale: float = 1.0) -> Starlette:
+               player_factory: PlayerFactory | None = None, time_scale: float = 1.0,
+               extra_origins: tuple[str, ...] = ()) -> Starlette:
+    """`extra_origins`：另外放行的页面来源（经反向代理访问时用），逐个精确匹配，没有通配。"""
     runs = Path(runs_dir) if runs_dir is not None else settings.path('runs')
     hub = Hub(settings, ww, offline=offline, dev=dev, speed=speed or ww.speed, runs_dir=runs,
               player_factory=player_factory, time_scale=time_scale)
-    origins = allowed_origins(ww.port)
+    origins = allowed_origins(ww.port) | {o.rstrip('/') for o in extra_origins}
 
     async def index(request: Request) -> FileResponse:
         return FileResponse(WEB_DIR / 'index.html')

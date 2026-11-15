@@ -31,6 +31,8 @@ def _serve(argv: Sequence[str]) -> int:
     ap.add_argument('--speed', choices=SPEEDS, default=None)
     ap.add_argument('--dev', action='store_true', help='开发模式：new_game.seed 生效，允许没有 Origin 的握手')
     ap.add_argument('--config', default='werewolf.toml')
+    ap.add_argument('--allow-origin', action='append', default=[], metavar='ORIGIN',
+                    help='另外放行的页面来源（如 https://game.example），可重复；经反向代理访问时用，精确匹配')
     args = ap.parse_args(list(argv))
 
     import uvicorn
@@ -42,7 +44,8 @@ def _serve(argv: Sequence[str]) -> int:
     if args.port is not None:
         ww = ww.model_copy(update={'port': args.port})
     host = args.host or ww.host
-    app = create_app(settings, ww, offline=args.offline, dev=args.dev, speed=args.speed or ww.speed)
+    app = create_app(settings, ww, offline=args.offline, dev=args.dev, speed=args.speed or ww.speed,
+                     extra_origins=tuple(args.allow_origin))
     shown = '127.0.0.1' if host in ('0.0.0.0', '::', '') else host
     url = f'http://{shown}:{ww.port}/'
     print(f'狼人杀已启动：{url}  （Ctrl+C 退出）', flush=True)
