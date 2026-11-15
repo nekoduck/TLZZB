@@ -209,3 +209,9 @@ async def test_requests_outside_the_candidates_still_count(camp: Scene) -> None:
     assert b3.repeat
     reqs = [r for r in camp.state.requests.values() if r.frm == "player"]
     assert len(reqs) == 1 and reqs[0].attempts == 3 and reqs[0].verdict in ("no", "never")
+
+
+async def test_going_somewhere_further_takes_the_first_step(scene: Scene) -> None:
+    _, b = await scene.bind("我去下山石径")  # 不相邻：先往山门走
+    assert b.kind == "action" and b.action is not None
+    assert b.action.signature == "go:exit=jianhu_gate"

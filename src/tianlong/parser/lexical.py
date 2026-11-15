@@ -345,7 +345,7 @@ _REQUEST_START = re.compile(r"^(请|求|劳驾|麻烦|拜托|烦请|恳请)")
 
 
 def vocative(text: str) -> bool:
-    """开头先叫人：「段公子，……」「帮主，……」「这位大哥，……」。"""
+    """开头先叫人：「公子，……」「帮主，……」「这位大哥，……」。"""
     m = re.match(r"^([^，,：:！!？?。]{1,8})[，,：:！!]", text or "")
     if not m:
         return False

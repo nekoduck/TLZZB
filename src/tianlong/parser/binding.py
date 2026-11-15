@@ -110,6 +110,20 @@ def _absent_reply(state: WorldState, defs: Defs, eid: str, legal: list[ActionIns
     return replies.NO_SUCH_THING
 
 
+def first_hop(state: WorldState, defs: Defs, clean: str, gos: list[ActionInst]) -> ActionInst | None:
+    """「去某个不相邻的地方」：取最短路上的第一步（只走玩家知道的路）。"""
+    me = state.chars[state.player]
+    others = [loc for loc in state.locations if loc != me.loc]
+    for dest, _score in lx.match_entities(state, defs, clean, others, floor=3):
+        route = actions.path(state, defs, me.id, me.loc, dest)
+        if route:
+            nxt = route[0].to
+            for a in gos:
+                if a.params.get("exit") == nxt:
+                    return a
+    return None
+
+
 def mentioned_absent(state: WorldState, defs: Defs, clean: str, legal: list[ActionInst], *, floor: int = 6
                      ) -> str | None:
     """话里点名提到、此刻却不在眼前的人或东西：说明一句，不让玩家猜。"""
@@ -223,6 +237,10 @@ def align(state: WorldState, defs: Defs, result: ParseResult) -> tuple[ActionIns
         chosen = _with_duration(state, defs, base, clean, legal)
         return (chosen, "") if chosen is not None else (None, replies.CANNOT)
     if not targets:
+        if verb == "go":
+            hop = first_hop(state, defs, clean, matching)
+            if hop is not None:
+                return hop, ""
         if verb == "hide":
             loc = state.locations[state.chars[pid].loc]
             feats = [a for a in matching if a.params.get("feature")]

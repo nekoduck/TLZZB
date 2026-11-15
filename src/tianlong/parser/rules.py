@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from tianlong.kernel import actions, perception, speech
+from tianlong.kernel import perception, speech
 from tianlong.kernel.defs import Defs
 from tianlong.kernel.state import WorldState
 from tianlong.parser import lexical as lx
@@ -384,7 +384,3 @@ def guess(state: WorldState, defs: Defs, clean: str, menu: Menu) -> Guess:
 
 def kill_intent(text: str) -> bool:
     return bool(lx.KILL_WORDS.search(text or ""))
-
-
-def legal_verbs(legal: list[actions.ActionInst]) -> set[str]:
-    return {a.verb for a in legal}

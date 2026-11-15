@@ -62,7 +62,7 @@ async def map_wish(llm: Any, state: WorldState, defs: Defs, text: str) -> dict:
         cands = []
     found = rule_refs(state, defs, clean, cands) if cands else []
     mode = llm.mode("classify") if llm is not None else "rules_only"
-    if cands and mode != "rules_only" and llm is not None:
+    if cands and mode not in ("rules_only", "claude_only") and llm is not None:  # 心愿只问 Jev；不用 Jev 时按名字
         try:
             w = words()
             me = state.chars[state.player]

@@ -206,7 +206,7 @@ def scene_objects(state: WorldState, defs: Defs, legal: list[actions.ActionInst]
         out.append(Opt(key=f"i{i}", ref=iid, desc=f"{name_for_model(state, defs, iid)}（{where}）", kind="item"))
     exits = []
     for a in legal:
-        if a.verb == "go" and a.params.get("exit") not in exits:
+        if a.verb in ("go", "flee") and a.params.get("exit") not in exits:
             exits.append(a.params["exit"])
     for i, to in enumerate(exits, 1):
         out.append(Opt(key=f"x{i}", ref=to, desc=f"往{name_for_model(state, defs, to)}去的路", kind="exit"))
