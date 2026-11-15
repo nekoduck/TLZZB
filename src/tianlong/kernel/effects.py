@@ -14,15 +14,19 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from tianlong.kernel import checks, danger, events, growth, mood, perception, predicates, refs
+from tianlong.kernel import checks, danger, events, growth, memory, mood, perception, predicates, refs
 from tianlong.kernel.defs import Defs, SituationDef
 from tianlong.kernel.predicates import KernelError, flag_key, loc_of, resolve_id
 from tianlong.kernel.state import (
     Agenda,
     Belief,
     Character,
+    ChronicleEntry,
     Ctx,
+    Divergence,
     Event,
+    MemoryItem,
+    Relation,
     SituationState,
     Status,
     Step,
@@ -81,6 +85,14 @@ EFFECT_SHAPES: dict[str, Any] = {
     "step_state": ["char", "str", "stepstate"],
     "eat": "char",
     "rest": ["char", "int"],
+    # 上层模块要用的记账类效果（D-078）：让 minds/world/storyteller 也只经效果改状态
+    "reflect": ["char", "str", "any?", "int?"],
+    "impression": ["char", "char", "str"],
+    "agenda": ["char", "any"],
+    "progress": ["char", "int"],
+    "chronicle": "any",
+    "diverge": "any",
+    "teller": ["str", "any"],
 }
 
 CHECK_KINDS = ("flee", "hide", "steal", "climb", "descend", "leap", "fall", "death_save", "chance")
@@ -546,6 +558,78 @@ class Run:
     def e_step_state(self, arg: Any) -> None:
         c = self.char(arg[0])
         set_step_state(self.state, c, str(arg[1]), str(arg[2]))
+
+    def e_agenda(self, arg: Any) -> None:
+        """整份替换此人的打算（重新打算落地，8.3 第 5 步）；第二项为 null 表示清空。"""
+        c = self.char(arg[0])
+        if arg[1] is None:
+            c.agenda = None
+            return
+        data = arg[1] if isinstance(arg[1], dict) else arg[1].model_dump()
+        try:
+            c.agenda = Agenda.model_validate(data)
+        except ValidationError as e:
+            raise EffectError(f"agenda: bad agenda {arg[1]!r}: {e}") from e
+
+    def e_progress(self, arg: Any) -> None:
+        """给此人当前这一步记下花了多少刻（离场结算，8.2）；写 0 表示从头算。"""
+        c = self.char(arg[0])
+        if c.agenda is None:
+            return
+        n = int(arg[1])
+        c.agenda.progress = 0 if n == 0 else max(0, c.agenda.progress + n)
+
+    def e_reflect(self, arg: Any) -> None:
+        """夜间反思（7.10）：写一条 kind=reflection 的记忆。"""
+        c = self.char(arg[0])
+        about = arg[2] if len(arg) > 2 and arg[2] is not None else []
+        if isinstance(about, str):
+            about = [about]
+        sal = int(arg[3]) if len(arg) > 3 and arg[3] is not None else 6
+        memory.write(
+            self.state,
+            c,
+            MemoryItem(
+                tick=self.state.tick,
+                kind="reflection",
+                text=str(arg[1]),
+                entities=[str(self.rid(a)) for a in about],
+                salience=max(1, min(10, sal)),
+            ),
+        )
+
+    def e_impression(self, arg: Any) -> None:
+        """一句印象，只给模型看（5.1 Relation.impression）。数值不动。"""
+        a = self.char(arg[0])
+        b = self.char(arg[1])
+        r = a.rel.get(b.id)
+        if r is None:
+            a.rel[b.id] = Relation(impression=str(arg[2]))
+        else:
+            r.impression = str(arg[2])
+
+    def e_chronicle(self, arg: Any) -> None:
+        d = dict(arg)
+        d.setdefault("tick", self.state.tick)
+        d["text"] = refs.fill_roles(str(d.get("text", "")), self.ctx.roles, self.ctx.self_id)
+        try:
+            self.state.chronicle.append(ChronicleEntry.model_validate(d))
+        except ValidationError as e:
+            raise EffectError(f"chronicle: bad entry {arg!r}: {e}") from e
+
+    def e_diverge(self, arg: Any) -> None:
+        d = dict(arg)
+        d.setdefault("tick", self.state.tick)
+        if any(x.mark == d.get("mark") for x in self.state.divergences):
+            return
+        try:
+            self.state.divergences.append(Divergence.model_validate(d))
+        except ValidationError as e:
+            raise EffectError(f"diverge: bad entry {arg!r}: {e}") from e
+
+    def e_teller(self, arg: Any) -> None:
+        """讲述者的记账：张力、上次出牌的时刻、今日已出几张（5.1 WorldState.storyteller）。"""
+        self.state.storyteller[str(arg[0])] = arg[1]
 
     def e_replan(self, arg: Any) -> None:
         c = self.char(arg)

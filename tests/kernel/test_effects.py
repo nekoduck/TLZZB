@@ -299,6 +299,9 @@ def test_unknown_effect_raises(w: World) -> None:
 def test_every_effect_key_is_tested() -> None:
     import inspect
 
+    from pathlib import Path
+
     src = inspect.getsource(inspect.getmodule(test_every_effect_key_is_tested))  # type: ignore[arg-type]
+    src += (Path(__file__).parent / "test_bookkeeping_effects.py").read_text(encoding="utf-8")
     for key in EFFECT_SHAPES:
         assert f"'{key}'" in src or f'"{key}"' in src, key

@@ -98,6 +98,10 @@ class Snapshot:
             lists.append((loc.traces, loc.traces[:]))
         for it in state.items.values():
             objs.append((it, it.__dict__.copy()))
+        for t in state.threads.values():
+            objs.append((t, t.__dict__.copy()))
+        for sit in state.situations.values():
+            objs.append((sit, sit.__dict__.copy()))
         pending: set[str] = set()
         able: set[str] = set()
         for c in state.chars.values():
