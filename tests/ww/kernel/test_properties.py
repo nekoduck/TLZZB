@@ -338,8 +338,6 @@ def test_engine_shapes_match_testing_scenario() -> None:
     for ev in sc.events + sc2.events:
         keys = set(ev.data)
         want = _expected_keys(ev)
-        if ev.type == EventType.WOLF_KILL:
-            want = want - {'stance'}
         assert keys == want, (ev.type, sorted(keys))
 
 
