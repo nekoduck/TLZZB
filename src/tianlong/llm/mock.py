@@ -145,6 +145,7 @@ class MockJev(JevClient):
         *,
         hints: Mapping[str, Any] | None = None,
         escalated: bool = False,
+        timeout_s: float | None = None,  # 替身立刻作答，从不超时
     ) -> Answers:
         spec = self.spec(kind)
         body = self.build_request(spec, state, questions)

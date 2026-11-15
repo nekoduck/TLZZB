@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any
 import httpx
 
 from tianlong.config import Settings
-from tianlong.llm.errors import JevError, LLMUnavailable
+from tianlong.llm.errors import JevError, JevTimeout, LLMUnavailable
 from tianlong.llm.specs import JevSpec, jev_spec
 
 if TYPE_CHECKING:
@@ -241,10 +241,43 @@ class JevClient:
         *,
         hints: Mapping[str, Any] | None = None,
         escalated: bool = False,
+        timeout_s: float | None = None,
     ) -> Answers:
-        """问一组问题，返回 问题 id → 答案。失败（重试之后）抛 `JevError` 或 `LLMUnavailable`。"""
+        """问一组问题，返回 问题 id → 答案。失败（重试之后）抛 `JevError` 或 `LLMUnavailable`。
+
+        `timeout_s`：这一次调用（含重试）总共最多等多久；到点抛 `JevTimeout`（`JevError` 的子类）。
+        超时、以及调用方中途取消，都在 calls.jsonl 里记成一条错误行：重放时在同一处再抛 `JevTimeout`，
+        后面的调用不会错位。要限时就传 `timeout_s`，不要在外面套 `asyncio.wait_for`。
+        """
         spec = self.spec(kind)
         body = self.build_request(spec, state, questions)
+        t0 = time.perf_counter()
+
+        def gave_up(why: str) -> JevTimeout:
+            err = JevTimeout(f'Jev {kind}: {why}', timeout_s=timeout_s)
+            self._record(kind, spec, body, None, (time.perf_counter() - t0) * 1000.0, 0.0, escalated,
+                         attempts=0, error=err)
+            return err
+
+        try:
+            if timeout_s is None:
+                return await self._ask(kind, spec, body, questions, escalated)
+            async with asyncio.timeout(max(0.0, float(timeout_s))):
+                return await self._ask(kind, spec, body, questions, escalated)
+        except TimeoutError:
+            raise gave_up(f'no answer within {float(timeout_s or 0.0):g}s') from None
+        except asyncio.CancelledError:
+            gave_up('cancelled by the caller')
+            raise
+
+    async def _ask(
+        self,
+        kind: str,
+        spec: JevSpec,
+        body: dict[str, Any],
+        questions: Mapping[str, Mapping[str, Any]],
+        escalated: bool,
+    ) -> Answers:
         data: dict[str, Any] | None = None
         latency_ms = 0.0
         cost = 0.0

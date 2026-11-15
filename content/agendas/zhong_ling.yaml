@@ -1,3 +1,4 @@
+# 钟灵开局时的打算。被扣住的人走不了：「回家」这一步排在后面，自然等到有人放她的那一刻。
 goal: 看热闹；护着新认下的朋友；最后平安回家
 steps:
   - id: zl_watch
@@ -22,16 +23,16 @@ steps:
     at: shennong_camp
     do: {verb: wait}
     pre: {all: [{has: [self, shandian_diao]}, {alive: sikong_xuan}]}
-    takes: 8
+    takes: 16
     deadline: 240
   - id: zl_wait_rescue
     text: 被扣作人质，等人来救
     at: shennong_camp
     do: {verb: wait}
     pre: {status: [self, captive]}
-    takes: 480
+    takes: 16
   - id: zl_go_home
-    text: 回万劫谷见娘
+    text: 脱了身，回万劫谷见娘
     at: zhong_hall
     do: {verb: say, act: greet, to: gan_baobao}
     pre: {all: [{not: {status: [self, captive]}}, {alive: gan_baobao}]}

@@ -19,6 +19,17 @@ class JevError(LLMError):
         self.status = status
 
 
+class JevTimeout(JevError):
+    """这一次 `jev.ask` 超过了调用方给的时限（`timeout_s`），或被调用方取消。
+
+    录制里记成一条错误行；重放时在同一处再抛出来，后面的调用不会错位。
+    """
+
+    def __init__(self, message: str, *, timeout_s: float | None = None) -> None:
+        super().__init__(message, status=None)
+        self.timeout_s = timeout_s
+
+
 class ClaudeError(LLMError):
     """Claude 请求在 SDK 重试之后仍然失败（网络、4xx、5xx）。"""
 

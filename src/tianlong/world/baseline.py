@@ -1,10 +1,16 @@
 """与原著的分岔（方案 8.6）：每个时辰对照一次 ``content/baseline.yaml`` 的参照点，事后显示。
 
+**全项目只有这一处认定分岔**：``check`` 由 ``world.tick`` 每个时辰调用一次（方案 8.1 第 5 步），经内核效果
+``diverge`` 写进 ``state.divergences``（同一参照点只记一次），带上起因 ``cause_event`` 与
+``known_to_player``。storyteller 只读 ``state.divergences`` 来写年谱和收场的清单，不另行对照。
+
 - 参照点的谓词成立过一次就算达成（D-075：被擒这类一时的状态也一样）。
-- 过了 ``by`` 再加一日的宽限而仍未达成，经效果 ``diverge`` 记一条 ``Divergence``（同一参照点只记一次）。
+- 过了 ``by`` 再加一日的宽限而仍未达成，记一条 ``Divergence``。
 - 起因：事件日志里最早一条由玩家引发、且涉及同一批人或物的事件。事件尾巴只留最近 200 条，所以每个时辰
   扫一遍新事件，把候选的起因记在旗标 ``__baseline__`` 里。改变了那些人或物的事件（易手、伤亡、擒放、
-  中毒、得救）优先于只是沾了边的事件（例如跟那人说过话）。
+  中毒、得救，以及开口相求、相劝、示警、喝令、威胁）优先于只是沾了边的事件（例如跟那人打过招呼）。
+- 「同一批人或物」：参照点谓词参数里的人与物、所引事实提到的人与物、参照点自己列的 ``refs``，以及
+  参照点那句话里叫得出名字的人与物（只写旗标的参照点靠这一条才追得到起因）。
 - ``known_to_player``：玩家亲见或听见了起因事件，或者之后相信了它（事实 ``E<id>``）。
 
 参照点只用来事后对照与显示。运行时没有任何规则读它来决定事情的走向：这里写下的记账只有本模块自己读。
@@ -22,10 +28,13 @@ from tianlong.world.common import BASELINE_FLAG, LOG, flag_dict
 GRACE = TICKS_PER_DAY  # 过了 by 再宽限一日
 MAJOR_KINDS = ("item_change", "harmed", "captured", "death", "rescue", "relieved", "poisoned", "gift")
 MAJOR_VERBS = ("take", "steal", "give", "attack", "restrain", "release", "use", "push", "block")
+MAJOR_ACTS = ("request", "plead", "order", "warn", "threaten")  # 想改变别人做什么的话
+NAME_MIN = 2  # 参照点那句话里，至少两个字的名字才算数
 
 
 def mark_entities(state: WorldState, mark: BaselineMark) -> set[str]:
-    """参照点涉及的人与物：谓词参数里的人、物，以及所引事实文字里提到的人、物。"""
+    """参照点涉及的人与物：谓词参数里的人、物，所引事实文字里提到的人、物，参照点自己列的 refs，
+    以及参照点那句话里叫得出名字的人、物。"""
     out: set[str] = set()
 
     def walk(x: Any) -> None:
@@ -44,6 +53,15 @@ def mark_entities(state: WorldState, mark: BaselineMark) -> set[str]:
                         out.add(e)
 
     walk(mark.holds)
+    walk((mark.model_extra or {}).get("refs"))
+    text = mark.text or ""
+    for e in refs.refs_in(text):
+        if e in state.chars or e in state.items:
+            out.add(e)
+    for table in (state.chars, state.items):
+        for eid, x in table.items():
+            if len(x.name) >= NAME_MIN and x.name in text:
+                out.add(eid)
     out.discard(state.player)
     return out
 
@@ -75,7 +93,10 @@ def player_caused(state: WorldState, ev: Event) -> bool:
 
 
 def is_major(ev: Event) -> bool:
-    return ev.verb in MAJOR_VERBS or any(k.get("k") in MAJOR_KINDS for k in ev.kinds)
+    """改变了人或物的处境的事件；开口相求、相劝、示警、喝令、威胁也算（它们想改变别人做什么）。"""
+    if ev.verb in MAJOR_VERBS or any(k.get("k") in MAJOR_KINDS for k in ev.kinds):
+        return True
+    return ev.speech is not None and ev.speech.act in MAJOR_ACTS
 
 
 def player_witnessed(state: WorldState, ev: Event) -> bool:
@@ -156,7 +177,8 @@ def check(state: WorldState, defs: Defs) -> list[Divergence]:
         effs.append({"diverge": d.model_dump()})
     effs.append({"set_flag": [BASELINE_FLAG, book]})
     resolve.run_effects(state, defs, effs, source="rule")
-    return new
+    recorded = {d.mark for d in state.divergences}
+    return [d for d in new if d.mark in recorded]  # 效果整体回滚时什么也没记下
 
 
 def reached(state: WorldState) -> dict[str, int]:

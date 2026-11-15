@@ -1,6 +1,7 @@
 goal: 查办神农帮办事不力，慑服两派
 steps:
   - {id: ev_enter, text: 从图外赶到无量山, do: {verb: wait}, pre: {alive: self}, start: 224, takes: 1, offscreen: [{enter: [self, mountain_path]}]}
-  - {id: ev_question_shennong, text: 到营里追问神农帮的差事, at: shennong_camp, do: {verb: say, act: ask, to: sikong_xuan}, pre: {alive: sikong_xuan}, takes: 4}
-  - {id: ev_cow_wuliang, text: 上剑湖宫传令，叫两派听命, at: jianhu_hall, do: {verb: say, act: order, to: zuo_zimu}, pre: {alive: zuo_zimu}, takes: 4}
+  - {id: ev_question_shennong, text: 到营里追问神农帮的差事, at: shennong_camp, do: {verb: say, act: ask, to: sikong_xuan}, pre: {all: [{alive: sikong_xuan}, {same_loc: [self, sikong_xuan]}]}, takes: 4}
+  # 两派掌门不是她的下属，谈不上吩咐（order）；她只消把灵鹫宫的规矩当面说一遍
+  - {id: ev_cow_wuliang, text: 上剑湖宫传话，叫两派听命, at: jianhu_hall, do: {verb: say, act: tell, to: zuo_zimu, fact: F_lingjiu_rules}, pre: {all: [{alive: zuo_zimu}, {same_loc: [self, zuo_zimu]}]}, takes: 4}
   - {id: ev_oversee, text: 留在剑湖宫监看, at: jianhu_hall, do: {verb: wait}, pre: {not: {status: [self, captive]}}, takes: 288}

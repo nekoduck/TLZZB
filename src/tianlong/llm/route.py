@@ -9,8 +9,8 @@ from tianlong.config import JevThresholds, Settings
 
 Mode = Literal['jev_first', 'claude_first', 'claude_only', 'rules_only']
 
-# 各类判断的路由键（config.toml 的 [route]）→ 快、慢两条路的调用代号
-CATEGORIES: dict[str, tuple[str, str | None]] = {
+# 各类判断的路由键（config.toml 的 [route]）→ 快、慢两条路的调用代号（没有那条路的写 None）
+CATEGORIES: dict[str, tuple[str | None, str | None]] = {
     'classify': ('J1', 'C1'),
     'decide_soul': ('J2', 'C2_soul'),
     'decide_named': ('J2', 'C2_named'),
@@ -18,13 +18,25 @@ CATEGORIES: dict[str, tuple[str, str | None]] = {
     'options': ('J4', None),
     'check': ('J5', None),
     'cards': ('J6', None),
+    # 只有 Claude 一条路的：叙述（C3 流式）、选项措辞（C4）、离线管线（P1…P6）
+    'narrate': (None, 'C3'),
+    'phrase': (None, 'C4'),
+    'pipeline': (None, 'pipeline'),
 }
 
 _MODES: frozenset[str] = frozenset({'jev_first', 'claude_first', 'claude_only', 'rules_only'})
 
 
+def uses_model(settings: Settings, category: str) -> bool:
+    """这一类判断此刻用不用模型（取值不是 'rules_only'）。"""
+    return mode(settings, category) != 'rules_only'
+
+
 def mode(settings: Settings, category: str) -> Mode:
-    """某类判断此刻走哪条路。未知的类别按 'jev_first'。"""
+    """某类判断此刻走哪条路。未知的类别按 'jev_first'。
+
+    `narrate`、`phrase`、`pipeline` 只有 Claude 一条路：'rules_only' 是不调模型，其余取值都是调 Claude。
+    """
     value = getattr(settings.route, category, None)
     if value is None:
         extra = settings.route.model_extra or {}

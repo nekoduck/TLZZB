@@ -242,15 +242,35 @@ def band(defs: Defs, state: WorldState, a: str, b: str) -> str:
         b_ = "familiar"
     else:
         b_ = "trusted"
-    if b_ in ("hostile", "stranger") and close_roles(defs, ca, cb):
+    if b_ in ("hostile", "stranger") and close_roles(defs, ca, cb, state):
         b_ = "familiar"
     return b_
 
 
-def close_roles(defs: Defs, a: Character, b: Character) -> bool:
-    """同门（有共同身份）、师徒与主仆（一方听命于另一方）。"""
+def sect_roles(defs: Defs, state: WorldState | None = None) -> set[str] | None:
+    """算作门派、人家的身份（K3）。world.yaml 写了 ``request.sect_roles`` 就以它为准；
+    没写时取占着地盘的身份（各地点的 ``owner``）。两者都没有（没给 state）返回 None：任何共同身份都算。"""
+    listed = defs.world.request.sect_roles
+    if listed is not None:
+        return set(listed)
+    if state is None:
+        return None
+    return {loc.owner for loc in state.locations.values() if loc.owner}
+
+
+def same_sect(defs: Defs, a: Character, b: Character, state: WorldState | None = None) -> bool:
+    """同门、同一家：两人有一个共同的、算作门派或人家的身份。「同是来客」不算。"""
+    shared = set(a.roles) & set(b.roles)
+    if not shared:
+        return False
+    sects = sect_roles(defs, state)
+    return True if sects is None else bool(shared & sects)
+
+
+def close_roles(defs: Defs, a: Character, b: Character, state: WorldState | None = None) -> bool:
+    """同门（``same_sect``）、师徒与主仆（一方听命于另一方）。"""
     rules = defs.world.request.close_roles
-    if "same_sect" in rules and set(a.roles) & set(b.roles):
+    if "same_sect" in rules and same_sect(defs, a, b, state):
         return True
     if ("master_disciple" in rules or "master_servant" in rules) and (
         a.superior == b.id or b.superior == a.id

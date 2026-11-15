@@ -12,7 +12,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from tianlong.kernel import checks, danger, growth, perception, predicates, refs
+from tianlong.kernel import bottom, checks, danger, growth, perception, predicates, refs
 from tianlong.kernel.defs import Defs
 from tianlong.kernel.state import (
     TICKS_PER_DAY,
@@ -140,6 +140,13 @@ def travel_cost(state: WorldState, c: Character, e: Exit) -> int:
         (int(state.items[i].props.get("speed", 1)) for i in c.inventory if i in state.items), default=1
     )
     return max(1, e.cost // max(1, speed)) if e.cost > 0 else 0
+
+
+def edge_text(state: WorldState, defs: Defs, e: Exit) -> str:
+    """通往图外的出口怎么说（K10）：图外那头有名字（词表里有这一条）就带上，没有就只说「离开这一带」。"""
+    if refs.lookup(state, defs, e.to) is not None:
+        return f"离开这一带，往⟦{e.to}⟧去"
+    return "离开这一带"
 
 
 def exit_lethal(state: WorldState, defs: Defs, c: Character, e: Exit) -> bool:
@@ -317,7 +324,7 @@ def _v(state: WorldState, defs: Defs, c: Character, verb: str, p: dict) -> _B | 
         e = find_exit(state, defs, c, p.get("exit", ""))
         if e is None:
             return None
-        desc = f"离开这一带，往⟦{e.to}⟧去" if e.edge else f"往⟦{e.to}⟧去"
+        desc = edge_text(state, defs, e) if e.edge else f"往⟦{e.to}⟧去"
         if e.check:
             desc = {
                 "descend": f"缒下去，往⟦{e.to}⟧",
@@ -435,6 +442,8 @@ def _v(state: WorldState, defs: Defs, c: Character, verb: str, p: dict) -> _B | 
         it = state.items.get(p.get("item", ""))
         if t is None or it is None or it.holder != t.id:
             return None
+        if not perception.item_visible(state, c, it.id):
+            return None  # 看不见、也不知道在他身上的东西，无从下手（K9）
         return _B(cost=1, desc=f"偷偷去拿⟦{t.id}⟧身上的⟦{it.id}⟧")
     if verb == "help":
         t = _person(state, c, p.get("target"))
@@ -529,11 +538,25 @@ def _v(state: WorldState, defs: Defs, c: Character, verb: str, p: dict) -> _B | 
     return None
 
 
+def build_speech_wait(state: WorldState, defs: Defs, actor: str) -> ActionInst | None:
+    """只说话、不动时用来带那句话的动作（K12）：等 1 刻（ARCHITECTURE 2.3；紧张场面里耗时为 0）。
+
+    ``resolve.apply(state, defs, build_speech_wait(...), speech, source=...)`` 只记那句话，不另记「等」。
+    """
+    return build(state, defs, actor, "wait", {"ticks": 1})
+
+
 def build(state: WorldState, defs: Defs, actor: str, verb: str, params: dict) -> ActionInst | None:
-    """按此刻的状态构造一个动作实例；不合法返回 None。不看底线（底线在 legal_actions 与 is_legal 里过滤）。"""
+    """按此刻的状态构造一个动作实例；不合法返回 None。不看底线（底线在 legal_actions 与 is_legal 里过滤）。
+
+    ``verb == 'say'``：「说」本身不是身体动作，返回带话用的 ``wait`` 1 刻（同 ``build_speech_wait``，
+    ``params`` 不看）；话的内容另由 ``Speech`` 给出。
+    """
     c = state.chars.get(actor)
     if not can_act(c) or c is None:
         return None
+    if verb == "say":
+        return build_speech_wait(state, defs, actor)
     if has_status(c, "bound") and verb not in ("wait", "struggle"):
         return None
     if verb == "setpiece":
@@ -590,26 +613,15 @@ def _setpiece(state: WorldState, defs: Defs, c: Character, params: dict) -> Acti
 
 
 def blocked_by_bottom(state: WorldState, defs: Defs, action: ActionInst) -> bool:
-    """人物底线（5.4 的 blocks）：命中的动作从此人的清单里去掉。"""
-    c = state.chars[action.actor]
-    card = defs.card_for(c.persona) or defs.cards.get(c.id)
-    if card is None:
+    """人物底线（5.4 的 blocks）：命中的动作从此人的清单里去掉。
+
+    匹配规则见 ``kernel/bottom.py``（与请求裁决的 never 共用）：block 写出来的每个键都要对得上，
+    例如 ``{verb: attack, act: kill}`` 只挡下杀手，不挡寻常动手。``say`` 的底线在 ``speech`` 里查。
+    """
+    if action.verb == "say":
         return False
-    target = action.params.get("target")
-    ctx = Ctx(self_id=c.id, roles={"target": target} if target else {})
-    for bl in card.bottom_lines:
-        for b in bl.blocks:
-            if b.verb != action.verb or b.verb == "say":
-                continue
-            if b.target is not None and predicates.resolve_id(b.target, state, ctx) != target:
-                continue
-            extra = {k: v for k, v in (b.model_extra or {}).items()}
-            if any(action.params.get(k) != predicates.resolve_id(v, state, ctx) for k, v in extra.items()):
-                continue
-            if b.when is not None and not predicates.holds(state, defs, b.when, ctx):
-                continue
-            return True
-    return False
+    c = state.chars[action.actor]
+    return bottom.blocked(state, defs, c, action.verb, action.params)
 
 
 def is_legal(state: WorldState, defs: Defs, action: ActionInst) -> ActionInst | None:
@@ -635,6 +647,7 @@ def _candidates(state: WorldState, defs: Defs, c: Character) -> list[tuple[str, 
         for o in state.chars.values()
         if o.loc == c.loc and o.onstage and o.id != c.id and not perception.on_map(o)
     ]
+    seen = perception.seen_entities(state, c)
     for t in WAIT_TICKS[:1] if tense_for(state, c) else WAIT_TICKS:
         out.append(("wait", {"ticks": t}))
     out.append(("look", {}))
@@ -683,7 +696,8 @@ def _candidates(state: WorldState, defs: Defs, c: Character) -> list[tuple[str, 
             out.append(("show", {"item": iid, "target": t.id}))
             out.append(("use", {"item": iid, "target": t.id}))
         for iid in t.inventory:
-            out.append(("steal", {"item": iid, "target": t.id}))
+            if perception.item_visible(state, c, iid, seen=seen):
+                out.append(("steal", {"item": iid, "target": t.id}))
         arts = set(t.arts) | {growth.LITERACY}
         for art in sorted(arts):
             for h in STUDY_HOURS:

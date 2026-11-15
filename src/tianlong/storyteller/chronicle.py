@@ -5,10 +5,10 @@
 ``known_to_player`` 取「玩家亲见或听见」或「玩家相信这件事」。哪些是亲见的，另记在 teller 的
 ``chron_seen``（条目下标）里；年谱分三栏时据此区分「亲见的」与「听说的」。
 
-**分岔**（``check_divergences``，每个时辰对照一次）：过了参照点的 ``by`` 再加一日的宽限，谓词从没成立过，
-就记一条 ``Divergence``（``diverge`` 效果，同一参照点只记一次）。成立过一次的参照点记进 ``marks_hit``，
-之后不再追究（D-075：一时的状态一旦成立即算达成）。起因取事件日志里最早一条由玩家引发、且涉及同一批
-人或物的事件；有起因的分岔算玩家亲历过。参照点只用来事后对照和显示，运行时没有任何规则读它。
+**分岔只读不判**：对照参照点、认定分岔是世界时钟的事（``world.baseline.check``，每个时辰一次，方案 8.1
+第 5 步，经 ``diverge`` 效果写进 ``state.divergences``，带起因与玩家知不知道）。这里只读
+``state.divergences``：每条分岔在年谱里记一条，``/年谱`` 列出玩家亲历的，收场时列出全部并附起因。
+玩家后来才听说起因那件事（相信了事实 ``E<号>``）的，显示时也算他知道。
 """
 
 from __future__ import annotations
@@ -16,13 +16,12 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Any
 
-from tianlong.kernel import mood, predicates, refs
+from tianlong.kernel import mood, refs
 from tianlong.kernel.defs import Defs
-from tianlong.kernel.state import TICKS_PER_DAY, Ctx, Event, Relation, WorldState, is_alive
+from tianlong.kernel.state import Divergence, Event, Relation, WorldState, is_alive
 from tianlong.storyteller import common
 
 SALIENCE = 7
-GRACE = TICKS_PER_DAY
 ID_CAP = 400
 BAND_TEXT = {"hostile": "敌视", "stranger": "生疏", "familiar": "相熟", "trusted": "信赖"}
 ATTITUDE_CAP = 12
@@ -138,7 +137,8 @@ def record(state: WorldState, defs: Defs, events: Iterable[Event] = ()) -> list[
             continue
         marks.append(d.mark)
         text = f"与原著的分岔：{texts.get(d.mark, d.mark)}——这件事没有照原样发生"
-        entries.append(({"tick": d.tick, "text": text, "known_to_player": d.known_to_player}, False))
+        entry = {"tick": d.tick, "text": text, "event": d.cause_event, "known_to_player": divergence_known(state, d)}
+        entries.append((entry, False))
     seen = list(common.teller(state, "chron_seen", []))
     base = len(state.chronicle)
     effs: list[dict] = []
@@ -159,68 +159,32 @@ def record(state: WorldState, defs: Defs, events: Iterable[Event] = ()) -> list[
     return common.book(state, defs, effs)
 
 
-# ---------------------------------------------------------------- 分岔
+# ---------------------------------------------------------------- 分岔（只读）
 
 
-def _mark_entities(state: WorldState, pred: Any) -> set[str]:
-    out: set[str] = set()
-    if isinstance(pred, dict):
-        for v in pred.values():
-            out |= _mark_entities(state, v)
-    elif isinstance(pred, list):
-        for v in pred:
-            out |= _mark_entities(state, v)
-    elif isinstance(pred, str) and (pred in state.chars or pred in state.items):
-        out.add(pred)
-    return out
+def divergence_known(state: WorldState, d: Divergence) -> bool:
+    """玩家知不知道这条分岔：认定时就知道（亲见或听见了起因），或者后来相信了起因那件事。"""
+    if d.known_to_player:
+        return True
+    p = common.player(state)
+    return p is not None and d.cause_event is not None and common.believes(p, f"E{d.cause_event}")
 
 
-def _event_entities(ev: Event) -> set[str]:
-    ids = set(refs.refs_in(ev.fact_text))
-    if ev.actor:
-        ids.add(ev.actor)
-    ids |= {v for v in ev.params.values() if isinstance(v, str)}
-    for k in ev.kinds:
-        for f in ("who", "by"):
-            if isinstance(k.get(f), str):
-                ids.add(k[f])
-    return ids
-
-
-def _cause(state: WorldState, ents: set[str]) -> int | None:
+def cause_text(state: WorldState, d: Divergence) -> str:
+    """起因那件事的事实句：事件还在日志尾巴里就取它，否则取它留下的事实 ``E<号>``；都没有就留空。"""
+    if d.cause_event is None:
+        return ""
     for ev in state.events_tail:
-        if ev.source != "player" and ev.actor != state.player:
-            continue
-        if ev.outcome == "blocked":
-            continue
-        if ents & (_event_entities(ev) - {state.player}):
-            return ev.id
-    return None
+        if ev.id == d.cause_event:
+            return ev.fact_text
+    f = state.facts.get(f"E{d.cause_event}")
+    return f.text if f is not None else ""
 
 
-def check_divergences(state: WorldState, defs: Defs) -> list[Event]:
-    """对照参照点（每个时辰一次）。成立过的记进 marks_hit；过期仍没成立过的记一条分岔。"""
-    hit = list(common.teller(state, "marks_hit", []))
-    have = {d.mark for d in state.divergences}
-    effs: list[dict] = []
-    for m in defs.baseline:
-        if m.id in hit or m.id in have:
-            continue
-        try:
-            ok = predicates.holds(state, defs, m.holds, Ctx())
-        except predicates.KernelError:
-            continue
-        if ok:
-            hit.append(m.id)
-            continue
-        if m.by is None or state.tick <= m.by + GRACE:
-            continue
-        cause = _cause(state, _mark_entities(state, m.holds))
-        effs.append({"diverge": {"mark": m.id, "tick": state.tick, "known_to_player": cause is not None,
-                                 "cause_event": cause}})
-    if hit != common.teller(state, "marks_hit", []):
-        effs.append({"teller": ["marks_hit", hit]})
-    return common.book(state, defs, effs)
+def divergences(state: WorldState, *, final: bool = False) -> list[Divergence]:
+    """要显示的分岔，按认定的先后：游戏中只有玩家知道的，收场后是全部。"""
+    rows = sorted(state.divergences, key=lambda d: (d.tick, d.mark))
+    return [d for d in rows if final or divergence_known(state, d)]
 
 
 # ---------------------------------------------------------------- 显示
@@ -283,15 +247,12 @@ def _player_knows_death(state: WorldState, cid: str) -> bool:
 def divergence_lines(state: WorldState, defs: Defs, *, final: bool = False) -> list[str]:
     """与原著的分岔：游戏中只列玩家亲历的；收场时列全部，附上追溯到的起因。"""
     texts = {m.id: m.text for m in defs.baseline}
-    causes = {ev.id: ev for ev in state.events_tail}
     out: list[str] = []
-    for d in state.divergences:
-        if not final and not d.known_to_player:
-            continue
+    for d in divergences(state, final=final):
         line = f"  · {texts.get(d.mark, d.mark)}——没有照原样发生（{common.clock(d.tick)}认定）"
-        ev = causes.get(d.cause_event) if d.cause_event is not None else None
-        if final and ev is not None:
-            line += f"；起因：{common.omni(state, defs, ev.fact_text)}"
+        cause = cause_text(state, d) if final else ""
+        if cause:
+            line += f"；起因：{common.omni(state, defs, cause)}"
         out.append(line)
     return out
 

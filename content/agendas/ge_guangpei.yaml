@@ -2,7 +2,7 @@ goal: 跟着干光豪私逃出山
 steps:
   - {id: gp_bout, text: 在练武厅随众观战, at: jianhu_hall, do: {verb: wait}, pre: {not: {status: [self, captive]}}, takes: 8, deadline: 64}
   - id: gp_slip_out
-    text: 趁乱溜到后山小径与干光豪会合
+    text: 趁乱溜到后山小径与干光豪会合，等天色暗些再走
     at: back_trail
     do: {verb: wait}
     pre:
@@ -13,7 +13,7 @@ steps:
         - {not: {knows: [zuo_zimu, F_lovers]}}
         - {not: {knows: [xin_shuangqing, F_lovers]}}
     start: 72
-    takes: 16
+    takes: 24
     deadline: 240
   - id: gp_flee_out
     text: 随他逃出山去

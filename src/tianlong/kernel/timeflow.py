@@ -72,7 +72,11 @@ def time_of_day(tick: int) -> str:
     return "night"
 
 
-def _run_scheduled(state: WorldState, defs: Defs) -> list[Event]:
+def run_due_scheduled(state: WorldState, defs: Defs) -> list[Event]:
+    """执行已经到点的 ``scheduled``（到点时 ``pre`` 不成立的丢弃），返回产生的事件。
+
+    ``advance_time`` 每一刻调用一次；world 在不推进时间的地方（开局、离场结算之后）也可以直接调用（K5）。
+    """
     from tianlong.kernel import resolve
 
     due = [s for s in state.scheduled if int(s.get("at", 0)) <= state.tick]
@@ -92,6 +96,9 @@ def _run_scheduled(state: WorldState, defs: Defs) -> list[Event]:
             state, defs, list(s.get("effects") or []), ctx, source=s.get("source") or "rule"
         )
     return out
+
+
+_run_scheduled = run_due_scheduled  # 旧名，留给已经在用它的调用方
 
 
 def _statuses(state: WorldState, defs: Defs) -> list[Event]:
@@ -181,7 +188,7 @@ def advance_time(state: WorldState, defs: Defs, ticks: int) -> list[Event]:
     out: list[Event] = []
     for _ in range(max(0, int(ticks))):
         state.tick += 1
-        out += _run_scheduled(state, defs)
+        out += run_due_scheduled(state, defs)
         out += _statuses(state, defs)
         _needs(state)
         _promises(state)

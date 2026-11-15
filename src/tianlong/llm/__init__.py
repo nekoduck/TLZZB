@@ -1,7 +1,7 @@
 """模型调用的门面（ARCHITECTURE 4.1）。上层模块只经它调 Jev 与 Claude。
 
     llm = make_llm(settings, mock=False, run_dir=Path('runs/<id>'))
-    answers = await llm.jev.ask('J2', state_text, questions, hints=...)
+    answers = await llm.jev.ask('J2', state_text, questions, hints=..., timeout_s=None)
     obj, meta = await llm.claude.call_json('C2_soul', system_blocks, user_text, Decision, mock_default=...)
     async for piece in llm.claude.stream_text('C3', system_blocks, user_text, mock_text=...): ...
 
@@ -21,6 +21,7 @@ from tianlong.llm.errors import (
     BudgetExceeded,
     ClaudeError,
     JevError,
+    JevTimeout,
     LLMError,
     LLMRefusal,
     LLMUnavailable,
@@ -132,6 +133,7 @@ __all__ = [
     'JevAnswer',
     'JevClient',
     'JevError',
+    'JevTimeout',
     'LLMError',
     'LLMRefusal',
     'LLMUnavailable',

@@ -492,6 +492,129 @@ def _variants(state: WorldState, defs: Defs, action: Any) -> list[str]:  # noqa:
     return [desc or '静观其变']
 
 
+# ---------------------------------------------------------------- 开口的选项
+
+# 言语行为 → 给 C4 看的说法（方案 6.6 的表）
+SPEECH_LABEL: dict[str, str] = {
+    'greet': '招呼',
+    'tell': '告知',
+    'ask': '打听',
+    'request': '相求',
+    'plead': '求情',
+    'order': '吩咐',
+    'warn': '示警',
+    'comfort': '安慰',
+    'agree': '答应',
+    'refuse': '回绝',
+    'bargain': '还价',
+    'promise': '许诺',
+    'threaten': '威胁',
+    'insult': '辱骂',
+    'taunt': '激将',
+    'lie': '搪塞',
+}
+_PERSUADE = '相劝'
+_ASK_ACTS = ('request', 'plead', 'order')
+
+
+def _sp(speech: Any, key: str, default: Any = None) -> Any:
+    """读一句话的字段：内核的 `Speech`，或存档里读回来的字典。"""
+    if isinstance(speech, dict):
+        return speech.get(key, default)
+    return getattr(speech, key, default)
+
+
+def _pv(state: WorldState, defs: Defs, text: Any) -> str:
+    return place_text(refs.render(str(text or ''), state, defs, state.player)).strip().rstrip('。')
+
+
+def is_persuasion(speech: Any) -> bool:
+    """所求之事是眼前情境里对方自己的一招：这句话是「劝」，不是「求」。"""
+    ask = _sp(speech, 'ask_action') or {}
+    return _sp(speech, 'act') in _ASK_ACTS and ask.get('verb') == 'setpiece'
+
+
+def speech_label(speech: Any) -> str:
+    if is_persuasion(speech):
+        return _PERSUADE
+    act = str(_sp(speech, 'act') or '')
+    return SPEECH_LABEL.get(act, '说话')
+
+
+def _addressee(state: WorldState, defs: Defs, speech: Any) -> str:
+    to = [t for t in (_sp(speech, 'to') or []) if t]
+    return '、'.join(_name(state, defs, t) for t in to[:2]) or '在场的人'
+
+
+def _topic(state: WorldState, defs: Defs, speech: Any) -> str:
+    """告知、示警的那件事说的是谁、什么（第一个不是对方、也不是玩家自己的实体）。"""
+    skip = {state.player, *(_sp(speech, 'to') or [])}
+    for fid in _sp(speech, 'fact_refs') or []:
+        f = state.facts.get(fid)
+        if f is None:
+            continue
+        for eid in refs.refs_in(f.text):
+            if eid not in skip and '#' not in eid:
+                return _name(state, defs, eid)
+    return ''
+
+
+def speech_fact(state: WorldState, defs: Defs, speech: Any, desc: str = '') -> str:
+    """开口的选项给 C4 看的事实句：哪种言语行为、对谁说（玩家眼里的叫法）、要旨。"""
+    t = _addressee(state, defs, speech)
+    low = '低声' if _sp(speech, 'whisper') else ''
+    gist = _pv(state, defs, _sp(speech, 'gist')) or _pv(state, defs, desc)
+    head = f'开口{speech_label(speech)}：对{t}{low}说'
+    return f'{head}，{gist}' if gist else head
+
+
+def _speech_variants(state: WorldState, defs: Defs, speech: Any, desc: str = '') -> list[str]:  # noqa: C901
+    """每种言语行为的模板句：只写打算（劝、问、求、提醒……），不写对方答不答应。"""
+    act = str(_sp(speech, 'act') or '')
+    to = [x for x in (_sp(speech, 'to') or []) if x]
+    t = _addressee(state, defs, speech)
+    shown = _pv(state, defs, desc)
+    ask = _sp(speech, 'ask_action') or {}
+    what = _pv(state, defs, ask.get('desc'))
+    if act in _ASK_ACTS:
+        if is_persuasion(speech) and what:
+            return [f'低声劝{t}{what}', f'悄悄劝{t}{what}', shown]
+        if act == 'plead':
+            return [f'求{t}{what}', f'恳求{t}{what}', shown] if what else [shown, f'向{t}求情']
+        if act == 'order':
+            return [f'吩咐{t}{what}', shown] if what else [shown, f'吩咐{t}几句']
+        return [f'求{t}{what}', f'开口请{t}{what}', shown] if what else [shown, f'向{t}开口相求']
+    if act == 'ask':
+        about = _sp(speech, 'about')
+        if about and about in to:
+            return [f'问一问{t}的来历', f'向{t}请教来历', shown]
+        if about:
+            a = _name(state, defs, about)
+            return [f'问一问{t}，{a}是怎么回事', f'向{t}打听{a}的事', shown]
+        return [shown, f'向{t}打听近来的事']
+    if act == 'warn':
+        topic = _topic(state, defs, speech)
+        if topic:
+            return [f'提醒{t}留神{topic}的事', f'把{topic}的事提醒{t}', f'提醒{t}多加小心']
+        return [shown, f'低声提醒{t}多加小心', f'提醒{t}留神']
+    if act == 'tell':
+        if _sp(speech, 'request'):
+            return [f'回答{t}的问话', f'照实回答{t}']
+        topic = _topic(state, defs, speech)
+        if topic:
+            return [f'把{topic}的事告诉{t}', f'同{t}说一说{topic}的事']
+        return [f'把知道的事告诉{t}', shown]
+    if act == 'greet':
+        return [f'向{t}打个招呼', f'上前同{t}见个礼']
+    if act == 'comfort':
+        return [f'安慰{t}几句', f'好言宽慰{t}']
+    if act == 'agree':
+        return [f'答应{t}所求的事', f'应下{t}的话']
+    if act == 'refuse':
+        return [f'回绝{t}所求的事', f'婉言回绝{t}']
+    return [shown, f'同{t}说几句话']
+
+
 def _fit(text: str, limit: int) -> str:
     text = text.strip().rstrip('。')
     if text_len(text) <= limit:
@@ -504,15 +627,21 @@ def _fit(text: str, limit: int) -> str:
 
 
 def option_template(state: WorldState, defs: Defs, action: Any, *, variant: int = 0,
-                    avoid: Sequence[str] = ()) -> str:
+                    avoid: Sequence[str] = (), speech: Any = None, desc: str = '',
+                    signature: str = '') -> str:
     """一个动作的模板选项：写打算，不写结果，不超过 30 字（方案 2.3、7.8）。
 
     `variant` 换一种说法；`avoid` 里的文字（例如上回合选过的那条）不重复。
+    开口的选项传 `speech`（内核的 Speech）与它的意图描述 `desc`、指纹 `signature`：按言语行为取模板句
+    （低声劝……、问一问……、求……、提醒……），`action`（那一刻的 wait）不参与措辞。
     """
-    cands = [c for c in _variants(state, defs, action) if c and c.strip()]
+    if speech is not None:
+        cands = [c for c in _speech_variants(state, defs, speech, desc) if c and c.strip()]
+    else:
+        cands = [c for c in _variants(state, defs, action) if c and c.strip()]
     if not cands:
         cands = ['静观其变']
-    sig = getattr(action, 'signature', '') or getattr(action, 'desc', '')
+    sig = signature or getattr(action, 'signature', '') or getattr(action, 'desc', '')
     start = (_h(sig) + variant) % len(cands)
     avoid_set = {a.strip() for a in avoid if a}
     ordered = cands[start:] + cands[:start]
@@ -528,14 +657,18 @@ def option_template(state: WorldState, defs: Defs, action: Any, *, variant: int 
 __all__ = [
     'OPTION_MAX',
     'REPLIES',
+    'SPEECH_LABEL',
     'STANCE_ADV',
     'STANCE_LABEL',
     'Fact',
     'diegetic_reply',
     'duration_text',
     'fact_list',
+    'is_persuasion',
     'option_template',
     'place_text',
+    'speech_fact',
+    'speech_label',
     'template_narration',
     'template_sentences',
     'travel_summary',

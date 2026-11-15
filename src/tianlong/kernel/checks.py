@@ -131,9 +131,13 @@ def death_save_chance(who: Character) -> int:
 LUCKY_FLAG = "__lucky__"
 
 
-def roll_against(state: WorldState, kind: str, chance: int) -> CheckResult:
-    """掷一次。旗标 __lucky__ 为真时判定一律成功（方案 11.3 的 --lucky 基线跑），仍消耗一次随机数。"""
+def roll_against(state: WorldState, kind: str, chance: int, *, adverse: bool = False) -> CheckResult:
+    """掷一次。旗标 __lucky__ 为真时判定一律成功（方案 11.3 的 --lucky 基线跑），仍消耗一次随机数。
+
+    ``adverse``：这是一次「成了反而坏事」的判定（看押的人趁隙逃脱、暗处的人被发现……）。
+    ``__lucky__`` 下它一律不成（K11）；平时与寻常判定一样掷。
+    """
     r = rng.roll(state)
     if state.flags.get(LUCKY_FLAG):
-        return CheckResult(kind=kind, chance=chance, roll=r, ok=True)
+        return CheckResult(kind=kind, chance=chance, roll=r, ok=not adverse)
     return CheckResult(kind=kind, chance=chance, roll=r, ok=r <= chance)

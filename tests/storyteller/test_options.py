@@ -9,7 +9,7 @@ import pytest
 
 from tianlong.kernel import actions, danger
 from tianlong.llm import JevError
-from tianlong.storyteller import common, options, threads
+from tianlong.storyteller import common, options, speaking, threads
 from tianlong.storyteller.options import Option, note_action, note_choice, pick_options
 
 from .conftest import calls
@@ -26,12 +26,18 @@ def _assert_basic(w, opts: list[Option]) -> None:
     assert len(opts) == 3
     tags = [o.tag for o in opts]
     assert len(set(tags)) == 3, tags
-    sigs = [o.action.signature for o in opts]
-    assert len(set(sigs)) == 3
+    sigs = [o.signature for o in opts]
+    assert len(set(sigs)) == 3 and len({o.id for o in opts}) == 3
     for o in opts:
         assert o.tag in options.TAGS
         assert not o.action.lethal
         assert actions.is_legal(w.s, w.defs, o.action) is not None
+        if o.speech is None:
+            assert o.signature == o.action.signature and o.desc == o.action.desc and o.id == o.action.id
+        else:  # 开口的选项：动作是 1 刻的 wait，那句话此刻说得出口
+            assert o.action.verb == "wait" and o.action.params == {"ticks": 1}
+            assert o.signature.startswith("say:") and o.id.startswith("s")
+            assert speaking.sayable(w.s, w.defs, o.speech)
 
 
 async def test_opening_has_intervene_when_bout_is_open(llm, w):
@@ -90,12 +96,12 @@ async def test_no_unknown_proper_names_in_option_text(llm, w):
     for name in UNKNOWN_AT_START:
         assert name in unknown
     for o in cands:
-        shown = common.pv(w.s, w.defs, o.action.desc)
+        shown = common.pv(w.s, w.defs, o.desc)
         assert not any(n in shown for n in UNKNOWN_AT_START), shown
         assert "⟦" not in shown and "out_" not in shown
     opts = await _opts(llm, w)
     for o in opts:
-        shown = common.pv(w.s, w.defs, o.action.desc)
+        shown = common.pv(w.s, w.defs, o.desc)
         assert not any(n in shown for n in unknown), shown
 
 
@@ -110,7 +116,8 @@ def test_name_check_catches_raw_names(w):
 def test_items_carried_by_others_need_to_be_seen(w):
     sigs = {o.action.signature for o in options.candidates(w.s, w.defs)[1]}
     steal = actions.signature("steal", {"item": "woodshed_key", "target": "wu_guangsheng"})
-    assert steal in {a.signature for a in actions.legal_actions(w.s, w.defs, w.s.player)}
+    # 内核自己就不列看不见的东西了（wave 3 的 K9）；细看过那人之后才合法
+    assert steal not in {a.signature for a in actions.legal_actions(w.s, w.defs, w.s.player)}
     assert steal not in sigs
     w.fx([{"mark": ["examined", "char:wu_guangsheng"]}])
     sigs = {o.action.signature for o in options.candidates(w.s, w.defs)[1]}
@@ -131,12 +138,12 @@ async def test_last_chosen_action_excluded(llm, w):
     chosen = opts[0]
     note_choice(w.s, w.defs, chosen)
     again = await _opts(llm, w)
-    assert chosen.action.signature not in {o.action.signature for o in again}
+    assert chosen.signature not in {o.signature for o in again}
     assert len(again) == 3
     # 下一回合：不再排除，但近三回合选过同一动词与对象，扣 15
     w.s.turn += 1
     _, cands = options.candidates(w.s, w.defs)
-    same = next(o for o in cands if o.action.signature == chosen.action.signature)
+    same = next(o for o in cands if o.signature == chosen.signature)
     assert same.rule == pytest.approx(chosen.rule - 15)
 
 
@@ -145,7 +152,7 @@ async def test_note_action_for_free_input(llm, w):
     note_action(w.s, w.defs, a)
     assert w.s.storyteller["last_chosen"]["sig"] == a.signature
     opts = await _opts(llm, w)
-    assert a.signature not in {o.action.signature for o in opts}
+    assert a.signature not in {o.signature for o in opts}
 
 
 async def test_j4_failure_still_three_options(llm, w, monkeypatch):
@@ -194,7 +201,7 @@ async def test_bound_player_gets_what_there_is(llm, w):
 async def test_offered_options_are_booked(llm, w):
     opts = await _opts(llm, w)
     offered = w.s.storyteller["offered"]
-    assert [x["sig"] for x in offered] == [o.action.signature for o in opts]
+    assert [x["sig"] for x in offered] == [o.signature for o in opts]
     assert isinstance(opts[0].to_pending(), dict)
 
 

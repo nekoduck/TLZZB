@@ -240,6 +240,8 @@ def test_use_food_antidote_poison(w: World) -> None:
 
 
 def test_steal_ok_and_caught(w: World, dice) -> None:  # type: ignore[no-untyped-def]
+    assert w.build("player", "steal", item="token", target="guest") is None  # 没看见过的东西无从下手（K9）
+    w.act("player", "examine", target="guest")
     dice(1)
     evs = w.act("player", "steal", item="token", target="guest")
     assert w.s.items["token"].holder == "player" and set(evs[0].witnesses) == {"player"}

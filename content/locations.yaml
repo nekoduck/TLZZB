@@ -66,7 +66,7 @@ mountain_path:
   exits:
     - {to: jianhu_gate, cost: 6}
     - {to: shennong_camp, cost: 6}
-    - {to: crag_foot, cost: 16}
+    - {to: crag_foot, cost: 24}
     - {to: out_east, cost: 24, edge: true}
   features:
     checkpoint: {name: 路卡, desc: 路当中横着几根木头，拦出一个只容一人过的口子。, cover: 5}
@@ -284,7 +284,7 @@ crag_foot:
   loud_to: [high_crag, highroad]
   exits:
     - {to: highroad, cost: 16}
-    - {to: mountain_path, cost: 16}
+    - {to: mountain_path, cost: 24}
     - {to: high_crag, cost: 6}
   features:
     cold_pool: {name: 冷水潭, desc: 一汪冷水，水色发暗，潭边的石头上有些细碎的爪痕。, contains: [mangu_zhuha]}

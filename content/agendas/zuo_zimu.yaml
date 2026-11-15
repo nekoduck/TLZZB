@@ -15,13 +15,13 @@ steps:
     start: 48
     takes: 40
   - id: zz_receive_envoy
-    text: 圣使到了，出来迎候
+    text: 圣使到了，回练武厅恭候
     at: jianhu_hall
-    do: {verb: say, act: greet, to: envoy_lingjiu}
+    do: {verb: wait}
     pre: {all: [{onstage: envoy_lingjiu}, {alive: envoy_lingjiu}]}
-    start: 224
+    start: 232
     deadline: 520
-    takes: 2
+    takes: 40
   - id: zz_keep_house
     text: 料理门中的事
     at: jianhu_hall

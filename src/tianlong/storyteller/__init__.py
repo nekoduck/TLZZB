@@ -5,8 +5,7 @@
     storyteller.note_choice(state, defs, option)             # 玩家选了哪个（下回合不再给同一个）
     storyteller.pacing.record_turn(state, defs, events)      # 每回合末：张力与停滞的计数
     events = await storyteller.pace(llm, state, defs)        # 停滞时出一张机会牌（J6）
-    storyteller.chronicle.record(state, defs, events)        # 年谱
-    storyteller.chronicle.check_divergences(state, defs)     # 每个时辰对照一次参照点
+    storyteller.chronicle.record(state, defs, events)        # 年谱（含 world.tick 认定的分岔，只读 state.divergences）
     async for piece in storyteller.epilogue(llm, state, defs): ...   # 后事（C7）＋分岔清单
 
 只 import kernel、llm、prompting；所有状态改动都经效果（thread / close_thread / teller / chronicle /

@@ -57,6 +57,7 @@ class ReplayJev(JevClient):
         *,
         hints: Mapping[str, Any] | None = None,
         escalated: bool = False,
+        timeout_s: float | None = None,  # 重放不计时：录制里超时的那一次照样抛 JevTimeout
     ) -> Answers:
         spec = self.spec(kind)
         body = self.build_request(spec, state, questions)

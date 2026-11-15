@@ -14,7 +14,15 @@ from typing import Any
 from tianlong.kernel import invariants, mood, predicates, refs
 from tianlong.kernel.actions import VERBS
 from tianlong.kernel.defs import Defs
-from tianlong.kernel.effects import CHECK_KINDS, EFFECT_SHAPES
+from tianlong.kernel.effects import (
+    CHAR_MARKS,
+    CHECK_KINDS,
+    EFFECT_SHAPES,
+    FACT_KEYS,
+    REQUEST_KEYS,
+    REQUEST_KINDS,
+    REQUEST_STATUSES,
+)
 from tianlong.kernel.predicates import (
     OPS,
     PREDICATE_SHAPES,
@@ -23,6 +31,7 @@ from tianlong.kernel.predicates import (
     STAT_FIELDS,
     STEP_STATES,
 )
+from tianlong.kernel.speech import ACTS as SPEECH_ACTS
 from tianlong.kernel.state import WorldState
 
 SPECIALS = ("self", "player")
@@ -45,6 +54,10 @@ STEP_DO_KEYS = {
     "ticks",
     "hours",
 }
+
+
+# 底线的 block 里除 verb / act / fact_tag / target / when 之外还能写的键：与动作参数同名
+BLOCK_PARAM_KEYS = {"art", "item", "intent", "exit", "feature", "target2", "name", "situation", "fact", "to"}
 
 
 class _Checker:
@@ -130,6 +143,16 @@ class _Checker:
         elif kind == "marklist":
             if v not in ("visited", "examined"):
                 self.err(where, f"bad mark list {v!r}")
+        elif kind == "charmark":
+            if v not in CHAR_MARKS:
+                self.err(where, f"mark_char: {v!r} is not a bookkeeping field {CHAR_MARKS}")
+        elif kind == "options":
+            if v is not None and (not isinstance(v, list) or not all(isinstance(x, dict) for x in v)):
+                self.err(where, f"offer: expects a list of mappings, got {v!r}")
+        elif kind == "requestdef":
+            self.request(v, where, roles)
+        elif kind == "factdef":
+            self.factdef(v, where, roles)
         elif kind == "any":
             return
         elif kind == "opts?":
@@ -248,6 +271,8 @@ class _Checker:
             if not isinstance(arg, dict) or arg.get("kind") not in CHECK_KINDS:
                 self.err(w, f"check needs a kind in {CHECK_KINDS}")
                 return
+            if not isinstance(arg.get("adverse", False), bool):
+                self.err(w, f"check.adverse must be true or false, got {arg.get('adverse')!r}")
             if "who" in arg:
                 self.ref("char", arg["who"], f"{w}.who", roles)
             sub = set(roles or set()) | {"checked"} if roles is not None else None
@@ -274,6 +299,94 @@ class _Checker:
                 self.err(w, f"bad end reason {arg!r}")
         else:
             self.ref(shape, arg, w, roles)
+
+    def request(self, v: Any, where: str, roles: set[str] | None) -> None:
+        """效果 ``request`` 的参数：{frm, to, action: {verb, params}, kind?, …}。"""
+        if not isinstance(v, dict):
+            self.err(where, f"request must be a mapping, got {v!r}")
+            return
+        extra = set(v) - REQUEST_KEYS
+        if extra:
+            self.err(where, f"request has unknown keys {sorted(extra)}")
+        self.ref("char", v.get("frm", "self"), f"{where}.frm", roles)
+        self.ref("char", v.get("to"), f"{where}.to", roles)
+        kind = v.get("kind", "request")
+        if kind not in REQUEST_KINDS:
+            self.err(where, f"bad request kind {kind!r}")
+        if kind != "question":
+            self.ask(v.get("action"), f"{where}.action", roles)
+        if v.get("status") is not None and v["status"] not in REQUEST_STATUSES:
+            self.err(where, f"bad request status {v['status']!r}")
+        if v.get("status") == "countered":
+            self.ask(v.get("condition"), f"{where}.condition", roles)
+        for x in v.get("evidence") or []:
+            self.ref("item", x, f"{where}.evidence", roles)
+        for x in v.get("fact_refs") or []:
+            self.ref("fact", x, f"{where}.fact_refs", roles)
+        if v.get("attempts") is not None:
+            self.ref("int", v["attempts"], f"{where}.attempts", roles)
+        if v.get("leverage") is not None and not isinstance(v["leverage"], dict):
+            self.err(where, f"request.leverage must be a mapping, got {v['leverage']!r}")
+
+    def ask(self, a: Any, where: str, roles: set[str] | None) -> None:
+        """所求之事 / 还价的条件：{verb, params}。"""
+        if not isinstance(a, dict) or a.get("verb") not in VERBS:
+            self.err(where, f"needs {{verb, params}} with a verb from the verb table, got {a!r}")
+            return
+        params = a.get("params") or {}
+        if not isinstance(params, dict):
+            self.err(where, f"params must be a mapping, got {params!r}")
+            return
+        for k in ("target", "target2"):
+            if k in params:
+                self.ref("char", params[k], f"{where}.params.{k}", roles)
+        if "item" in params:
+            self.ref("item", params["item"], f"{where}.params.item", roles)
+        if "art" in params:
+            self.ref("art", params["art"], f"{where}.params.art", roles)
+
+    def factdef(self, v: Any, where: str, roles: set[str] | None) -> None:
+        """效果 ``fact`` 的参数：{id, text, tags?, gossip?, contradicts?, known_by?}。"""
+        if not isinstance(v, dict) or not isinstance(v.get("id"), str) or not isinstance(v.get("text"), str):
+            self.err(where, "fact needs {id, text}")
+            return
+        extra = set(v) - FACT_KEYS
+        if extra:
+            self.err(where, f"fact has unknown keys {sorted(extra)}")
+        for name in refs.ROLE_RE.findall(v["text"]):
+            if roles is not None and name not in roles and name != "self":
+                self.err(where, f"text uses unknown role {{{name}}}")
+        for eid in refs.refs_in(v["text"]):
+            self._entity(eid, where)
+        for x in v.get("known_by") or []:
+            self.ref("char", x, f"{where}.known_by", roles)
+
+    def block(self, b: Any, where: str) -> None:
+        """人物底线的一条 block（匹配规则见 kernel/bottom.py）：每个键都要是认得的东西。"""
+        roles = {"target", "requester"}
+        if b.verb not in VERBS:
+            self.err(where, f"unknown verb {b.verb!r}")
+        if b.act is not None:
+            if b.verb == "attack" and b.act not in ("injure", "kill"):
+                self.err(where, f"attack block: act must be injure or kill, got {b.act!r}")
+            elif b.verb == "say" and b.act not in SPEECH_ACTS:
+                self.err(where, f"say block: unknown speech act {b.act!r}")
+        if b.target is not None:
+            self.ref("char", b.target, f"{where}.target", roles)
+        if b.fact_tag is not None and not any(b.fact_tag in f.tags for f in self.state.facts.values()):
+            self.err(where, f"no fact carries the tag {b.fact_tag!r}")
+        for key, raw in (b.model_extra or {}).items():
+            for v in raw if isinstance(raw, list) else [raw]:
+                if key == "art":
+                    self.ref("art", v, f"{where}.art", roles)
+                elif key == "item":
+                    self.ref("item", v, f"{where}.item", roles)
+                elif key == "intent":
+                    if v not in ("injure", "kill"):
+                        self.err(where, f"intent must be injure or kill, got {v!r}")
+                elif key not in BLOCK_PARAM_KEYS:
+                    self.err(where, f"unknown key {key!r} (it would never match an action parameter)")
+        self.pred(b.when, f"{where}.when", roles)
 
     def step(self, sd: Any, where: str, roles: set[str] | None = None) -> None:
         if not isinstance(sd, dict):
@@ -438,11 +551,7 @@ def validate(defs: Defs, state: WorldState) -> list[str]:
             c.err(f"characters/{cid}", "card not placed in the world")
         for i, bl in enumerate(card.bottom_lines):
             for j, b in enumerate(bl.blocks):
-                if b.verb not in VERBS:
-                    c.err(f"characters/{cid}.bottom_lines[{i}].blocks[{j}]", f"unknown verb {b.verb!r}")
-                c.pred(
-                    b.when, f"characters/{cid}.bottom_lines[{i}].blocks[{j}].when", {"target", "requester"}
-                )
+                c.block(b, f"characters/{cid}.bottom_lines[{i}].blocks[{j}]")
     for sid, d in defs.situations.items():
         w = f"situations/{sid}"
         roles = set(d.roles)
@@ -480,6 +589,9 @@ def validate(defs: Defs, state: WorldState) -> list[str]:
             c.err("opening.term_alias", f"unknown entity {t!r}")
     for i, m in enumerate(defs.baseline):
         c.pred(m.holds, f"baseline[{i}].holds")
+    for r in defs.world.request.sect_roles or []:
+        if not isinstance(r, str) or not r:
+            c.err("world.request.sect_roles", f"expected a role name, got {r!r}")
     _raw_tables(c)
     for p in invariants.check(s, defs):
         c.err("invariant", p)

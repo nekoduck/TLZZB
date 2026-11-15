@@ -36,7 +36,10 @@ def test_move_takes_followers_along(w: World) -> None:
     )
     assert w.c("player").loc == "yard"
     assert "yard" in w.s.visited
-    assert any(e.verb == "follow" and e.actor == "player" for e in evs)
+    moved = [e for e in evs if e.verb == "follow_move" and e.actor == "player"]  # K8：换了地方，不叫 follow
+    assert len(moved) == 1 and moved[0].loc == "yard"
+    assert moved[0].params == {"target": "guest", "exit": "yard", "from": "hall"}
+    assert not any(e.verb == "follow" for e in evs)
 
 
 def test_give_spawn_remove(w: World) -> None:

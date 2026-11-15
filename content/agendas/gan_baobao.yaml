@@ -7,12 +7,12 @@ steps:
     pre: {not: {status: [self, captive]}}
     takes: 200
   - id: gb_hear_news
-    text: 有人来报女儿的消息，问明经过
+    text: 得了女儿被扣的消息，守在厅上等回音
     at: zhong_hall
-    do: {verb: say, act: ask}
-    pre: {knows: [self, F_zhong_ling_held]}
+    do: {verb: wait}
+    pre: {all: [{knows: [self, F_zhong_ling_held]}, {alive: zhong_ling}]}
     deadline: 480
-    takes: 2
+    takes: 96
   - id: gb_wait_daughter
     text: 等女儿平安回来
     at: zhong_hall

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class _Out(BaseModel):
@@ -172,8 +172,27 @@ class CardQuote(_Out):
 
 
 class CardChoice(_Out):
-    text: str = Field(description='用自己的话概括的一次抉择')
-    para: str
+    """人物卡里的一次抉择（方案 5.4 的 choices）：处境与做法两栏，另注出处。"""
+
+    situation: str = Field(description='用自己的话写的处境，一句')
+    did: str = Field(description='用自己的话写的做法，一句')
+    para: str | None = Field(description='原文里这次抉择所在的段落编号，如 ch02_p0031；说不准为 null')
+
+    @model_validator(mode='before')
+    @classmethod
+    def _legacy_text(cls, data: object) -> object:
+        """旧写法只有一句 `text`：当作做法，处境留空。"""
+        if isinstance(data, dict) and 'text' in data and 'did' not in data:
+            data = dict(data)
+            data['did'] = data.pop('text')
+            data.setdefault('situation', '')
+            data.setdefault('para', None)
+        return data
+
+    @property
+    def text(self) -> str:
+        """一句话的说法（旧字段名）：「处境：做法」。"""
+        return f'{self.situation}：{self.did}' if self.situation else self.did
 
 
 class CharacterCardDraft(_Out):  # P4

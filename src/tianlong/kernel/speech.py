@@ -15,7 +15,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from tianlong.kernel import beliefs, danger, effects, events, mood, perception, predicates, refs
+from tianlong.kernel import beliefs, bottom, danger, effects, events, mood, perception, predicates, refs
 from tianlong.kernel.defs import BlockDef, Defs
 from tianlong.kernel.state import (
     TICKS_PER_DAY,
@@ -95,6 +95,7 @@ MAX_FACTS = 8
 ORDER_BONUS = 60
 PROMISE_DAYS = 1
 EVIDENCE_WINDOW = 16  # 出示信物在多少刻之内算数
+DETAIL = "weak:detail:"  # 说得出当事人才知道的细节：一桩请求只算一次
 ALERT_TICKS = 2
 
 
@@ -121,10 +122,7 @@ def audience(state: WorldState, speaker: Character) -> list[Character]:
 
 
 def _card_blocks(defs: Defs, c: Character) -> list[BlockDef]:
-    card = defs.card_for(c.persona) or defs.cards.get(c.id)
-    if card is None:
-        return []
-    return [b for bl in card.bottom_lines for b in bl.blocks]
+    return bottom.card_blocks(defs, c)
 
 
 def say_blocked(
@@ -136,26 +134,30 @@ def say_blocked(
     fact: str | None = None,
     to: list[str] | None = None,
 ) -> bool:
-    """人物底线是否禁止这句话（verb 为 say 的 blocks）。"""
-    for b in _card_blocks(defs, c):
-        if b.verb != "say":
-            continue
-        if b.act is not None and b.act != act:
-            continue
-        if b.fact_tag is not None:
-            f = state.facts.get(fact or "")
-            if f is None or b.fact_tag not in f.tags:
+    """人物底线是否禁止这句话（verb 为 say 的 blocks；匹配规则见 ``kernel/bottom.py``）。"""
+    return bottom.blocked(state, defs, c, "say", {"act": act, "fact": fact}, to=to)
+
+
+def holds_captive(state: WorldState, holder: Character) -> bool:
+    """holder（或听命于他的人）在这里扣着人：同处一地、被捆或被看押、来源是他或他的手下。"""
+    for o in perception.present(state, holder.loc, exclude=holder.id):
+        for st in o.statuses:
+            if st.kind not in ("captive", "bound") or not st.source:
                 continue
-        if b.target is not None:
-            t = predicates.resolve_id(b.target, state, Ctx(self_id=c.id))
-            if not to or t not in to:
-                continue
-        target = to[0] if to else None
-        ctx = Ctx(self_id=c.id, roles={"target": target} if target else {})
-        if b.when is not None and not predicates.holds(state, defs, b.when, ctx):
-            continue
-        return True
+            src = state.chars.get(st.source)
+            if st.source == holder.id or (src is not None and src.superior == holder.id):
+                return True
     return False
+
+
+def can_plead_to(state: WorldState, speaker: Character, target: Character) -> bool:
+    """求饶、求情（6.6）：对方对自己有敌意；或对在场的另一个人有敌意；或手里扣着人（K17：替别人求情）。"""
+    if danger.is_hostile(state, target, speaker.id):
+        return True
+    for o in perception.present(state, speaker.loc, exclude=speaker.id):
+        if o.id != target.id and danger.is_hostile(state, target, o.id):
+            return True
+    return holds_captive(state, target)
 
 
 def open_requests_to(state: WorldState, cid: str) -> list[Request]:
@@ -183,7 +185,7 @@ def available_acts(state: WorldState, defs: Defs, c: Character) -> list[str]:
         acts.append("refuse")
     if any(r.kind != "question" and r.status == "open" and r.verdict == "conditional" for r in to_me):
         acts.append("bargain")
-    if any(danger.is_hostile(state, o, c.id) for o in others):
+    if any(can_plead_to(state, c, o) for o in others):
         acts.append("plead")
     if any(o.superior == c.id for o in others):
         acts.append("order")
@@ -311,36 +313,52 @@ def classify_request(state: WorldState, defs: Defs, frm: str, to: str, action: d
 
 
 def request_blocked(state: WorldState, defs: Defs, r: Request) -> bool:
-    """所求之事撞上对方的底线：never。"""
+    """所求之事撞上对方的底线：never。与 ``legal_actions`` 用同一套匹配（``kernel/bottom.py``）。
+
+    所求之事没写对象时，对象按提出请求的人算（「教我」「帮我」「给我」）；``$requester`` 指提出请求的人。
+    """
     to = state.chars.get(r.to)
     if to is None:
         return True
-    verb = r.action.get("verb")
-    params = r.action.get("params") or {}
-    target = params.get("target")
-    for b in _card_blocks(defs, to):
-        if b.verb != verb:
-            continue
-        if verb == "say":
-            if b.act is not None and b.act != params.get("act", "tell"):
-                continue
-            if b.fact_tag is not None:
-                f = state.facts.get(params.get("fact", ""))
-                if f is None or b.fact_tag not in f.tags:
-                    continue
-        ctx = Ctx(
-            self_id=to.id, roles={"target": target, "requester": r.frm} if target else {"requester": r.frm}
-        )
-        if b.target is not None and predicates.resolve_id(b.target, state, ctx) != target:
-            continue
-        if b.when is not None and not predicates.holds(state, defs, b.when, ctx):
-            continue
-        return True
-    return False
+    verb = str(r.action.get("verb") or "")
+    params = dict(r.action.get("params") or {})
+    if verb == "say":
+        heard = params.get("to") or params.get("target") or r.frm
+        listeners = [heard] if isinstance(heard, str) else [str(x) for x in heard]
+        return bottom.blocked(state, defs, to, verb, params, to=listeners, requester=r.frm)
+    if not params.get("target"):
+        params["target"] = r.frm
+    return bottom.blocked(state, defs, to, verb, params, requester=r.frm)
+
+
+def request_entities(state: WorldState, frm: Character, to: Character, action: dict | None) -> set[str]:
+    """一桩请求牵涉到的实体：双方、双方所在的地点、所求之事的各个参数。"""
+    out = {frm.id, to.id, frm.loc, to.loc}
+    for v in ((action or {}).get("params") or {}).values():
+        if isinstance(v, str):
+            out.add(v)
+        elif isinstance(v, list | tuple):
+            out.update(str(x) for x in v if isinstance(x, str))
+    return out
+
+
+def relevant_detail(state: WorldState, frm: Character, to: Character, sp: Speech, fid: str) -> bool:
+    """「说得出当事人才知道的细节」（6.6 的弱凭据）：说者自己相信、又与所求之事相干的一条事实。
+
+    相干＝这条事实提到了这桩请求牵涉的人、物、地点、本事（``request_entities``）。
+    """
+    b = frm.beliefs.get(fid)
+    f = state.facts.get(fid)
+    if b is None or f is None or b.confidence < predicates.BELIEVE:
+        return False
+    return bool(set(refs.refs_in(f.text)) & request_entities(state, frm, to, sp.ask_action))
 
 
 def gather_evidence(state: WorldState, defs: Defs, frm: Character, to: Character, sp: Speech) -> list[str]:
-    """强凭据：出示信物；对方亲眼见过。弱凭据：对方已知的事；有第三者作证。"""
+    """强凭据：出示信物；对方亲眼见过。弱凭据：对方已知的事；有第三者作证；说得出当事人才知道的细节。
+
+    最后一种一桩请求只算一次（``weak:detail:<事实>``），免得靠罗列琐事堆分。
+    """
     out: list[str] = []
     for iid in sp.evidence:
         it = state.items.get(iid)
@@ -366,6 +384,8 @@ def gather_evidence(state: WorldState, defs: Defs, frm: Character, to: Character
             (ob := o.beliefs.get(fid)) is not None and ob.confidence >= predicates.BELIEVE for o in others
         ):
             out.append(f"weak:witness:{fid}")
+        elif not any(e.startswith(DETAIL) for e in out) and relevant_detail(state, frm, to, sp, fid):
+            out.append(f"{DETAIL}{fid}")
     return out
 
 
@@ -432,7 +452,10 @@ def make_request(
     old = _same_request(state, frm.id, to.id, kind, action)
     nag = False
     if old is not None and old.status != "agreed":
-        new_ev = [e for e in evidence if e not in old.evidence]
+        had_detail = any(e.startswith(DETAIL) for e in old.evidence)
+        new_ev = [
+            e for e in evidence if e not in old.evidence and not (had_detail and e.startswith(DETAIL))
+        ]
         if new_ev or lev > old.leverage:
             old.evidence.extend(new_ev)
             old.leverage = max(old.leverage, lev)
@@ -505,8 +528,85 @@ def gist_for(sp: Speech, speaker: str, state: WorldState) -> str:
     if act == "greet":
         return f"自称⟦{speaker}⟧"
     if act in REQUEST_ACTS and sp.ask_action:
-        return f"想让对方{sp.ask_action.get('verb', '')}"
+        return "想让对方" + ask_phrase(sp.ask_action, speaker)
     return ""
+
+
+# 所求之事的说法（K19）：给人看的要旨里不出现动词的英文名。{target}、{item} 等缺了就退回动词的中文标签。
+_ASK_PHRASES: dict[str, str] = {
+    "go": "往{exit}去",
+    "flee": "逃往{exit}",
+    "follow": "跟着{target}走",
+    "examine": "细看{obj}",
+    "take": "拿起{item}",
+    "drop": "放下{item}",
+    "give": "把{item}交给{target}",
+    "show": "把{item}拿出来给{target}看",
+    "use": "用{item}",
+    "steal": "去偷{item}",
+    "help": "照料{target}",
+    "restrain": "拿住{target}",
+    "release": "放了{target}",
+    "attack": "对{target}动手",
+    "block": "拦住{target}",
+    "push": "推开{target}",
+    "study": "学{art}",
+    "practice": "练{art}",
+    "teach": "传授{art}",
+}
+_ASK_PLAIN: dict[str, str] = {
+    "go": "离开这里",
+    "flee": "快逃",
+    "follow": "跟着走",
+    "hide": "躲起来",
+    "look": "四下看看",
+    "listen": "仔细听听",
+    "search": "找一找",
+    "say": "开口说话",
+    "give": "把东西交出来",
+    "show": "把东西拿出来看看",
+    "help": "帮一把",
+    "release": "放人",
+    "attack": "动手",
+    "teach": "传授本事",
+    "study": "学本事",
+    "wait": "等一等",
+    "rest": "歇一歇",
+    "struggle": "挣脱",
+    "setpiece": "做一件事",
+}
+
+
+def ask_phrase(ask: dict, speaker: str | None = None) -> str:
+    """所求之事的一句中文说法，实体写成 ``⟦id⟧``；对象是说话的人自己时写「自己」。"""
+    from tianlong.kernel import actions, growth
+
+    verb = str(ask.get("verb") or "")
+    params = ask.get("params") or {}
+
+    def ent(key: str) -> str | None:
+        v = params.get(key)
+        if not isinstance(v, str) or not v:
+            return None
+        if speaker is not None and v == speaker:
+            return "自己"
+        if key == "art" and v == growth.LITERACY:
+            return "识字"
+        return refs.ref(v)
+
+    fields = {k: ent(k) for k in ("target", "item", "art", "exit")}
+    fields["obj"] = fields["target"] or fields["item"]
+    tpl = _ASK_PHRASES.get(verb)
+    if tpl is not None:
+        need = [k for k in fields if "{" + k + "}" in tpl]
+        if all(fields[k] for k in need):
+            return tpl.format(**{k: fields[k] for k in need})
+    if verb == "say" and isinstance(params.get("about"), str) and params["about"]:
+        return f"说一说{refs.ref(params['about'])}的事"
+    if verb in _ASK_PLAIN:
+        return _ASK_PLAIN[verb]
+    spec = actions.VERBS.get(verb)
+    return spec.label if spec is not None else "做一件事"
 
 
 def _fact_text(sp: Speech, speaker: str, gist: str) -> str:
@@ -574,8 +674,8 @@ def process(
     reply_events: list[Event] = []
     # 请求类：先建请求，事件里带上它的 id
     if sp.act in REQUEST_ACTS:
-        if sp.act == "plead" and not danger.is_hostile(state, target, c.id):
-            log_violation(state, f"plead dropped: {target.id} is not hostile to {speaker_id}")
+        if sp.act == "plead" and not can_plead_to(state, c, target):
+            log_violation(state, f"plead dropped: {target.id} is hostile to nobody here and holds no one")
             return []
         if sp.act == "order" and target.superior != c.id:
             log_violation(state, f"order dropped: {target.id} does not obey {speaker_id}")
@@ -650,14 +750,16 @@ def process(
         listeners = [x for x in listeners if x.id in sp.to]
     extra: list[dict] = []
     judgements: dict[str, list[str]] = {}
-    if sp.act in ("tell", "warn"):
-        beneficial = any(
+    # 断言：不论哪种言语行为，话里夹带的断言都按 6.7 判（K16）。告知、示警没写 claims 时，
+    # 所引的事实各算一条为真的断言；其余行为只判明写出来的 claims（请求里夹带的话）。
+    claims = [] if sp.act == "lie" else list(sp.claims)
+    if not claims and sp.act in ("tell", "warn"):
+        claims = [_claim(state, f) for f in sp.fact_refs]
+    if claims:
+        beneficial = sp.act in REQUEST_ACTS or any(
             r.frm == c.id and r.to in sp.to and r.status == "open" for r in state.requests.values()
         )
         shown = bool(sp.evidence)
-        claims = list(sp.claims)
-        if not claims:
-            claims = [_claim(state, f) for f in sp.fact_refs]
         for li in listeners:
             for cl in claims:
                 before = li.beliefs.get(cl.ref or "")

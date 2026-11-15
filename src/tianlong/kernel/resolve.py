@@ -192,9 +192,29 @@ def apply(
     speech: Speech | None = None,
     *,
     source: str,
+    offscreen: bool = False,
 ) -> list[Event]:
-    """结算一个身体动作加一句话（先话后动作）。不变量失败则整体回滚，返回空表。"""
-    return _guarded(state, defs, action.signature, lambda: _apply(state, defs, action, speech, source))
+    """结算一个身体动作加一句话（先话后动作）。不变量失败则整体回滚，返回空表。
+
+    ``offscreen=True``：这是离场结算出来的（world 替不在玩家眼前的人走的一步），
+    这次结算产生的事件全部标上 ``offscreen``（K6）。
+
+    玩家第一次尝试致命动作时只出一条警示事件，局面不变（2.4、6.10）：连同这一回合要说的话也不结算
+    （K13）。叙述只拿到警示；玩家再说一遍、或再做一遍，才真的发生。
+    """
+    first = state.next_event_id
+    evs = _guarded(state, defs, action.signature, lambda: _apply(state, defs, action, speech, source))
+    if offscreen:
+        mark_offscreen(state, first)
+    return evs
+
+
+def mark_offscreen(state: WorldState, first_id: int) -> None:
+    """把 id 不小于 ``first_id`` 的事件标成离场结算出来的。"""
+    for ev in reversed(state.events_tail):
+        if ev.id < first_id:
+            break
+        ev.offscreen = True
 
 
 def run_effects(
@@ -282,6 +302,7 @@ def _apply(
         return []
     out: list[Event] = []
     # 玩家的致命动作：先警示，局面不变（2.4、6.10）。致命与否按此刻的状态重算。
+    # 这一回合要说的话也一并不结算（K13）：局面不变，叙述只拿到这条警示。
     fresh = actions.is_legal(state, defs, action)
     lethal = fresh.lethal if fresh is not None else action.lethal
     if source == "player" and lethal and action.signature not in state.warned:
@@ -441,7 +462,9 @@ class R:
         me = self.me
         pre = list(pre or [])
         if e.edge:
-            effs = pre + [self.say(f"⟦{me}⟧往⟦{e.to}⟧去了，走出了这一带"), {"leave": me}]
+            known = refs.lookup(self.state, self.defs, e.to) is not None
+            gone = f"⟦{me}⟧往⟦{e.to}⟧去了，走出了这一带" if known else f"⟦{me}⟧走出了这一带"
+            effs = pre + [self.say(gone), {"leave": me}]
             if me == self.state.player:
                 effs.append({"end": "left"})
             return self.fx(effs)
@@ -946,4 +969,15 @@ class R:
         return evs
 
 
-__all__ = ["apply", "run_effects", "resolve_action", "snapshot", "Snapshot", "R", "ActionInst", "Claim"]
+__all__ = [
+    "apply",
+    "run_effects",
+    "settle_offscreen",
+    "resolve_action",
+    "mark_offscreen",
+    "snapshot",
+    "Snapshot",
+    "R",
+    "ActionInst",
+    "Claim",
+]

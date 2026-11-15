@@ -1,5 +1,6 @@
 # 段誉开局时的打算（方案 3.3）。每一步的 pre 是它真正的前提：前提不成立，这一步作废，他重新打算。
 # 坠崖与谷底的事不在他的计划里，由情境 caught_eloping、cave_find 发生。
+# 没有「在营里听候发落」这样按时辰数的一步：被扣住的人走不了，下一步自然等到放他上路的那一刻。
 goal: 游山玩水；见人相杀就要劝；中了毒就设法取回解药
 steps:
   - id: dy_watch_bout
@@ -20,14 +21,18 @@ steps:
     start: 40
     deadline: 192
     takes: 2
-  - id: dy_held
-    text: 被神农帮扣在营里，听候发落
-    at: shennong_camp
+  - id: dy_leave_camp
+    text: 被逼服了毒，从后山小径往善人渡赶
+    at: ferry_bridge
     do: {verb: wait}
-    pre: {any: [{status: [self, captive]}, {status: [self, poisoned_duanchang]}]}
-    takes: 24
+    pre:                                        # 没中毒、没有人质押在那里，他就没有理由赶这趟路
+      all:
+        - {status: [self, poisoned_duanchang]}
+        - {status: [zhong_ling, captive]}
+    deadline: 480
+    takes: 1
   - id: dy_errand_wanjie
-    text: 服了毒，去万劫谷报信，取解药换回人质
+    text: 到万劫谷报信，取解药换回人质
     at: zhong_hall
     do: {verb: say, act: tell, to: gan_baobao, fact: F_zhong_ling_held}
     pre:                                        # 这几条有一条不成立，他就没有理由去
@@ -48,6 +53,7 @@ steps:
         - {knows: [self, F_mu_lodging]}
         - {alive: mu_wanqing}
         - {at: [mu_wanqing, mu_house]}
+        - {has: [mu_wanqing, black_rose]}
     takes: 2
     offscreen:
       - {give: [mu_wanqing, self, black_rose]}
@@ -60,9 +66,8 @@ steps:
     takes: 8
   - id: dy_warn_mu
     text: 路上遇伏，掉头回去给木姑娘报信
-    at: mu_house
     do: {verb: say, act: warn, to: mu_wanqing, fact: F_mu_hunted}
-    pre: {all: [{knows: [self, F_mu_hunted]}, {alive: mu_wanqing}]}
+    pre: {all: [{knows: [self, F_mu_hunted]}, {alive: mu_wanqing}, {same_loc: [self, mu_wanqing]}]}
     takes: 1
     offscreen:
       - {rel: [mu_wanqing, self, trust, 20]}
@@ -70,17 +75,20 @@ steps:
       - {emit: {actor: self, verb: warn, text: '{self}折回来，告诉⟦mu_wanqing⟧有人在路上等着截她'}}
   - id: dy_hold_crag
     text: 跟着木姑娘突围，退上高崖
-    at: high_crag
     do: {verb: follow, target: mu_wanqing}
     pre: {all: [{alive: mu_wanqing}, {same_loc: [self, mu_wanqing]}]}
     takes: 48
   - id: dy_back_wuliang
     text: 随木姑娘回无量山，向神农帮讨解药
-    at: shennong_camp
-    do: {verb: say, act: request, to: sikong_xuan}
-    pre: {all: [{status: [self, poisoned_duanchang]}, {alive: sikong_xuan}, {not: {status: [self, captive]}}]}
+    do: {verb: follow, target: mu_wanqing}
+    pre:
+      all:
+        - {status: [self, poisoned_duanchang]}
+        - {alive: mu_wanqing}
+        - {same_loc: [self, mu_wanqing]}
+        - {alive: sikong_xuan}
     start: 300
-    takes: 2
+    takes: 48
   - id: dy_take_antidote
     text: 服下断肠散的解药
     do: {verb: use, item: duanchang_antidote}
@@ -94,18 +102,18 @@ steps:
       all:
         - {status: [zhong_ling, captive]}
         - {at: [zhong_ling, shennong_camp]}
-        - {any: [{step: [mu_wanqing, mw_cow_camp, done]}, {not: {alive: sikong_xuan}}]}
+        - {any: [{flag: camp_cowed}, {not: {alive: sikong_xuan}}]}     # 营里的人被镇住了，或帮主已死
     takes: 1
     offscreen:
       - {remove_status: [zhong_ling, captive]}
-      - {remove_status: [self, captive]}
-      - {add_status: [zhong_ling, vetted, {ticks: 96}]}
-      - {add_status: [self, vetted, {ticks: 96}]}
+      - {add_status: [zhong_ling, camp_pass, {ticks: 96}]}
+      - {add_status: [self, camp_pass, {ticks: 96}]}
       - {emit: {actor: self, verb: release, text: '{self}解开了⟦zhong_ling⟧，带她出了⟦shennong_camp⟧'}}
   - id: dy_study_scroll
-    text: 照着帛卷研读那门步法
+    text: 回剑湖宫的客舍，照着帛卷研读那门步法
+    at: jianhu_back
     do: {verb: study, item: silk_scroll, art: lingbo}
-    pre: {has: [self, silk_scroll]}
+    pre: {all: [{has: [self, silk_scroll]}, {not: {status: [self, captive]}}]}
     takes: 88
   - id: dy_wander
     text: 四处走走看看

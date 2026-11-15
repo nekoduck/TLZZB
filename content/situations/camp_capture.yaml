@@ -1,6 +1,11 @@
 # 外人闯进神农帮营地。帮主在营里、没被制住时，闯入的人多半被拿下。
+# 两种人不拦：替帮主取药的信使（身份 shennong_errand，由 poison_errand 给）；帮主放过、或被人逼着放过的人
+# （状态 camp_pass，一日为期）。别处的盘问用的是另一个状态 vetted，两者互不相干。
 id: camp_capture
 origin: canon
+title: '{chief}的人围住了闯进营地的{intruder}'
+chronicle_open: '{intruder}闯进⟦shennong_camp⟧，被{chief}的人围住'
+chronicle_close: '{intruder}闯营的事有了结果'
 when:
   all:
     - {flag: siege_began}
@@ -15,8 +20,9 @@ roles:
         all:
           - {not: {role: [$it, shennong_member]}}
           - {not: {role: [$it, lingjiu_envoy]}}
+          - {not: {role: [$it, shennong_errand]}}
           - {not: {status: [$it, captive]}}
-          - {not: {status: [$it, vetted]}}
+          - {not: {status: [$it, camp_pass]}}
           - {not: {status: [$it, hidden]}}
 at: shennong_camp
 scene: tense
@@ -24,6 +30,7 @@ actions:
   question:
     role: chief
     lean: true
+    pre: {not: {flag: .questioned}}
     desc: '{chief}冷冷地盘问{intruder}的来历'
     effects:
       - {set_flag: [.questioned, true]}
@@ -34,6 +41,7 @@ actions:
     desc: '{chief}喝令帮众拿下{intruder}'
     effects:
       - {add_status: [$intruder, captive, {source: $chief}]}
+      - {follow: [$intruder, null]}
       - {set_flag: [.seized, true]}
       - {learn: [$intruder, F_shennong_siege, 1.0, told]}
       - {emit: {actor: $chief, verb: seize, text: '{chief}一挥手，几个帮众扑上来拿住了{intruder}', loud: true}}
@@ -42,14 +50,16 @@ actions:
     pre: {flag: .questioned}
     desc: '{chief}挥手放{intruder}走'
     effects:
-      - {add_status: [$intruder, vetted, {ticks: 96}]}
+      - {add_status: [$intruder, camp_pass, {ticks: 96}]}
       - {set_flag: [.released, true]}
       - {emit: {actor: $chief, verb: let_go, text: '{chief}不耐烦地挥挥手，叫人放{intruder}过去'}}
   explain:
     role: intruder
     lean: true
+    pre: {not: {flag: .explained}}
     desc: '{intruder}说明自己的来意'
     effects:
+      - {set_flag: [.explained, true]}
       - {set_flag: [.questioned, true]}
       - {emit: {actor: $intruder, verb: explain, text: '{intruder}向{chief}说明来意'}}
 exit_when: {any: [{flag: .seized}, {flag: .released}, {not: {same_loc: [$chief, $intruder]}}]}
@@ -57,11 +67,12 @@ max_turns: 6
 offscreen:
   - when: {stat: [$intruder, power, '>=', 4]}
     effects:
-      - {add_status: [$intruder, vetted, {ticks: 96}]}
+      - {add_status: [$intruder, camp_pass, {ticks: 96}]}
       - {emit: {actor: $intruder, verb: pass, text: '帮众见{intruder}不好惹，没敢上前阻拦'}}
   - when: true
     effects:
       - {add_status: [$intruder, captive, {source: $chief}]}
+      - {follow: [$intruder, null]}
       - {learn: [$intruder, F_shennong_siege, 1.0, told]}
       - {emit: {actor: $chief, verb: seize, text: '{chief}命帮众拿下了闯进营来的{intruder}'}}
       - {trace: [shennong_camp, 木栅里又多关了一个人]}

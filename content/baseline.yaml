@@ -57,13 +57,15 @@
   text: 灵鹫宫的圣使到了无量山，两派慑服
   holds: {flag: envoy_received}
   by: 248
+# 下面两条说的是「先落难、后脱困」：只写「此刻不是人质」「此刻没中毒」的话，开局那一刻就成立了。
+# 所以各带一条「那件事确实发生过」的条件：貂咬过人（她当时正被扣着）；他领过取药的差事（服过那包药）。
 - id: m_zhong_freed
   text: 钟灵脱出神农帮之手
-  holds: {all: [{alive: zhong_ling}, {not: {status: [zhong_ling, captive]}}]}
+  holds: {all: [{flag: diao_bite_done}, {alive: zhong_ling}, {not: {status: [zhong_ling, captive]}}]}
   by: 400
 - id: m_duan_cured
   text: 段誉解了断肠散的毒
-  holds: {all: [{alive: duan_yu}, {not: {status: [duan_yu, poisoned_duanchang]}}]}
+  holds: {all: [{role: [duan_yu, shennong_errand]}, {alive: duan_yu}, {not: {status: [duan_yu, poisoned_duanchang]}}]}
   by: 400
 - id: m_nanhai_arrives
   text: 南海鳄神来到这一带

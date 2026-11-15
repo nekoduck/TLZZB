@@ -7,7 +7,8 @@ game 推进时间（``kernel.timeflow.advance_time``）时每跨过一个时辰�
 3. 推进每个离场者当前这一步打算（``world/offscreen.py``）。在场的人在微轮里自己抉择，这里只替他们
    作废过期的步骤。
 4. 活性检查：无事可做的人进重新打算的队列；每日卯时把在等的人也放进去；然后消费队列（``world/replan.py``）。
-5. 对照参照点（``world/baseline.py``）。牵挂与年谱由 storyteller 更新（game 接线）。
+5. 对照参照点（``world/baseline.py``，全项目唯一认定分岔的地方，经 ``diverge`` 效果写入）。牵挂与年谱由
+   storyteller 更新（game 接线）；storyteller 只读 ``state.divergences``。
 """
 
 from __future__ import annotations
@@ -93,7 +94,7 @@ async def tick(llm: Any, state: WorldState, defs: Defs, *, decide: Decide | None
     # 4 活性检查与重新打算
     liveness(state, defs, dawn=(state.tick % TICKS_PER_DAY == DAWN))
     out += await replan.process_queue(llm, state, defs, rules_only=rules_only)
-    # 5 参照点
+    # 5 参照点：分岔只在这里认定（经 diverge 效果写进 state.divergences）
     baseline.check(state, defs)
     return out
 

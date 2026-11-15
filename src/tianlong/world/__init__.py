@@ -11,6 +11,7 @@ game 接线：
 from tianlong.world.baseline import divergences_report
 from tianlong.world.clock import tick
 from tianlong.world.offscreen import advance
+from tianlong.world.onscene import onscene_elapsed  # noqa: F401  （I6：在场者的「等」，game 在 pass_time 里调用）
 from tianlong.world.replan import process_queue
 from tianlong.world.run import RunReport, run_days
 from tianlong.world.situations import end_of_turn

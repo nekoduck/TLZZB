@@ -6,6 +6,10 @@
 
 除 5.3 的效果外，内核自己还用到几个（只增不减）：
 ``follow``、``mood``、``warn``、``know_term``、``mark``、``step_state``。
+开局布置与上层记账另有 ``request``、``superior``、``dequeue``、``turn``、``offer``、``fact``、``mark_char``。
+
+``check`` 可以写 ``adverse: true``：这是一次「成了反而坏事」的判定（例如看押的人趁隙逃脱），
+``--lucky`` 基线跑（旗标 ``__lucky__``）里它一律不成（见 ``checks.roll_against``）。
 """
 
 from __future__ import annotations
@@ -25,9 +29,12 @@ from tianlong.kernel.state import (
     Ctx,
     Divergence,
     Event,
+    Fact,
     MemoryItem,
     Relation,
+    Request,
     SituationState,
+    Speech,
     Status,
     Step,
     Thread,
@@ -93,7 +100,38 @@ EFFECT_SHAPES: dict[str, Any] = {
     "chronicle": "any",
     "diverge": "any",
     "teller": ["str", "any"],
+    # 开局布置与上层记账（K4、K18、K20）：测试、评测集的布景和 game / world 的记账也只经效果改状态
+    "request": "requestdef",
+    "superior": ["char", "char?"],
+    "dequeue": "char",
+    "turn": "int",
+    "offer": "options",
+    "fact": "factdef",
+    "mark_char": ["char", "charmark", "int?"],
 }
+
+REQUEST_KINDS = ("request", "plead", "order", "question")
+REQUEST_KEYS = frozenset(
+    {
+        "id",
+        "frm",
+        "to",
+        "kind",
+        "action",
+        "about",
+        "action_class",
+        "evidence",
+        "fact_refs",
+        "leverage",
+        "attempts",
+        "status",
+        "condition",
+    }
+)
+REQUEST_STATUSES = ("open", "agreed", "refused", "countered", "expired")
+FACT_KEYS = frozenset({"id", "text", "tags", "gossip", "contradicts", "known_by"})
+CHAR_MARKS = ("reflect_mark", "last_replan")  # mark_char 只许改这两个记账字段
+FOLLOW_MOVE = "follow_move"  # 跟着别人换了地方的那条事件的动词（「开始跟随」仍是 follow）
 
 CHECK_KINDS = ("flee", "hide", "steal", "climb", "descend", "leap", "fall", "death_save", "chance")
 STAT_RANGES: dict[str, tuple[int, int]] = {
@@ -635,6 +673,151 @@ class Run:
         c = self.char(arg)
         events.queue_replan(self.state, c.id)
 
+    # ------------------------------------------------------------ setup & bookkeeping (K4, K18, K20)
+
+    def e_request(self, arg: Any) -> None:
+        """建一桩请求并立即裁决（6.6）：算分、凭据、筹码、重提都与 ``speech.make_request`` 相同。
+
+        ``{request: {frm, to, action: {verb, params}, kind?, action_class?, evidence?: [物件],
+        fact_refs?: [事实], leverage?: {reward, urgent, threat}, attempts?, status?, condition?, id?}}``。
+        ``kind: question`` 是一个待答的问题（``about`` 写问的是什么）。``status: agreed`` 按答应处理
+        （那件事插到对方打算的最前面，并记一桩许诺）；``countered`` 要带 ``condition``。不产生事件。
+        """
+        from tianlong.kernel import speech
+
+        if not isinstance(arg, dict) or set(arg) - REQUEST_KEYS:
+            raise EffectError(f"request: bad arg {arg!r}")
+        frm = self.char(arg.get("frm", "self"))
+        to = self.char(arg.get("to"))
+        if frm.id == to.id:
+            raise EffectError("request: frm and to are the same person")
+        kind = str(arg.get("kind", "request"))
+        if kind not in REQUEST_KINDS:
+            raise EffectError(f"request: bad kind {kind!r}")
+        if kind == "question":
+            about = self.rid(arg.get("about"))
+            r = Request(
+                id=next_id(self.state, "R"),
+                frm=frm.id,
+                to=to.id,
+                action={"verb": "say", "params": {"act": "tell", "about": about}},
+                action_class="trivial",
+                verdict="may",
+                kind="question",
+                created=self.state.tick,
+            )
+            self.state.requests[r.id] = r
+        else:
+            action = arg.get("action")
+            if not isinstance(action, dict) or not action.get("verb"):
+                raise EffectError(f"request: needs action {{verb, params}}, got {action!r}")
+            params = {k: self.rid(v) for k, v in dict(action.get("params") or {}).items()}
+            sp = Speech(
+                act=kind,
+                to=[to.id],
+                ask_action={"verb": str(action["verb"]), "params": params},
+                action_class=arg.get("action_class"),
+                evidence=[str(self.rid(x)) for x in arg.get("evidence") or []],
+                fact_refs=[str(self.rid(x)) for x in arg.get("fact_refs") or []],
+                leverage=dict(arg.get("leverage") or {}),
+            )
+            r, _nag = speech.make_request(self.state, self.defs, frm, to, sp, kind)
+            if arg.get("attempts") is not None:
+                r.attempts = max(1, int(arg["attempts"]))
+                speech.score_request(self.state, self.defs, r)
+        new_id = arg.get("id")
+        if new_id is not None and str(new_id) != r.id:
+            new_id = str(new_id)
+            if new_id in self.state.requests:
+                raise EffectError(f"request: id {new_id!r} is taken")
+            del self.state.requests[r.id]
+            r.id = new_id
+            self.state.requests[new_id] = r
+        status = arg.get("status")
+        if status is None or status == "open":
+            return
+        if status not in REQUEST_STATUSES:
+            raise EffectError(f"request: bad status {status!r}")
+        if status == "agreed":
+            speech.accept(self.state, self.defs, r)
+        elif status == "countered":
+            cond = arg.get("condition")
+            if not isinstance(cond, dict) or "verb" not in cond:
+                raise EffectError("request: status countered needs a condition {verb, params}")
+            cparams = {k: self.rid(v) for k, v in dict(cond.get("params") or {}).items()}
+            r.condition = {"verb": str(cond["verb"]), "params": cparams}
+            r.status = "countered"
+        else:
+            r.status = status
+
+    def e_superior(self, arg: Any) -> None:
+        """``{superior: [c, boss]}``：c 从此听命于 boss；boss 写 null 即不再听命于谁。"""
+        c = self.char(arg[0])
+        boss = arg[1] if len(arg) > 1 else None
+        if boss is None:
+            c.superior = None
+            return
+        b = self.char(boss)
+        if b.id == c.id:
+            raise EffectError(f"superior: {c.id} cannot be their own superior")
+        c.superior = b.id
+
+    def e_dequeue(self, arg: Any) -> None:
+        """把人从 ``replan_queue`` 里拿掉（world/replan 处理完这个人之后）。"""
+        cid = self.rid(arg)
+        if cid in self.state.replan_queue:
+            self.state.replan_queue.remove(cid)
+
+    def e_turn(self, arg: Any) -> None:
+        """``{turn: n}``：回合数（game 每回合记一次）。"""
+        n = int(arg)
+        if n < 0:
+            raise EffectError(f"turn: bad value {arg!r}")
+        self.state.turn = n
+
+    def e_offer(self, arg: Any) -> None:
+        """``{offer: [选项…]}``：这一回合摆给玩家的选项（``pending_options``）；空表即清空。"""
+        if arg is None:
+            arg = []
+        if not isinstance(arg, list) or not all(isinstance(x, dict) for x in arg):
+            raise EffectError(f"offer: expects a list of mappings, got {arg!r}")
+        self.state.pending_options[:] = [dict(x) for x in arg]
+
+    def e_fact(self, arg: Any) -> None:
+        """``{fact: {id, text, tags?, gossip?, contradicts?, known_by?}}``：往事实库添一条（同 id 则替换）。
+
+        ``known_by`` 里的人随即确信它（置信度 1.0，来源 saw）。文字里的 ``{角色位}`` 照常替换。
+        """
+        if not isinstance(arg, dict) or set(arg) - FACT_KEYS or not arg.get("id"):
+            raise EffectError(f"fact: bad arg {arg!r}")
+        d = {k: v for k, v in arg.items() if k != "known_by"}
+        d["id"] = str(d["id"])
+        d["text"] = refs.fill_roles(str(d.get("text", "")), self.ctx.roles, self.ctx.self_id)
+        try:
+            f = Fact.model_validate(d)
+        except ValidationError as e:
+            raise EffectError(f"fact: bad fact {arg!r}: {e}") from e
+        self.state.facts[f.id] = f
+        for who in arg.get("known_by") or []:
+            learn(self.state, self.char(who), f.id, 1.0, "saw")
+
+    def e_mark_char(self, arg: Any) -> None:
+        """``{mark_char: [c, 字段, 值]}``：只许改记账字段 ``reflect_mark``（夜间反思读到第几条记忆）
+        与 ``last_replan``（上次重新打算的时刻，可写 null）。"""
+        if not isinstance(arg, list) or len(arg) < 2:
+            raise EffectError(f"mark_char: bad arg {arg!r}")
+        c = self.char(arg[0])
+        field = str(arg[1])
+        value = arg[2] if len(arg) > 2 else None
+        if field not in CHAR_MARKS:
+            raise EffectError(f"mark_char: {field!r} is not a bookkeeping field")
+        if field == "reflect_mark":
+            if value is None or int(value) < 0:
+                raise EffectError(f"mark_char: bad reflect_mark {value!r}")
+            c.reflect_mark = int(value)
+        else:
+            c.last_replan = None if value is None else int(value)
+
     # ------------------------------------------------------------ situations & threads
 
     def e_open(self, arg: Any) -> None:
@@ -679,7 +862,7 @@ class Run:
         kind = str(arg["kind"])
         who = self.char(arg.get("who", "self"))
         chance = check_chance(self, kind, who, arg)
-        res = checks.roll_against(self.state, kind, chance)
+        res = checks.roll_against(self.state, kind, chance, adverse=bool(arg.get("adverse")))
         self.checks.append(res)
         sub = Run(
             self.state,
@@ -779,7 +962,12 @@ def move_char(run: Run, c: Character, to: str, *, followers: bool = True) -> Non
         if has_status(f, "hidden"):
             f.statuses = [s for s in f.statuses if s.kind != "hidden"]
         run.implicit(
-            actor=f.id, verb="follow", text=f"⟦{f.id}⟧跟着⟦{c.id}⟧来到⟦{to}⟧", loc=to, standalone=True
+            actor=f.id,
+            verb=FOLLOW_MOVE,
+            text=f"⟦{f.id}⟧跟着⟦{c.id}⟧来到⟦{to}⟧",
+            loc=to,
+            standalone=True,
+            params={"target": c.id, "exit": to, "from": frm},
         )
         if f.id == state.player:
             if to not in state.visited:

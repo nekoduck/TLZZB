@@ -50,6 +50,11 @@ class RouteSettings(_Base):
     options: RouteMode = 'jev_first'
     check: RouteMode = 'jev_first'
     cards: RouteMode = 'jev_first'
+    # 只有 Claude 一条路的三类（没有 Jev 可退）：claude_first / claude_only 都是「调 Claude，失败退模板」，
+    # rules_only 是「不调模型」（叙述与选项用模板，管线只跑不用模型的步骤）。
+    narrate: RouteMode = 'claude_first'
+    phrase: RouteMode = 'claude_first'
+    pipeline: RouteMode = 'claude_only'
 
 
 class ClaudeSettings(_Base):

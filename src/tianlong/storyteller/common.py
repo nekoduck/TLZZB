@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import copy
+import re
 from collections.abc import Iterable
 from typing import Any
 
@@ -54,6 +55,21 @@ def pv(state: WorldState, defs: Defs, text: str) -> str:
 def omni(state: WorldState, defs: Defs, text: str) -> str:
     """收场后的全知视角：玩家仍写成「你」，其余一律用真名。"""
     return refs.render((text or "").replace(f"⟦{state.player}⟧", refs.YOU), state, defs, viewer=None)
+
+
+def safe_text(state: WorldState, defs: Defs, text: str) -> str:
+    """玩家说出口的要旨里只留他已知的专名：不知其名的实体换成他眼里的叫法（不再是 ⟦id⟧）。
+
+    与解析器给玩家的话写要旨时同一口径：开口提到一个人，不等于知道了他的名字。纯函数。
+    """
+
+    def sub(m: re.Match[str]) -> str:
+        eid = m.group(1)
+        if eid == state.player or "#" in eid or eid in state.known_terms:
+            return m.group(0)
+        return refs.display_name(state, defs, eid, state.player)
+
+    return refs.REF_RE.sub(sub, text or "")
 
 
 def clock(tick: int) -> str:

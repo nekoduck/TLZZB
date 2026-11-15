@@ -25,6 +25,10 @@ replan = 'jev_first'        # J3，退到 C5
 options = 'jev_first'       # J4
 check = 'jev_first'         # J5
 cards = 'jev_first'         # J6
+# 下面三类只有 Claude 一条路：rules_only 是不调模型，其余取值都是调 Claude（失败退模板）
+narrate = 'claude_first'    # C3 叙述；rules_only 时全用模板句
+phrase = 'claude_first'     # C4 选项措辞；rules_only 时用模板
+pipeline = 'claude_only'    # P1…P6 离线管线；rules_only 时只跑不用模型的步骤（P0、P7）
 
 [claude]
 api_key_env = 'ANTHROPIC_API_KEY'

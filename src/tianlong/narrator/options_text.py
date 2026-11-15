@@ -3,6 +3,9 @@
     texts = await phrase_options(llm, state, defs, options, avoid=[上回合选中的那条])
 
 `options` 是带 `.action`（内核的 `ActionInst`）与 `.tag`（方向标签）的对象，顺序即一、二、三。
+开口的选项另带 `.speech`（内核的 `Speech`；那时 `.action` 只是 1 刻的 wait）、`.desc`（一句意图，实体写成
+⟦id⟧）、`.id`（这一组里唯一的编号）与 `.signature`：给 C4 的事实句写明言语行为、对谁说和要旨，模板句按
+言语行为取（低声劝……、问一问……、求……、提醒……）。
 """
 
 from __future__ import annotations
@@ -19,7 +22,7 @@ from tianlong.kernel.state import WorldState
 from tianlong.llm import LLM, LLMError
 from tianlong.llm.schemas import OptionsOut, OptionText
 from tianlong.narrator.checks import Checker, build_checker, text_len
-from tianlong.narrator.templates import OPTION_MAX, option_template, place_text
+from tianlong.narrator.templates import OPTION_MAX, option_template, place_text, speech_fact
 
 _ENUM_RE = re.compile(r'^\s*(?:[一二三四五六七八九十]+[、.．:：]|[0-9０-９]+[、.．:：)）]|[-*•·]\s*|[（(][一二三0-9][)）])\s*')
 
@@ -41,6 +44,27 @@ def _tag(o: Any) -> str:
     return str(getattr(o, 'tag', '') or '')
 
 
+def _speech(o: Any) -> Any:
+    return getattr(o, 'speech', None)
+
+
+def _oid(o: Any) -> str:
+    """这一组里对号用的编号：选项自己的 id；没有就用动作的 id。"""
+    return str(getattr(o, 'id', '') or getattr(_action(o), 'id', '') or '')
+
+
+def _desc(o: Any) -> str:
+    return str(getattr(o, 'desc', '') or getattr(_action(o), 'desc', '') or '')
+
+
+def _template(state: WorldState, defs: Defs, o: Any, *, variant: int = 0, avoid: Sequence[str] = ()) -> str:
+    sp = _speech(o)
+    if sp is None:
+        return option_template(state, defs, _action(o), variant=variant, avoid=avoid)
+    return option_template(state, defs, _action(o), variant=variant, avoid=avoid, speech=sp, desc=_desc(o),
+                           signature=str(getattr(o, 'signature', '') or ''))
+
+
 def last_chosen_texts(state: WorldState) -> list[str]:
     """上回合被选中的选项文字：`state.pending_options` 里带 `chosen` 与 `text` 的条目。"""
     out: list[str] = []
@@ -50,8 +74,31 @@ def last_chosen_texts(state: WorldState) -> list[str]:
     return out
 
 
-def _fact(state: WorldState, defs: Defs, action: Any) -> str:
-    return place_text(refs.render(getattr(action, 'desc', '') or '', state, defs, state.player)).strip()
+def _fact(state: WorldState, defs: Defs, o: Any) -> str:
+    """给 C4 看的事实句。开口的选项：言语行为、对谁说、要旨。"""
+    sp = _speech(o)
+    if sp is not None:
+        return speech_fact(state, defs, sp, _desc(o))
+    return place_text(refs.render(_desc(o), state, defs, state.player)).strip()
+
+
+def _ref_texts(state: WorldState, o: Any) -> list[str]:
+    """一个选项里带 ⟦id⟧ 的文字：描述；开口的另有要旨、所求之事、说到的事实。"""
+    out = [_desc(o)]
+    sp = _speech(o)
+    if sp is None:
+        return out
+    out.append(str(getattr(sp, 'gist', '') or ''))
+    out.append(str((getattr(sp, 'ask_action', None) or {}).get('desc') or ''))
+    out += [refs.ref(t) for t in getattr(sp, 'to', None) or []]
+    about = getattr(sp, 'about', None)
+    if about:
+        out.append(refs.ref(about))
+    for fid in getattr(sp, 'fact_refs', None) or []:
+        f = state.facts.get(fid)
+        if f is not None:
+            out.append(f.text)
+    return out
 
 
 def _scene(state: WorldState, defs: Defs) -> tuple[str, list[str]]:
@@ -68,17 +115,18 @@ def _scene(state: WorldState, defs: Defs) -> tuple[str, list[str]]:
     return head + '。', people
 
 
-def _names(state: WorldState, defs: Defs, actions: Sequence[Any], people: Sequence[str]) -> list[str]:
+def _names(state: WorldState, defs: Defs, options: Sequence[Any], people: Sequence[str]) -> list[str]:
     p = state.player
     out: list[str] = []
     for n in people:
         if n and n not in out:
             out.append(n)
-    for a in actions:
-        for eid in refs.refs_in(getattr(a, 'desc', '') or ''):
-            n = refs.display_name(state, defs, eid, p)
-            if n and n != '你' and n not in out:
-                out.append(place_text(n))
+    for o in options:
+        for text in _ref_texts(state, o):
+            for eid in refs.refs_in(text):
+                n = refs.display_name(state, defs, eid, p)
+                if n and n != '你' and place_text(n) not in out:
+                    out.append(place_text(n))
     return out
 
 
@@ -112,9 +160,7 @@ def template_options(
     """每个动作的模板句，三条互不相同，也不与 `avoid` 重复。"""
     out: list[str] = []
     for o in options:
-        a = _action(o)
-        text = option_template(state, defs, a, avoid=[*avoid, *out])
-        out.append(text)
+        out.append(_template(state, defs, o, avoid=[*avoid, *out]))
     return out
 
 
@@ -145,27 +191,27 @@ async def phrase_options(
     if not opts:
         return []
     avoid_all = [*avoid, *last_chosen_texts(state)]
-    actions = [_action(o) for o in opts]
+    ids = [_oid(o) for o in opts]
     templates = template_options(state, defs, opts, avoid=avoid_all)
     rep.source = ['template'] * len(opts)
     if not _use_claude(llm):
         return templates
 
     scene, people = _scene(state, defs)
-    names = _names(state, defs, actions, people)
-    facts = [_fact(state, defs, a) for a in actions]
+    names = _names(state, defs, opts, people)
+    facts = [_fact(state, defs, o) for o in opts]
     checker = build_checker(state, defs, None, allowed_texts=[scene, *names, *facts])
     system = [prompting.load('c4_system')]
     user = prompting.render(
         'c4_user',
         scene=scene,
         names='、'.join(names) or '无',
-        options=[{'id': a.id, 'fact': f, 'tag': _tag(o) or '无'} for a, f, o in zip(actions, facts, opts, strict=True)],
+        options=[{'id': i, 'fact': f, 'tag': _tag(o) or '无'} for i, f, o in zip(ids, facts, opts, strict=True)],
         avoid='；'.join(a for a in avoid_all if a),
     )
 
     def mock_default() -> OptionsOut:
-        return OptionsOut(options=[OptionText(id=a.id, text=t) for a, t in zip(actions, templates, strict=True)])
+        return OptionsOut(options=[OptionText(id=i, text=t) for i, t in zip(ids, templates, strict=True)])
 
     try:
         out, _meta = await llm.claude.call_json('C4', system, user, OptionsOut, mock_default=mock_default)
@@ -174,13 +220,13 @@ async def phrase_options(
         return templates
 
     got = list(out.options)
-    ids = [o.id for o in got]
-    unique = len(set(ids)) == len(ids)
+    got_ids = [o.id for o in got]
+    unique = len(set(got_ids)) == len(got_ids)
     result: list[str] = []
-    for i, a in enumerate(actions):
+    for i, o in enumerate(opts):
         problems: list[str] = []
         text = ''
-        if i >= len(got) or not unique or got[i].id != a.id:
+        if i >= len(got) or not unique or got[i].id != ids[i]:
             problems.append('id')
         else:
             text = clean_option(got[i].text)
@@ -191,7 +237,7 @@ async def phrase_options(
             rep.rejected.append((i, text, problems))
             fallback = templates[i]
             if fallback in result:
-                fallback = option_template(state, defs, a, variant=1, avoid=[*avoid_all, *result])
+                fallback = _template(state, defs, o, variant=1, avoid=[*avoid_all, *result])
             result.append(fallback)
         else:
             rep.source[i] = 'claude'

@@ -60,6 +60,10 @@ class RequestRules(_Open):
     labels: dict[str, str] = DEFAULT_LABELS
     bands: dict[str, list[int]] = DEFAULT_BANDS
     close_roles: list[str] = ["same_sect", "master_disciple", "master_servant"]
+    # 哪些身份算「同门、同一家」（K3）：world.yaml 的 request.sect_roles。两人都有其中同一个身份才算同门。
+    # 不写（None）时退回一条不认名字的规则：占着地盘的身份（某个地点的 owner）才算门派或人家，
+    # 「同是来客」这类临时身份不算。写成空表即任何共同身份都不算同门。
+    sect_roles: list[str] | None = None
 
 
 class WorldRules(_Open):

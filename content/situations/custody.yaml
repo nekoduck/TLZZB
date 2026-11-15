@@ -1,6 +1,10 @@
 # 通用：有人被扣押，身边有看守。看守、送饭、逼问；被押的人求情或伺机逃走。
+# 一日一回（状态 custody_recent）。不在眼前时，被押的人自己挣脱是少有的事（判定 5，是内核判定的下限）。
 id: custody
 origin: generic
+title: '{warden}看押着{prisoner}'
+chronicle_open: '{prisoner}被{warden}看押着'
+chronicle_close: '{warden}这一回看押{prisoner}的事过去了'
 when: true
 roles:
   prisoner: {pick: {where: {all: [{status: [$it, captive]}, {not: {status: [$it, custody_recent]}}]}}}
@@ -10,14 +14,16 @@ actions:
   feed:
     role: warden
     lean: true
+    pre: {not: {flag: .fed}}
     desc: '{warden}给{prisoner}送吃的'
     effects:
       - {set_flag: [.fed, true]}
-      - {add_status: [$prisoner, custody_recent, {ticks: 32}]}
+      - {add_status: [$prisoner, custody_recent, {ticks: 96}]}
       - {rel: [$prisoner, $warden, affinity, 5]}
       - {emit: {actor: $warden, verb: feed, text: '{warden}丢给{prisoner}一块干饼、一碗冷水'}}
   interrogate:
     role: warden
+    pre: {not: {flag: .pressed}}
     desc: '{warden}逼问{prisoner}'
     effects:
       - {set_flag: [.pressed, true]}
@@ -25,15 +31,18 @@ actions:
   beg:
     role: prisoner
     lean: true
+    pre: {not: {flag: .begged}}
     desc: '{prisoner}向{warden}求情'
     effects:
       - {set_flag: [.begged, true]}
       - {emit: {actor: $prisoner, verb: plead, text: '{prisoner}低声向{warden}求情'}}
   slip_free:
     role: prisoner
+    pre: {not: {flag: .tried}}
     desc: '{prisoner}趁看守不备想挣脱'
     effects:
       - {set_flag: [.tried, true]}
+      - {add_status: [$prisoner, custody_recent, {ticks: 96}]}
       - check:
           kind: flee
           who: $prisoner
@@ -45,11 +54,12 @@ max_turns: 4
 offscreen:
   - when: true
     effects:
-      - {add_status: [$prisoner, custody_recent, {ticks: 32}]}
+      - {add_status: [$prisoner, custody_recent, {ticks: 96}]}
       - check:
           kind: chance
           who: $prisoner
           chance: 5
+          adverse: true            # 少有的意外：走运模式（方案 11.3）下不发生
           ok: [{remove_status: [$prisoner, captive]}, {emit: {actor: $prisoner, verb: escape, text: '{prisoner}趁夜挣脱绳索逃了出去'}}]
           fail: [{emit: {actor: $warden, verb: feed, text: '{warden}照例看着{prisoner}，送了一回饭'}}]
 paragraphs: []

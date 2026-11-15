@@ -11,7 +11,7 @@ steps:
     at: shennong_camp
     do: {verb: wait}
     pre: {all: [{not: {status: [self, captive]}}, {flag: siege_on}]}
-    takes: 16
+    takes: 32
     deadline: 240
   - id: sk_force_errand
     text: 中了貂毒，逼俘虏去取解药，扣下人质
@@ -29,13 +29,13 @@ steps:
     at: shennong_camp
     do: {verb: wait}
     pre: {all: [{status: [self, poisoned_diao]}, {not: {status: [self, captive]}}]}
-    takes: 136
+    takes: 96
   - id: sk_greet_envoy
     text: 迎候圣使，禀报差事
     at: shennong_camp
     do: {verb: say, act: greet, to: envoy_lingjiu}
-    pre: {all: [{onstage: envoy_lingjiu}, {alive: envoy_lingjiu}]}
-    start: 224
+    pre: {all: [{onstage: envoy_lingjiu}, {alive: envoy_lingjiu}, {same_loc: [self, envoy_lingjiu]}]}
+    start: 240
     deadline: 520
     takes: 2
   - id: sk_hold_on

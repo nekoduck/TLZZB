@@ -1,6 +1,10 @@
-# 追杀木婉清的人撞上了她，或撞上了骑着她那匹黑马的人。
+# 追杀木婉清的人撞上了她，或撞上了骑着她那匹黑马的人（她本人就在眼前时，只冲着她去）。
+# 骑马的不是正主：他们要的是问出她的下落，截不住也就算了，不下重手。
 id: ambush_mu
 origin: canon
+title: '{hunter}一伙拦住了{quarry}'
+chronicle_open: '{hunter}一伙拦路截住了{quarry}'
+chronicle_close: '{hunter}一伙拦截{quarry}的事有了结果'
 when:
   all:
     - {onstage: rui_popo}
@@ -12,8 +16,11 @@ roles:
     pick:
       where:
         all:
-          - {any: [{role: [$it, mu_quarry]}, {has: [$it, black_rose]}]}
+          - any:
+              - {role: [$it, mu_quarry]}
+              - {all: [{has: [$it, black_rose]}, {not: {same_loc: [$it, mu_wanqing]}}]}
           - {not: {status: [$it, ambushed]}}
+          - {not: {status: [$it, captive]}}
 at: $hunter
 scene: tense
 actions:
@@ -21,6 +28,7 @@ actions:
     role: hunter
     lean: true
     loud: true
+    pre: {not: {flag: .confronted}}
     desc: '{hunter}一伙拦住了{quarry}'
     effects:
       - {set_flag: [.confronted, true]}
@@ -41,8 +49,7 @@ actions:
           ok:
             - {emit: {actor: $quarry, verb: flee, text: '{quarry}拨转马头往回狂奔，把追兵甩在了后头'}}
           fail:
-            - {injure: [$quarry, 1]}
-            - {emit: {actor: $hunter, verb: strike, text: '{hunter}追上去一掌拍在{quarry}背上，{quarry}伏在马上逃开了'}}
+            - {emit: {actor: $hunter, verb: seize_rein, text: '{hunter}一把带住马缰，逼问了{quarry}几句，见他确实不知那女子的去向，才松手放他走了'}}
   fight_off:
     role: quarry
     lean: true
@@ -79,9 +86,8 @@ offscreen:
           who: $quarry
           from: [$hunter]
           ok:
-            - {emit: {actor: $quarry, verb: flee, text: '{quarry}在大路上遇伏，拨马逃了回去'}}
+            - {emit: {actor: $quarry, verb: flee, text: '{quarry}半路遇上{hunter}一伙拦截，拨马逃开了'}}
           fail:
-            - {injure: [$quarry, 1]}
-            - {emit: {actor: $hunter, verb: strike, text: '{hunter}一伙截住{quarry}，打伤了他，又放他逃了'}}
+            - {emit: {actor: $hunter, verb: seize_rein, text: '{hunter}一伙截住{quarry}，逼问那黑衣女子的下落，问不出什么，才放他走了'}}
       - {trace: [$hunter, 地上一片马蹄乱踏的痕迹]}
 paragraphs: []
