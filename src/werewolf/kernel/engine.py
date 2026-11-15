@@ -50,6 +50,7 @@ class Game:
         self._roles: dict[Seat, Role] = {s: Role(roles[s]) for s in sorted(roles)}
         self._rng = Rng(seed, 'kernel')
         self._events: list[Event] = []
+        self._stripped: list[Event] = []  # 与 _events 一一对应的去文字副本（视图用，省得反复复制）
         self._alive: set[Seat] = set(self._roles)
         self._day = 0
         self._phase = Phase.SETUP
@@ -122,10 +123,10 @@ class Game:
         return self._events[start:]
 
     def view(self, seat: Seat) -> View:
-        return build_view(self.config, seat, [e for e in self._events if self.visible(e, seat)])
+        return build_view(self.config, seat, [e for e in self._stripped if self.visible(e, seat)])
 
     def public_view(self) -> PublicView:
-        return build_public_view(self.config, self._events)
+        return build_public_view(self.config, self._stripped)
 
     def visible(self, ev: Event, viewer: Viewer) -> bool:
         if viewer == 'judge' or ev.vis == 'public':
@@ -140,7 +141,8 @@ class Game:
         return [e for e in self._events[max(since, 0):] if self.visible(e, viewer)]
 
     def fanout(self, events: Sequence[Event]) -> dict[Seat, list[Event]]:
-        return {s: [strip_text(e) for e in events if self.visible(e, s)] for s in self._roles}
+        stripped = [strip_text(e) for e in events]
+        return {s: [e for e in stripped if self.visible(e, s)] for s in self._roles}
 
     @property
     def over(self) -> bool:
@@ -189,6 +191,7 @@ class Game:
         g = cls(config, int(data['seed']), {int(s): Role(r) for s, r in data['roles']})
         g._rng = Rng.from_state(data['rng'])
         g._events = [Event.model_validate(e) for e in data['events']]
+        g._stripped = [strip_text(e) for e in g._events]
         g._alive = {int(s) for s in data['alive']}
         g._day = int(data['day'])
         g._phase = Phase(data['phase'])
@@ -212,6 +215,7 @@ class Game:
 
     def _add(self, ev: Event) -> None:
         self._events.append(ev)
+        self._stripped.append(strip_text(ev))
 
     def _enter(self, phase: Phase, **kw: Any) -> None:
         self._phase = phase
