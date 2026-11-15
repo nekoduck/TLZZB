@@ -452,7 +452,7 @@ def ask_score(state: WorldState, defs: Defs, c: AskCand, text: str, frm: str) ->
             return True
         o = state.chars.get(r)
         if o is not None and lexical.FEMALE_WORDS.search(text) or (o is not None and "她" in text):
-            alias = refs.display_name(state, defs, r, state.player) + (o.name if o else "")
+            alias = (o.unknown_alias if o else "") + refs.display_name(state, defs, r, state.player)
             return bool(lexical.FEMALE_MARK.search(alias))
         return False
 
@@ -548,9 +548,15 @@ def claim_candidates(
     return out[:limit]
 
 
-def self_event_candidates(state: WorldState, defs: Defs, frm: str | None = None, *, limit: int = MAX_SELF
-                          ) -> list[SelfCand]:
-    """玩家近来做过的事（最近的在前）。'self_unlisted' 由调用方另加。"""
+UNLISTED = "self_unlisted"
+
+
+def self_event_candidates(state: WorldState, defs: Defs, frm: str | None = None, *, limit: int = MAX_SELF,
+                          with_unlisted: bool = False) -> list[SelfCand]:
+    """玩家近来做过的事（最近的在前）。with_unlisted 时末尾另加一项「日志里没有的事」（self_unlisted）。
+
+    J1 把 self_unlisted 单独问一道是非题，所以 Menu.selfs 里不放它。
+    """
     frm = frm or state.player
     out: list[SelfCand] = []
     for ev in reversed(state.events_tail):
@@ -562,4 +568,6 @@ def self_event_candidates(state: WorldState, defs: Defs, frm: str | None = None,
         out.append(SelfCand(ref=f"event:{ev.id}", text=ev.fact_text, verb=ev.verb, refs=rs))
     for i, s in enumerate(out, 1):
         s.key = f"s{i}"
+    if with_unlisted:
+        out.append(SelfCand(key=UNLISTED, ref=UNLISTED, text="日志里没有的事"))
     return out

@@ -130,7 +130,7 @@ def _by_title(state: WorldState, defs: Defs, head: str, hearers: list[str]) -> s
         from tianlong.kernel import refs as krefs
 
         fem = [h for h in hearers
-               if lx.FEMALE_MARK.search(krefs.display_name(state, defs, h, state.player) + state.chars[h].name)]
+               if lx.FEMALE_MARK.search(state.chars[h].unknown_alias + krefs.display_name(state, defs, h, state.player))]
         if len(fem) == 1:
             return fem[0]
     return None
@@ -275,10 +275,13 @@ def _strip_names(state: WorldState, defs: Defs, text: str, ids: list[str]) -> st
 
 def _claims(state: WorldState, defs: Defs, spoken: str, menu: Menu) -> list[str]:
     """断言的规则猜测：说到了事实里的人或物，并且有实在的字词对得上。"""
-    if not spoken:
+    if not spoken or lx.FUTURE.search(spoken):
         return []
     from tianlong.kernel import refs as krefs
 
+    m = lx.VOCATIVE_RE.match(spoken)
+    if m:  # 先叫的那个人不算话里提到的人
+        spoken = spoken[m.end():]
     scored: list[tuple[int, str]] = []
     for c in menu.claims:
         rs = krefs.refs_in(c.text)
@@ -294,10 +297,13 @@ def _claims(state: WorldState, defs: Defs, spoken: str, menu: Menu) -> list[str]
 
 
 def _selfs(state: WorldState, defs: Defs, spoken: str, menu: Menu) -> list[str]:
-    if not spoken or not lx.SELF_CLAIM.search(spoken):
+    if not spoken or lx.FUTURE.search(spoken):
+        return []
+    strong = bool(lx.SELF_CLAIM_STRONG.search(spoken))
+    if not strong and not lx.SELF_CLAIM.search(spoken):
         return []
     vs = {v for _, v, _ in lx.verbs_in(spoken)}
-    if not vs:
+    if not vs and not strong:
         return []
     out = []
     for s in menu.selfs:

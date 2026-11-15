@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import math
 import re
+import zlib
 from typing import Literal
 
 from pydantic import BaseModel
@@ -323,6 +324,20 @@ def _about(state: WorldState, defs: Defs, result: ParseResult, to: list[str], ca
     return None
 
 
+def other_request(state: WorldState, result: ParseResult, to: list[str], hearers: list[str]) -> AskCand | None:
+    """求的事不在候选里（「撤兵」「借个火」）：仍记成一个请求，让内核照常裁决、计重复（D）。
+
+    动作写成对方等一等，带 other 指纹（同一句话重复说才算同一个请求）；类别至少算「费事」。
+    """
+    who = to[0] if to else (hearers[0] if len(hearers) == 1 else None)
+    if who is None:
+        return None
+    fp = f"{zlib.crc32(result.clean.encode('utf-8')):08x}"
+    desc = f"{refs.ref(state.player)}开口相求的一件事"
+    return AskCand(to=who, action={"verb": "wait", "params": {"ticks": 1}, "desc": desc, "other": fp}, desc=desc,
+                   cls=_cls_max("effort", result.intent.cls), type="other")
+
+
 def build_speech(state: WorldState, defs: Defs, result: ParseResult, action: ActionInst | None
                  ) -> tuple[Speech | None, str]:
     """组一句 Speech；说不出口（没人听）返回 (None, 回话)。"""
@@ -340,6 +355,8 @@ def build_speech(state: WorldState, defs: Defs, result: ParseResult, action: Act
     if cand is not None and cand.to not in hearers:
         cand = None
     if act in speech.REQUEST_ACTS:
+        if cand is None:
+            cand = other_request(state, result, to, hearers)
         if cand is None:
             act = "tell"
         else:

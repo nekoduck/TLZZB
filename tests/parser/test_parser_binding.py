@@ -176,3 +176,36 @@ async def test_self_event_candidates(scene: Scene) -> None:
     b, _ = await scene.play("左掌门，样茶我刚才已经交给您了")
     assert b.speech is not None
     assert [c.verdict for c in b.speech.claims] == ["true"]
+
+
+async def test_self_unlisted_option(scene: Scene) -> None:
+    out = parser.self_event_candidates(scene.state, scene.defs, with_unlisted=True)
+    assert [c.ref for c in out] == ["self_unlisted"]
+
+
+ASK_TYPES = {"release", "take_place_of", "accompany", "give_item", "show_item", "cure", "help", "teach_art",
+             "come_along", "stop_doing", "let_pass", "tell_about", "take_to", "protect"}
+
+
+async def test_request_candidate_types(camp: Scene) -> None:
+    cands = parser.request_candidates(camp.state, camp.defs, "player", "sikong_xuan", limit=50)
+    types = {c.type for c in cands}
+    assert types <= ASK_TYPES
+    assert {"release", "take_place_of", "accompany", "give_item", "come_along", "tell_about"} <= types
+    acc = next(c for c in cands if c.type == "accompany" and c.slots.get("target") == "duan_yu")
+    assert acc.action["permit"] == {"verb": "follow", "target": "duan_yu"}
+    for c in cands:  # 每一件都是对方此刻做得到的（传授、说话、等候除外）
+        if c.action["verb"] not in ("teach", "say", "wait"):
+            assert actions.build(camp.state, camp.defs, c.to, c.action["verb"], c.action["params"]) is not None
+
+
+async def test_requests_outside_the_candidates_still_count(camp: Scene) -> None:
+    raw = "帮主，你先把兵撤了吧。"
+    b1, _ = await camp.play(raw)
+    assert b1.speech is not None and b1.speech.act == "request"
+    assert b1.speech.ask_action is not None and "other" in b1.speech.ask_action
+    await camp.play(raw)
+    b3, _ = await camp.play(raw)
+    assert b3.repeat
+    reqs = [r for r in camp.state.requests.values() if r.frm == "player"]
+    assert len(reqs) == 1 and reqs[0].attempts == 3 and reqs[0].verdict in ("no", "never")

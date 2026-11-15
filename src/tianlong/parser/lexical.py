@@ -77,7 +77,7 @@ VERB_WORDS: list[tuple[re.Pattern[str], str]] = [
 # 凑近一类的词不算动作（不是「走」到别处去）
 APPROACH = re.compile(
     r"走过去|走上前|走上去|冲上去|冲过去|扑上去|扑过去|上前|凑过去|凑上前|凑近|靠近|走近|走过来|找个|找了个|"
-    r"用[^，。,把]{1,6}(?=把)|给[^，。,]{1,6}(?=包扎|敷|揉|喂|看看)|替[^，。,]{1,6}(?=[\u4e00-\u9fff])"
+    r"用[^，。,把]{1,6}(?=把)|给[^，。,]{1,6}(?=包扎|敷|揉|喂|看看)"
 )
 # 「看看」后面跟着具体的东西时是细看，不是环视
 LOOK_AT = re.compile(r"看看|瞧瞧|望望|看一看|读读|读一读")
@@ -94,10 +94,10 @@ SPEECH_VERB_START = re.compile(
 )
 SPEECH_SPLIT = r"说|讲|问|喊|告诉|求|劝|骂|请教|拜|扯谎|撒谎|谎称|骗"
 SECOND_PERSON = re.compile(r"你|您|阁下|诸位|各位")
-QUESTION = re.compile(r"[？?]|吗|么|呢|什么|哪|怎么|怎样|为何|为什么|谁|几时|多少|是否|可曾|打听")
+QUESTION = re.compile(r"[？?]|吗|么[？?]|呢|什么|哪|怎么|怎样|为何|为什么|谁|几时|多少|是否|可曾|打听")
 REQUEST_MARK = re.compile(
     r"请|求|让我|给我|帮我|能不能|能否|可否|可不可以|麻烦|劳驾|借我|带我|放我|放了|教我|跟我|随我|陪我|饶|"
-    r"别再|住手|停手|把.{0,8}给我|行个方便|咱们.{0,14}吧|我们.{0,14}吧|一起|收了我|收我"
+    r"别再|住手|停手|把.{0,8}给我|行个方便|咱们.{0,14}吧|我们.{0,14}吧|一起|收了我|收我|(你|您).{0,14}吧[。！!]?$"
 )
 ACT_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("plead", re.compile(r"饶命|饶了|求求|开恩|手下留情|高抬贵手|饶过")),
@@ -116,6 +116,12 @@ ACT_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
 ]
 GREET = re.compile(r"^(你好|您好|在下|小人|小的|我叫|晚辈|久仰|幸会|见过|请了|这位)")
 SELF_CLAIM = re.compile(r"我(刚才|刚刚|方才|已经|早就|曾经|亲手|亲眼|昨天|上回)|我.{0,8}(过|了)")
+# 不靠动作词也算自称做过某事：「方才是我……」「……我已经……了」
+SELF_CLAIM_STRONG = re.compile(
+    r"我.{0,4}(已经|刚才|刚刚|方才|早就|早已|曾经|亲手)|(已经|刚才|刚刚|方才|早就|早已).{0,4}我|是我.{0,12}(了|的)"
+)
+# 说的是还没发生的事：只当闲话或算命（6.7 opinion），不对事实
+FUTURE = re.compile(r"过几天|过两天|再过|明天|后天|将来|日后|之内.{0,8}(会|就)|就会|会被|将要|早晚")
 URGENT_WORDS = re.compile(r"快|急|救|解药|赶紧|尽快|早些|及早|来得及|性命")
 WHISPER = re.compile(r"悄悄|低声|小声|耳语|附耳|压低声音|凑到.{0,4}耳边")
 STANCES: list[tuple[str, re.Pattern[str]]] = [
@@ -348,7 +354,7 @@ def vocative(text: str) -> bool:
         return False
     return (
         any(head.endswith(h) for h in HONORIFICS)
-        or bool(AUTHORITY_TITLES.match(head))
+        or bool(AUTHORITY_TITLES.match(head) or MASTER_TITLES.search(head) or FEMALE_WORDS.search(head))
         or head.startswith(("这位", "那位", "老", "小"))
     )
 
