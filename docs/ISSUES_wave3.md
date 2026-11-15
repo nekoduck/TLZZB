@@ -55,3 +55,13 @@ K20 effect for Character.reflect_mark (and last_replan) — e.g. {mark_char: [c,
 C15 lexicon banned_modern: add more modern words (可乐, 汽水, 手表, 子弹, 飞机, 火车, 汽车, 电视, 网络, 微信, …).
 C16 lean setpieces stay ★ after their beat (challenge 'question' has no pre; bout_laugh feint_win after bout_over) → add pre guards.
 I6 on-scene agenda wait steps lag (only progress when picked as reactor and waiting 1 tick while player spent 8) → after pass_time(n), add n ticks of progress for on-scene chars whose current step is a wait step (progress effect) — helper in world (e.g. world.onscene_elapsed) called by game.
+
+## Wave 4 follow-ups (from the game and kernel-fix reports)
+T1 text glitches in real-content mock play: option texts 「试着你报上来意」「低声劝…喝令你离开」「你说明自己的来意」 (storyteller/narrator option templates); reply gists 「不肯情境」「答应情境」「打了个招呼：自称你」 (minds/narrator speech rendering); chronicle lines 「你、段公子在…起了一场事」 (generic situation titles); epilogue 「了结了的：…之间的事还没完」 (contradiction); duplicated clause 「向你打听…，又向你打听…」.
+T2 frequent logs "setpiece … no longer legal at resolution → wait" (e.g. duan_yu thank in beam_girl#1 at tick 40 on every seed) and "speech dropped: … not here" — minds/content ordering.
+T3 kernel danger() stays 0 with a lethal poison due within a few ticks → raise danger as a lethal deadline nears (so the pre-danger checkpoint is useful).
+T4 busy rooms: 1-hour wait/study almost always interrupted by chatter — tune game.QUIET_VERBS/_interrupts.
+T5 docs not updated for new APIs: API_NOTES.md, ARCHITECTURE.md (ViewEvent fields, follow_move), CONTENT_FORMAT.md (new effects, check.adverse, block matching, request.sect_roles, [route] keys).
+T6 optional migrations: world/clock.py → timeflow.run_due_scheduled; world/offscreen.py → resolve.apply(offscreen=True); narrator J5 → jev.ask(timeout_s=).
+T7 eval runner is a stub; tests/e2e/test_cli.py::test_eval_stub_lists_datasets must be updated by the runner's author.
+T8 scripts/baseline_report.py ruff errors (content agent).
