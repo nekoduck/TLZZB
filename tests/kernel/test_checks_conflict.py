@@ -195,3 +195,10 @@ def test_defender_wins_and_uses_own_intent(w: World) -> None:
 def test_power_uses_growth(w: World) -> None:
     assert growth.power(w.s, w.defs, "fighter") == 2
     assert conflict.effective_power(w.s, w.defs, w.c("fighter")) == 3  # 长剑 power_mod 1
+
+
+def test_lucky_flag_makes_checks_succeed(w):
+    from tianlong.kernel import checks
+
+    w.s.flags[checks.LUCKY_FLAG] = True
+    assert all(checks.roll_against(w.s, "flee", 5).ok for _ in range(30))

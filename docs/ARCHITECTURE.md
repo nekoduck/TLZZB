@@ -207,3 +207,30 @@ texts = await narrator.phrase_options(llm, state, defs, options) # C4 + 模板�
 - 内核的单元测试用一个小世界夹具：3 个地点、4 个人（`tests/fixtures/mini/`，格式与 `content/` 相同）。
 - 测试按模块放：`tests/kernel/`、`tests/llm/`、`tests/world/` ……；跨模块的放 `tests/e2e/`。
 - 运行：`.venv/bin/python -m pytest -q`；检查：`.venv/bin/ruff check src tests`。
+
+## 8. 游戏与界面之间（`game.Game` ↔ `ui/`）
+
+`ui` 只认 `game.Game` 和 `ui/events.py` 里的界面事件，不 import 其他模块。
+
+```python
+# ui/events.py
+Header(clock: str, place: str)          # 〔第一日 辰时 · 剑湖宫 练武厅〕
+Text(piece: str)                        # 叙述的一段流式文字（已过检查）
+Break()                                 # 一段叙述结束
+Options(items: list[str])               # 三个选项的文字，按一、二、三
+Notice(text: str, level: 'info'|'warn') # 戏外提示：预算、存档成功、命令输出
+Ended(reason: 'closed'|'dead'|'left')   # 收场；后事随后以 Text 流出
+
+# game.py
+class Game:
+    state: WorldState; defs: Defs
+    @classmethod
+    async def new(cls, settings, *, seed, mock, player_name, run_id=None, replay_dir=None) -> Game
+    @classmethod
+    async def load(cls, settings, save_name, *, mock) -> Game
+    def start(self) -> AsyncIterator[UIEvent]           # 开场叙述与第一组选项
+    def turn(self, raw: str) -> AsyncIterator[UIEvent]  # 一回合（方案 4.2）；斜杠命令也走这里
+    async def aclose(self) -> None
+```
+
+斜杠命令（方案 2.7）由 `game` 分派：只读的画面（`/状态 /物品 /人物 /本事 /回顾 /帮助`）由 `ui/commands.py` 的纯函数 `(state, defs) -> str` 渲染；`/牵挂 /年谱` 由 `storyteller` 渲染；`/存档 /读档` 走 `store`；`/心愿` 走 `parser.map_wish` 加 `storyteller.threads`；`/收笔` 走收场；`/debug` 只在 `--debug` 下可用。

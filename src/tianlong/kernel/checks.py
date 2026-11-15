@@ -128,6 +128,12 @@ def death_save_chance(who: Character) -> int:
     return max(0, min(CAP, 2 * who.luck))
 
 
+LUCKY_FLAG = "__lucky__"
+
+
 def roll_against(state: WorldState, kind: str, chance: int) -> CheckResult:
+    """掷一次。旗标 __lucky__ 为真时判定一律成功（方案 11.3 的 --lucky 基线跑），仍消耗一次随机数。"""
     r = rng.roll(state)
+    if state.flags.get(LUCKY_FLAG):
+        return CheckResult(kind=kind, chance=chance, roll=r, ok=True)
     return CheckResult(kind=kind, chance=chance, roll=r, ok=r <= chance)
