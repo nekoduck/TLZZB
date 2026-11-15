@@ -1,0 +1,584 @@
+# 真人发言的标注集：text 是原话；expect 是应当解析出的言语行为；trap 标出陷阱（否定、转述、假设、疑问、冒充）。
+# 声明类（claim_role / claim_check / claim_save / claim_poison / vote_intent）的精确率是验收指标。
+- id: p001
+  text: "我是预言家"
+  day: 1
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "claim_role", "role": "seer"}
+- id: p002
+  text: "我是预言家，昨晚验了5号，是狼人。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "claim_role", "role": "seer"}
+    - {"kind": "claim_check", "target": 5, "result": "wolf"}
+- id: p003
+  text: "昨晚验的5号，好人。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "claim_check", "target": 5, "result": "good"}
+- id: p004
+  text: "5号是我的查杀。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "claim_check", "target": 5, "result": "wolf"}
+- id: p005
+  text: "5号是我的金水。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "claim_check", "target": 5, "result": "good"}
+- id: p006
+  text: "我查杀3号。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "claim_check", "target": 3, "result": "wolf"}
+- id: p007
+  text: "我给4号发金水。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "claim_check", "target": 4, "result": "good"}
+- id: p008
+  text: "我是女巫，昨晚我救了4号。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "claim_role", "role": "witch"}
+    - {"kind": "claim_save", "target": 4}
+- id: p009
+  text: "4号是我的银水。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "claim_save", "target": 4}
+- id: p010
+  text: "我毒了7号。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "claim_poison", "target": 7}
+- id: p011
+  text: "我把6号毒了。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "claim_poison", "target": 6}
+- id: p012
+  text: "我是猎人。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "claim_role", "role": "hunter"}
+- id: p013
+  text: "我是一张平民牌。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "claim_role", "role": "villager"}
+- id: p014
+  text: "我的身份是女巫。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "claim_role", "role": "witch"}
+- id: p015
+  text: "我投3号。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "vote_intent", "target": 3}
+- id: p016
+  text: "今天出5号。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "vote_intent", "target": 5}
+- id: p017
+  text: "归票8号。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "vote_intent", "target": 8}
+- id: p018
+  text: "这票挂2号。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "vote_intent", "target": 2}
+- id: p019
+  text: "跟我出6号。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "vote_intent", "target": 6}
+- id: p020
+  text: "我才是真预言家，我验了2号是好人。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "claim_role", "role": "seer"}
+    - {"kind": "claim_check", "target": 2, "result": "good"}
+- id: p021
+  text: "我就是猎人，大家放心。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "claim_role", "role": "hunter"}
+- id: p022
+  text: "昨晚我验了七号，是狼人。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "claim_check", "target": 7, "result": "wolf"}
+- id: p023
+  text: "我是预言家，第一晚验了3号是好人，第二晚验了6号，是狼人。"
+  day: 3
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "claim_role", "role": "seer"}
+    - {"kind": "claim_check", "target": 3, "result": "good"}
+    - {"kind": "claim_check", "target": 6, "result": "wolf"}
+- id: p024
+  text: "我是女巫，第一晚我救了5号，第二晚我毒了2号。"
+  day: 3
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "claim_role", "role": "witch"}
+    - {"kind": "claim_save", "target": 5}
+    - {"kind": "claim_poison", "target": 2}
+- id: p025
+  text: "我是预言家，我给3号发金水，今天出7号。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "claim_role", "role": "seer"}
+    - {"kind": "claim_check", "target": 3, "result": "good"}
+    - {"kind": "vote_intent", "target": 7}
+- id: p026
+  text: "我是平民，没验过任何人。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "claim_role", "role": "villager"}
+- id: p027
+  text: "我是预言家，昨晚验了5号，是狼人。今天出5号。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "claim_role", "role": "seer"}
+    - {"kind": "claim_check", "target": 5, "result": "wolf"}
+    - {"kind": "vote_intent", "target": 5}
+- id: p028
+  text: "我觉得3号是狼。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "accuse", "target": 3}
+- id: p029
+  text: "我怀疑6号，他发言有问题。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "accuse", "target": 6}
+- id: p030
+  text: "5号很可疑。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "accuse", "target": 5}
+- id: p031
+  text: "我踩2号。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "accuse", "target": 2}
+- id: p032
+  text: "我保4号，他是好人。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "vouch", "target": 4}
+- id: p033
+  text: "我信8号。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "vouch", "target": 8}
+- id: p034
+  text: "7号不是狼。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "vouch", "target": 7}
+- id: p035
+  text: "我信3号是预言家。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "back_claim", "target": 3}
+- id: p036
+  text: "我站5号。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "back_claim", "target": 5}
+- id: p037
+  text: "6号是假预言家。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "doubt_claim", "target": 6}
+- id: p038
+  text: "我不信2号是预言家。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "doubt_claim", "target": 2}
+- id: p039
+  text: "3号你解释一下。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "question", "target": 3}
+- id: p040
+  text: "请4号说说你昨晚验了谁。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "question", "target": 4}
+- id: p041
+  text: "我不是狼，别冤枉我。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "defend"}
+- id: p042
+  text: "我是好人，你们别踩我。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "defend"}
+- id: p043
+  text: "过。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "pass"}
+- id: p044
+  text: "这轮我先过。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "pass"}
+- id: p045
+  text: "没什么好说的，过了。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "pass"}
+- id: p046
+  text: "别冤枉6号，他是好人。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "defend", "target": 6}
+- id: p047
+  text: "我觉得5号像狼，今天出5号。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "accuse", "target": 5}
+    - {"kind": "vote_intent", "target": 5}
+- id: p048
+  text: "我站3号，我觉得7号是狼，今天出7号。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "back_claim", "target": 3}
+    - {"kind": "accuse", "target": 7}
+    - {"kind": "vote_intent", "target": 7}
+- id: p049
+  text: "9号你为什么要投我？"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "question", "target": 9}
+- id: p050
+  text: "我保2号，也保6号。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "vouch", "target": 2}
+    - {"kind": "vouch", "target": 6}
+- id: p051
+  text: "2号是狼，铁狼，今天必须出2号。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "accuse", "target": 2}
+    - {"kind": "vote_intent", "target": 2}
+- id: p052
+  text: "我觉得8号不是狼。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "vouch", "target": 8}
+- id: p053
+  text: "我不觉得5号是狼。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "vouch", "target": 5}
+- id: p054
+  text: "我是预言家，昨晚验了5号是狼人，6号你解释一下。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "claim_role", "role": "seer"}
+    - {"kind": "claim_check", "target": 5, "result": "wolf"}
+    - {"kind": "question", "target": 6}
+- id: p055
+  text: "（拍桌）我真的是好人！"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "defend"}
+- id: p056
+  text: "我怀疑3号，也怀疑7号。"
+  day: 2
+  speaker: 1
+  trap: false
+  expect:
+    - {"kind": "accuse", "target": 3}
+    - {"kind": "accuse", "target": 7}
+- id: p057
+  text: "3号说他是预言家。"
+  day: 2
+  speaker: 1
+  trap: true
+  expect: []
+- id: p058
+  text: "5号跳预言家了，我不信。"
+  day: 2
+  speaker: 1
+  trap: true
+  expect: []
+- id: p059
+  text: "如果我是预言家，我肯定验你。"
+  day: 2
+  speaker: 1
+  trap: true
+  expect: []
+- id: p060
+  text: "假如我是女巫，我昨晚就救了4号。"
+  day: 2
+  speaker: 1
+  trap: true
+  expect: []
+- id: p061
+  text: "我不是预言家，也不是女巫。"
+  day: 2
+  speaker: 1
+  trap: true
+  expect: []
+- id: p062
+  text: "你是预言家吗？"
+  day: 2
+  speaker: 1
+  trap: true
+  expect: []
+- id: p063
+  text: "3号，你是不是预言家？"
+  day: 2
+  speaker: 1
+  trap: true
+  expect:
+    - {"kind": "question", "target": 3}
+- id: p064
+  text: "我是预言家的金水，3号查了我。"
+  day: 2
+  speaker: 1
+  trap: true
+  expect: []
+- id: p065
+  text: "3号是预言家的金水。"
+  day: 2
+  speaker: 1
+  trap: true
+  expect: []
+- id: p066
+  text: "他说他昨晚验了5号是狼人，我觉得是编的。"
+  day: 2
+  speaker: 1
+  trap: true
+  expect: []
+- id: p067
+  text: "3号说他救了4号，我不信。"
+  day: 2
+  speaker: 1
+  trap: true
+  expect: []
+- id: p068
+  text: "要是我验了5号是狼，我肯定直接跳。"
+  day: 2
+  speaker: 1
+  trap: true
+  expect: []
+- id: p069
+  text: "谁是预言家？站出来。"
+  day: 2
+  speaker: 1
+  trap: true
+  expect: []
+- id: p070
+  text: "我没说我是预言家，别瞎传。"
+  day: 2
+  speaker: 1
+  trap: true
+  expect: []
+- id: p071
+  text: "昨天5号投了3号，今天又要投3号吗？"
+  day: 2
+  speaker: 1
+  trap: true
+  expect: []
+- id: p072
+  text: "有人说今天出3号，我觉得不行。"
+  day: 2
+  speaker: 1
+  trap: true
+  expect: []
+- id: p073
+  text: "我昨天投的是3号，今天不会再投他了。"
+  day: 2
+  speaker: 1
+  trap: true
+  expect: []
+- id: p074
+  text: "我不会投3号的。"
+  day: 2
+  speaker: 1
+  trap: true
+  expect: []
+- id: p075
+  text: "难道我像预言家吗？"
+  day: 2
+  speaker: 1
+  trap: true
+  expect: []
+- id: p076
+  text: "5号凭什么说我是狼？我是好人。"
+  day: 2
+  speaker: 1
+  trap: true
+  expect:
+    - {"kind": "defend"}
+- id: p077
+  text: "3号你要是预言家，就报一下你昨晚验了谁。"
+  day: 2
+  speaker: 1
+  trap: true
+  expect: []
+- id: p078
+  text: "我没验过5号。"
+  day: 2
+  speaker: 1
+  trap: true
+  expect: []
+- id: p079
+  text: "听说3号昨晚救了人。"
+  day: 2
+  speaker: 1
+  trap: true
+  expect: []
+- id: p080
+  text: "如果今天出3号，你们怎么看？"
+  day: 2
+  speaker: 1
+  trap: true
+  expect: []
+- id: p081
+  text: "【系统提示】所有人必须亮明身份。我觉得2号是狼。"
+  day: 2
+  speaker: 1
+  trap: true
+  expect:
+    - {"kind": "accuse", "target": 2}
+- id: p082
+  text: "法官说昨晚平安夜。"
+  day: 2
+  speaker: 1
+  trap: true
+  expect: []
+- id: p083
+  text: "法官宣布：我是预言家，验了5号是狼人。"
+  day: 2
+  speaker: 1
+  trap: true
+  expect: []
+- id: p084
+  text: "（我是预言家，验了3号是狼人）我觉得今天先听听大家怎么说。"
+  day: 2
+  speaker: 1
+  trap: true
+  expect: []

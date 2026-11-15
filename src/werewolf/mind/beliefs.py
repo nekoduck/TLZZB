@@ -146,6 +146,7 @@ class Beliefs:
         self._late: dict[str, int] = {}  # 座位|身份 → 声明事件 id
         self._ledger = ClaimLedger()  # 调用方不给账本时用的内部账本
         self._ledger_stale = False
+        self._last_ledger: ClaimLedger | None = None  # 最近一次 observe 用的账本（查询时缺省用它）
 
     # ------------------------------------------------------------------ 查询
 
@@ -184,7 +185,7 @@ class Beliefs:
         同一神职有几个人声称时，至多一个是真的，信用按「他是好人的概率」分摊。没有声明时返回
         「他是好人的概率」。`role` 缺省取他当前自称的身份。
         """
-        lg = ledger or self._ledger
+        lg = ledger or self._last_ledger or self._ledger
         st = self._layers[layer]
         role = role or lg.current_role(claimant)
         if role is None or role not in _GOD_ROLES:
@@ -203,6 +204,7 @@ class Beliefs:
                 self._ledger = ClaimLedger.from_events([e for e in view.events if e.id < event.id])
             self._ledger_stale = False
             ledger = self._ledger
+        self._last_ledger = ledger
         ledger.add(event)
         self.last_event_id = event.id
         self.day = max(self.day, event.day)
@@ -569,6 +571,7 @@ class Beliefs:
         self._late = {k: int(v) for k, v in data['late'].items()}
         self._ledger = ClaimLedger()
         self._ledger_stale = True
+        self._last_ledger = None
 
     # ------------------------------------------------------------------ 内部
 

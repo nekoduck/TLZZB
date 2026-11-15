@@ -54,7 +54,7 @@ def random_action(game: Game, request: Request, rng: Rng) -> Action:
     opt = rng.choice(request.options)
     note = stance = None
     if request.kind in (RequestKind.WOLF_PROPOSE, RequestKind.WOLF_KILL):
-        if request.context.get('first_night'):
+        if request.day == 1:  # 首夜才报打法意愿
             stance = rng.choice(_STANCES)
         if request.kind == RequestKind.WOLF_PROPOSE and rng.chance(0.3):
             note = f'刀{opt.target}号吧' if opt.target else '空刀吧'

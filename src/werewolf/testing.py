@@ -144,7 +144,7 @@ class Scenario:
         """追加一整夜的事件（不结算死亡；之后调 `dawn`）。三个夜间阶段的 phase 事件每夜都发。"""
         self.day = day
         self.set_phase(Phase.NIGHT_WOLF)
-        self.add(EventType.WOLF_KILL, target=kill, data={'by': 'plurality', 'tally': {f'kill:{kill or "none"}': 1}},
+        self.add(EventType.WOLF_KILL, target=kill, data={'by': 'plurality', 'tally': {f'kill:{kill or "none"}': 1}, 'stance': None},
                  vis='wolves')
         self.kills.append((day, kill))
         self.tonight_victim = kill

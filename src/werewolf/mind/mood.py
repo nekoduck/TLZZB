@@ -66,7 +66,7 @@ class MoodWeights(BaseModel):
     trust_gold: float = 0.3
     trust_checked: float = 0.3  # 被报查杀：-(它 + 0.4 × 记仇)
     trust_covote: float = 0.08
-    friend_threshold: float = 0.3
+    friend_threshold: float = 0.25  # 交情不低于它的人死了会难过
 
 
 class Mood:
@@ -146,7 +146,7 @@ class Mood:
             relief = self.w.relief_rough_day if prev in self._rough else self.w.relief_quiet_day
             for layer in _LAYERS:
                 self._stress[layer] = max(0.0, self._stress[layer] - relief)
-            self._trust = {s: v * self.w.trust_decay for s, v in self._trust.items() if abs(v * self.w.trust_decay) > 1e-3}
+            self._trust = {s: v * self._decay(v) for s, v in self._trust.items() if abs(v * self._decay(v)) > 1e-3}
             self._thoughts = {k: t for k, t in self._thoughts.items()
                               if t.expires_day is None or t.expires_day >= self.day}
 
@@ -323,6 +323,11 @@ class Mood:
         layers: tuple[Layer, ...] = _LAYERS if layer == 'both' else (layer,)
         for name in layers:
             self._stress[name] = max(0.0, min(100.0, self._stress[name] + amount))
+
+    def _decay(self, v: float) -> float:
+        """交情每天的回落系数：记仇的人旧怨散得慢（负值的回落按记仇放缓）。"""
+        d = self.w.trust_decay
+        return d + (1.0 - d) * 0.6 * self.traits.vengeful if v < 0 else d
 
     def _adjust_trust(self, seat: Seat, delta: float) -> None:
         if seat == self.seat:

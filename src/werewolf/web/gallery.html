@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>头像图鉴</title>
+<style>body{margin:0;padding:16px;background:#14102e;color:#f3e9d2;font:12px sans-serif}.g{display:grid;grid-template-columns:70px repeat(10,64px);gap:6px;align-items:center}.g div{width:64px;height:64px;border-radius:50%;overflow:hidden}.g span{width:70px;text-align:right}svg{width:100%;height:100%;display:block}</style></head>
+<body><h3>10 种发型 × 10 种配饰（开发用）</h3><div class="g" id="g"></div>
+<script type="module">
+import { avatarSVG, HAIR_STYLES, ACCESSORIES } from './js/avatar.js';
+const g = document.getElementById('g');
+g.append(document.createElement('span'));
+for (const a of ACCESSORIES) { const s = document.createElement('span'); s.textContent = a; s.style.width = '64px'; s.style.textAlign = 'center'; g.append(s); }
+const skins = ['#f0c8a0', '#e0b088', '#c99a72', '#8a5a3a', '#f6d6b8'], hairs = ['#2b2230', '#9a9a9a', '#c8553d', '#6a3a2a', '#3a2a55'], outf = ['#4a5a8a', '#c8323c', '#2f6f9a', '#5a6a58', '#8a5a9a'];
+HAIR_STYLES.forEach((hs, i) => {
+  const l = document.createElement('span'); l.textContent = hs; g.append(l);
+  ACCESSORIES.forEach((ac, j) => { const d = document.createElement('div'); d.innerHTML = avatarSVG({ bg: ['#3a4a7a', '#6a4a2a', '#2c3a5a', '#4a6a5a', '#5a4a8a'][(i + j) % 5], skin: skins[(i + j) % 5], hair: hairs[(i * 3 + j) % 5], hair_style: hs, accessory: ac, outfit: outf[(i + 2 * j) % 5] }); g.append(d); });
+});
+</script></body></html>

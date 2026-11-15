@@ -33,7 +33,7 @@ timeout_s = 20
 [models.W_monologue]         # 夜里的内心独白（只进复盘）
 model = 'claude-haiku-5-5'
 effort = 'low'
-max_tokens = 400
+max_tokens = 700
 timeout_s = 20
 
 [models.W_parse]             # Jev 不可用时，解析真人发言

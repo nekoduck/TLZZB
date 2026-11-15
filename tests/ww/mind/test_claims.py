@@ -160,3 +160,24 @@ def test_contradiction_text_is_neutral() -> None:
     sc.speech(5, 'x', [act('claim_role', role=Role.SEER)])
     c = ClaimLedger.from_events(sc.events).contradictions(5)[0]
     assert '5 号' in c.text and '哈哈' not in c.text and c.event_id == sc.events[-1].id
+
+
+def test_double_poison_and_two_potions() -> None:
+    sc = Scenario()
+    sc.night(1, kill=4)
+    sc.dawn([4, 7], causes={7: 'poison'})
+    sc.speech(6, 'x', [act('claim_role', role=Role.WITCH), act('claim_poison', 7, night=1)])
+    assert ClaimLedger.from_events(sc.events).contradictions(6) == []
+    sc.speech(6, 'x', [act('claim_poison', 4, night=1)])
+    sc.speech(9, 'x', [act('claim_save', 5, night=1), act('claim_poison', 4, night=1)])
+    lg = ClaimLedger.from_events(sc.events)
+    assert kinds(lg, 6) == ['double_poison']
+    assert kinds(lg, 9) == ['two_potions']
+    assert [p.kind for p in lg.potions_by(9)] == ['save', 'poison']
+
+
+def test_claims_ignore_text_and_non_speech() -> None:
+    sc = day1()
+    sc.speech(5, '我是预言家，验了9号是狼', [])
+    lg = ClaimLedger.from_events(sc.events)
+    assert lg.role_claims() == [] and lg.checks_by(5) == []

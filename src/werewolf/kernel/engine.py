@@ -18,7 +18,6 @@ from werewolf.kernel.rng import Rng
 from werewolf.kernel.types import (
     Action,
     Event,
-    EventType,
     GameConfig,
     GameResult,
     IllegalAction,
@@ -309,7 +308,7 @@ class Game:
         opts = rules.kill_options(self._living(), self.config.allow_empty_kill)
         self._open('wolf_kill', [self._request(
             RequestKind.WOLF_KILL, leader, opts,
-            context={'first_night': self._day == 1, 'proposals': list(self._ctx['proposals'])},
+            context={'proposals': list(self._ctx['proposals'])},
         )])
 
     def _on_wolf_kill(self, answered: list[tuple[Request, Action]]) -> None:

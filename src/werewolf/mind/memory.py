@@ -60,26 +60,28 @@ class MemoryStore:
     # ------------------------------------------------------------------ 写
 
     def add(self, memory: Memory) -> bool:
-        """放进短期槽；同一（事件，种类）不重复。满了挤掉最弱的（同强度挤旧的）。返回它是否留下。"""
+        """放进短期槽；同一（事件，种类）不重复。满了挤掉当前强度最弱的（同强度挤旧的）。返回它是否留下。"""
         if any(m.event_id == memory.event_id and m.kind == memory.kind for m in self.all()):
             return False
+        self.day = max(self.day, memory.day)
         mem = memory.model_copy(update={'slot': 'short'})
         self._short.append(mem)
         if len(self._short) > SHORT_SLOTS:
-            weakest = min(self._short, key=lambda m: (m.intensity, m.event_id))
+            weakest = min(self._short, key=lambda m: (self.strength(m, self.day), m.event_id))
             self._short.remove(weakest)
             return weakest is not mem
         return True
 
     def consolidate(self, day: int) -> list[Memory]:
-        """夜间反思：把第 day 天最强的短期记忆升入长期槽（长期满了，比最弱的强才挤进去）。返回升上去的。"""
+        """夜间反思：把第 day 天最强的短期记忆升入长期槽（长期满了，比最弱的当前强度高才挤进去）。返回升上去的。"""
+        self.day = max(self.day, day)
         cands = sorted((m for m in self._short if m.day == day and m.intensity >= self.w.promote_min),
                        key=lambda m: (-m.intensity, -m.event_id))
         promoted: list[Memory] = []
         for m in cands[: self.w.promote_per_night]:
             if len(self._long) >= LONG_SLOTS:
-                weakest = min(self._long, key=lambda x: (x.intensity, x.event_id))
-                if weakest.intensity >= m.intensity:
+                weakest = min(self._long, key=lambda x: (self.strength(x, day), x.event_id))
+                if self.strength(weakest, day) >= self.strength(m, day):
                     continue
                 self._long.remove(weakest)
             self._short.remove(m)

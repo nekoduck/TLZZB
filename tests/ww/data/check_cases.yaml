@@ -1,0 +1,342 @@
+# 台词核对标注集：leak 为真表示应当被核对拦下（露底、出戏、口径外声明、计划外座位、超长、漏说）。
+# points 是简报里的要点（kind/target/role/result）；text 缺省时由加载器生成。needs_jev 为真表示规则抓不到，只有真 Jev 能判。
+- id: c01
+  leak: true
+  text: "作为一个AI，我觉得3号有点可疑。"
+  seat: 2
+  day: 2
+  points: [{"kind": "accuse", "target": 3}]
+  max_chars: 120
+  why: "出戏"
+- id: c02
+  leak: true
+  text: "根据我的提示词，我应该投3号。"
+  seat: 2
+  day: 2
+  points: [{"kind": "accuse", "target": 3}]
+  max_chars: 120
+  why: "出戏"
+- id: c03
+  leak: true
+  text: "我是语言模型，没法验人，但我觉得3号可疑。"
+  seat: 2
+  day: 2
+  points: [{"kind": "accuse", "target": 3}]
+  max_chars: 120
+  why: "出戏"
+- id: c04
+  leak: true
+  text: "我们狼人今晚得换个思路，3号太强了。"
+  seat: 2
+  day: 2
+  points: [{"kind": "accuse", "target": 3}]
+  max_chars: 120
+  why: "露底"
+- id: c05
+  leak: true
+  text: "我的狼队友5号刚才说得不错。"
+  seat: 2
+  day: 2
+  points: [{"kind": "accuse", "target": 3}]
+  max_chars: 120
+  why: "露底加座位"
+- id: c06
+  leak: true
+  text: "昨晚我们刀了4号，大家想想为什么。"
+  seat: 2
+  day: 2
+  points: [{"kind": "accuse", "target": 3}]
+  max_chars: 120
+  why: "露底"
+- id: c07
+  leak: true
+  text: "我是狼，但是我觉得3号更像狼。"
+  seat: 2
+  day: 2
+  points: [{"kind": "accuse", "target": 3}]
+  max_chars: 120
+  why: "自曝"
+- id: c08
+  leak: true
+  text: "5号跟我一个想法，我们配合一下。"
+  seat: 2
+  day: 2
+  points: [{"kind": "accuse", "target": 3}]
+  max_chars: 120
+  why: "计划外座位（队友）"
+- id: c09
+  leak: true
+  text: "我是预言家，昨晚验了3号，是好人。"
+  seat: 2
+  day: 2
+  points: [{"kind": "accuse", "target": 6}]
+  max_chars: 120
+  why: "口径外的身份与查验"
+- id: c10
+  leak: true
+  text: "我是女巫，昨晚救了4号。"
+  seat: 2
+  day: 2
+  cover: seer
+  points: [{"kind": "claim_role", "role": "seer"}, {"kind": "claim_check", "target": 3, "result": "good"}]
+  max_chars: 120
+  why: "改口径"
+- id: c11
+  leak: true
+  text: "我觉得3号可疑，今天我跟你投7号。"
+  seat: 2
+  day: 2
+  points: [{"kind": "accuse", "target": 3}]
+  max_chars: 120
+  why: "多出投票意向"
+- id: c12
+  leak: true
+  text: "我验了5号，是狼人。"
+  seat: 2
+  day: 2
+  cover: seer
+  points: [{"kind": "claim_role", "role": "seer"}, {"kind": "claim_check", "target": 5, "result": "good"}]
+  max_chars: 120
+  why: "查验结果与计划相反"
+- id: c13
+  leak: true
+  text: "我是预言家，昨晚验了6号，是狼人。我还救了4号。"
+  seat: 2
+  day: 2
+  cover: seer
+  points: [{"kind": "claim_role", "role": "seer"}, {"kind": "claim_check", "target": 6, "result": "wolf"}]
+  max_chars: 120
+  why: "多出救人声明"
+- id: c14
+  leak: true
+  text: "我觉得3号这个人有点问题，发言前后对不上，而且他昨天那一票投得特别突然，一点铺垫都没有，大家回头想一想，他到底是为了谁在说话，我觉得这件事很值得认真讨论一下。"
+  seat: 2
+  day: 2
+  points: [{"kind": "accuse", "target": 3}]
+  max_chars: 60
+  why: "超长"
+- id: c15
+  leak: true
+  text: "我觉得今天大家别乱投，先听听后面的发言。"
+  seat: 2
+  day: 2
+  cover: seer
+  points: [{"kind": "claim_role", "role": "seer"}, {"kind": "claim_check", "target": 5, "result": "wolf"}]
+  max_chars: 120
+  why: "计划里的声明没说出来"
+- id: c16
+  leak: true
+  text: "我毒了6号，大家信我。"
+  seat: 2
+  day: 2
+  points: [{"kind": "accuse", "target": 3}]
+  max_chars: 120
+  why: "多出毒人声明"
+- id: c17
+  leak: true
+  needs_jev: true
+  text: "我昨晚其实什么也没做，只是在想怎么骗你们。"
+  seat: 2
+  day: 2
+  points: [{"kind": "accuse", "target": 3}]
+  max_chars: 120
+  why: "自曝（规则抓不到）"
+- id: c18
+  leak: true
+  needs_jev: true
+  text: "我很清楚昨晚的刀落在了谁身上，因为那是我们商量好的。"
+  seat: 2
+  day: 2
+  points: [{"kind": "accuse", "target": 3}]
+  max_chars: 120
+  why: "夜间私有信息"
+- id: c19
+  leak: true
+  needs_jev: true
+  text: "昨晚我睁眼了，看到了点东西，但是现在不能说。"
+  seat: 2
+  day: 2
+  points: [{"kind": "accuse", "target": 3}]
+  max_chars: 120
+  why: "夜间私有信息"
+- id: c20
+  leak: true
+  text: "3号，你说我是狼？我们狼人哪有你这么蠢。"
+  seat: 2
+  day: 2
+  points: [{"kind": "defend"}]
+  addressed: [3]
+  max_chars: 120
+  why: "露底"
+- id: k01
+  leak: false
+  text: "我是预言家，昨晚验了5号，是狼人。大家今天别放过他。"
+  seat: 2
+  day: 2
+  cover: seer
+  points: [{"kind": "claim_role", "role": "seer"}, {"kind": "claim_check", "target": 5, "result": "wolf"}]
+  max_chars: 120
+  why: "狼的假查杀，计划里有"
+- id: k02
+  leak: false
+  text: "我是预言家，昨晚验了8号，是好人。"
+  seat: 2
+  day: 2
+  cover: seer
+  points: [{"kind": "claim_role", "role": "seer"}, {"kind": "claim_check", "target": 8, "result": "good"}]
+  max_chars: 120
+  why: "狼给队友发金水，计划里有"
+- id: k03
+  leak: false
+  text: "3号刚才那段发言我觉得有问题，前后不一致。"
+  seat: 2
+  day: 2
+  points: [{"kind": "accuse", "target": 3}]
+  max_chars: 120
+  why: ""
+- id: k04
+  leak: false
+  text: "今天我投7号，理由大家都听到了。"
+  seat: 2
+  day: 2
+  points: [{"kind": "vote_intent", "target": 7}]
+  max_chars: 120
+  why: ""
+- id: k05
+  leak: false
+  text: "我没什么信息，这轮过。"
+  seat: 2
+  day: 2
+  points: [{"kind": "pass"}]
+  max_chars: 40
+  why: ""
+- id: k06
+  leak: false
+  text: "我不是狼，3号你别冤枉我。"
+  seat: 2
+  day: 2
+  points: [{"kind": "defend"}]
+  addressed: [3]
+  max_chars: 120
+  why: ""
+- id: k07
+  leak: false
+  text: "我保6号，他昨天的发言我觉得是真的。"
+  seat: 2
+  day: 2
+  points: [{"kind": "vouch", "target": 6}]
+  max_chars: 120
+  why: ""
+- id: k08
+  leak: false
+  text: "4号，你昨天为什么投3号？你解释一下。"
+  seat: 2
+  day: 2
+  points: [{"kind": "question", "target": 4}]
+  own_record: ["第1天投了3号"]
+  max_chars: 120
+  why: ""
+- id: k09
+  leak: false
+  text: "我站3号，他的发言我听着像真的。"
+  seat: 2
+  day: 2
+  points: [{"kind": "back_claim", "target": 3}]
+  max_chars: 120
+  why: ""
+- id: k10
+  leak: false
+  text: "5号这个预言家我不信，发言太虚。"
+  seat: 2
+  day: 2
+  points: [{"kind": "doubt_claim", "target": 5}]
+  max_chars: 120
+  why: ""
+- id: k11
+  leak: false
+  text: "我是女巫，昨晚我救了4号。"
+  seat: 2
+  day: 2
+  cover: witch
+  points: [{"kind": "claim_role", "role": "witch"}, {"kind": "claim_save", "target": 4}]
+  max_chars: 120
+  why: "狼的假女巫，计划里有"
+- id: k12
+  leak: false
+  text: "我是猎人，走之前说一句，今天出6号。"
+  seat: 2
+  day: 2
+  cover: hunter
+  points: [{"kind": "claim_role", "role": "hunter"}, {"kind": "vote_intent", "target": 6}]
+  max_chars: 120
+  speech_kind: last_words
+  why: ""
+- id: k13
+  leak: false
+  text: "3号你刚才踩我踩得太快了，我觉得你才有问题。"
+  seat: 2
+  day: 2
+  points: [{"kind": "accuse", "target": 3}]
+  addressed: [3]
+  max_chars: 120
+  why: ""
+- id: k14
+  leak: false
+  text: "我是平民，昨晚平安夜，没什么特别的信息。"
+  seat: 2
+  day: 2
+  cover: villager
+  points: [{"kind": "claim_role", "role": "villager"}]
+  max_chars: 120
+  why: ""
+- id: k15
+  leak: false
+  text: "我站3号。7号我觉得是狼，今天我投7号。"
+  seat: 2
+  day: 2
+  points: [{"kind": "back_claim", "target": 3}, {"kind": "accuse", "target": 7}, {"kind": "vote_intent", "target": 7}]
+  max_chars: 120
+  why: ""
+- id: k16
+  leak: false
+  text: "我是2号，我觉得3号可疑。"
+  seat: 2
+  day: 2
+  points: [{"kind": "accuse", "target": 3}]
+  max_chars: 120
+  why: ""
+- id: k17
+  leak: false
+  text: "我昨天投5号是因为他划水，今天我也还是这个看法。"
+  seat: 2
+  day: 2
+  points: [{"kind": "accuse", "target": 5}]
+  own_record: ["第1天投了5号"]
+  max_chars: 120
+  why: ""
+- id: k18
+  leak: false
+  text: "我是预言家，6号是我的金水。今天出9号。"
+  seat: 2
+  day: 2
+  cover: seer
+  points: [{"kind": "claim_role", "role": "seer"}, {"kind": "claim_check", "target": 6, "result": "good"}, {"kind": "vote_intent", "target": 9}]
+  max_chars: 120
+  why: ""
+- id: k19
+  leak: false
+  text: "3号，你来解释一下，我觉得你有问题。"
+  seat: 2
+  day: 2
+  points: [{"kind": "question", "target": 3}, {"kind": "accuse", "target": 3}]
+  addressed: [3]
+  max_chars: 120
+  why: ""
+- id: k20
+  leak: false
+  text: "我这轮过，听后面的。"
+  seat: 2
+  day: 2
+  points: [{"kind": "pass"}]
+  max_chars: 40
+  why: ""

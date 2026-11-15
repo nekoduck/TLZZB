@@ -198,7 +198,7 @@ def play_random(config: GameConfig, seed: int, max_steps: int = 5000) -> Game: .
 - 解药、毒药各至多用一次，且不在同一夜；预言家每夜至多验一次，不重复验同一人。
 - 一个白天至多放逐一人；票只来自有投票权的存活者；没有人投自己。
 - **视图不泄露：** 对每个座位，`game.view(seat) == build_view(config, seat, 可见事件)`；`known_roles` 只含自己、（狼人的）队友、公开翻出的身份；视图里的发言事件没有文字。
-- **事件不夹私货：** 任何事件的 JSON 里不出现 `truthful`、`motive`、`reason`、`evidence`、`fuzzy`、`thought`、`utility` 这些键。
+- **事件不夹私货：** 任何事件的 JSON 里不出现 `truthful`、`motive`、`reason`、`evidence`、`fuzzy`、`thought`、`utility` 这些键（`vote_result` 与 `game_over` 的 `data.reason` 除外）。
 - **公开序列与身份无关：** 把一局的公开事件只留 `type` 与 `phase`，同一串公开动作下换一套身份分配，序列不变（专门的测试构造这种对照）。
 
 ## 4 心智
