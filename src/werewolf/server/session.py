@@ -109,8 +109,10 @@ REPLAY_TYPES = frozenset({'game', 'event', 'narration', 'private', 'parsed', 'go
 GATED_TYPES = frozenset({'event', 'narration', 'request', 'thinking', 'review'})
 QUICK_PASS = frozenset({'过', '过。', '过了', 'pass', 'Pass', 'PASS'})
 REFLECT_GRACE_S = 2.0  # 反思超时之外再宽限多久
-AI_GRACE_S = 5.0
-MAX_SPEECH_CHARS = 600  # 内核对 Speech.text 的上限  # AI 作答的兜底超时在模型超时之外再宽限多久
+AI_GRACE_S = 5.0  # AI 作答的兜底超时在模型超时之外再宽限多久
+MAX_SPEECH_CHARS = 600  # 内核对 Speech.text 的上限
+REVIEW_GRACE_S = 3.0  # 终局时还没写完的反思与独白，最多再等多久
+FALLBACK_SPEECH = '我先过。'
 
 # 事件 → 停顿种类（director.pacing.HOLD_RANGES）
 EVENT_HOLD: dict[EventType, str] = {
@@ -326,14 +328,20 @@ class Session:
         if isinstance(msg, RequestMsg) and self._open is not None and self._open.msg is msg:
             self._open.sent = True
 
-    async def _deliver(self, msg: ServerMsg) -> None:
+    async def _deliver(self, msg: ServerMsg, *, wait: bool = True) -> None:
+        """`wait=False`（回复浏览器来的消息）：没有连接时只记下（可重放的重连时重放），不等重连——
+        否则 app 的接收循环会卡在这里，连 resume 都收不到。"""
         if self._headless:
             self._log_out(msg)
             return
         while True:
-            await self._attached.wait()
+            if wait:
+                await self._attached.wait()
             async with self._wire_lock:
                 if not self._attached.is_set() or self._send is None:
+                    if not wait:
+                        self._log_out(msg)
+                        return
                     continue
                 self._log_out(msg)
                 try:
@@ -429,11 +437,30 @@ class Session:
         except Exception:
             log.exception('session crashed')
             with contextlib.suppress(Exception):
-                await self._deliver(ErrorMsg(code='internal', message='服务端出错，这一局无法继续'))
+                await self._deliver(ErrorMsg(code='internal', message='服务端出错，这一局无法继续'), wait=False)
             raise
         finally:
             self._cancel_tasks()
             self.store.close()
+
+    async def _settle_side_work(self, limit: float) -> None:
+        """终局：还在跑的反思与独白最多再等 `limit` 秒（进复盘），到点没完的取消。"""
+        async def quiet(aw: Awaitable[Any]) -> None:
+            with contextlib.suppress(Exception):
+                await aw
+
+        end = self._now() + limit
+        reflect = [t for t in self._reflect.values() if not t.done()]
+        if reflect:
+            await asyncio.wait(reflect, timeout=limit)
+        closers = [asyncio.ensure_future(quiet(fn())) for p in self.players.values()
+                   if callable(fn := getattr(p, 'aclose', None))]
+        if closers:
+            _, late = await asyncio.wait(closers, timeout=max(0.0, end - self._now()))
+            for t in late:
+                t.cancel()
+            if late:
+                await asyncio.wait(late)
 
     def _cancel_tasks(self) -> None:
         for t in [*self._tasks, *self._reflect.values()]:
@@ -493,16 +520,24 @@ class Session:
         try:
             await asyncio.wait_for(player.reflect(self.game.view(seat)),
                                    self.ww.limits.reflect_timeout_s + REFLECT_GRACE_S)
-        except (TimeoutError, asyncio.CancelledError):
+        except TimeoutError:
             pass
+        except asyncio.CancelledError:
+            raise  # 不吞取消：等着它的作答任务（乃至整局）被取消时要一路传上去
         except Exception:  # noqa: BLE001
             log.exception('reflect failed for seat %s', seat)
 
     async def _await_reflection(self, seat: Seat) -> None:
         t = self._reflect.pop(seat, None)
-        if t is not None:
-            with contextlib.suppress(asyncio.CancelledError):
-                await t
+        if t is None:
+            return
+        try:
+            await t
+        except asyncio.CancelledError:
+            me = asyncio.current_task()
+            if me is not None and me.cancelling():
+                raise  # 是自己被取消
+            # 只是反思被取消（例如被下一夜的换掉）：不挡作答
 
     async def _await_reflections(self) -> None:
         for seat in list(self._reflect):
@@ -554,10 +589,37 @@ class Session:
             return self._fallback(req)
 
     def _fallback(self, req: Request) -> _Answer:
-        action = random_action(self.game, req, self._fallback_rng)
+        """出错兜底：选择类随机合法动作；发言交「过」（acts 是 [PASS]），不编随机的言语行为。"""
+        if req.kind == RequestKind.SPEAK:
+            speech = Speech(text=FALLBACK_SPEECH, acts=[SpeechAct(kind=ActKind.PASS)], source='ai')
+            action = Action(request_id=req.id, seat=req.seat, speech=speech)
+            thought = '（出错，先过）'
+        else:
+            action = random_action(self.game, req, self._fallback_rng)
+            thought = '（出错，随机作答）'
         dec = Decision(request_id=req.id, seat=req.seat, day=req.day, kind=req.kind,
-                       option_id=action.option_id or 'fallback', source='fallback', thought='（出错，随机作答）')
+                       option_id=action.option_id or 'pass', source='fallback', thought=thought)
         return _Answer(req, action, dec)
+
+    def _late(self, req: Request) -> _Answer:
+        """夜间 / 技能环节到点还没答：用玩家的规则版选择（`fallback_act` 钩子，不调模型），没有就随机。"""
+        fn = getattr(self.players[req.seat], 'fallback_act', None)
+        if callable(fn):
+            try:
+                action, dec = fn(req, self.game.view(req.seat))
+                return _Answer(req, action, dec)
+            except Exception:  # noqa: BLE001
+                log.exception('fallback_act failed for seat %s', req.seat)
+        return self._fallback(req)
+
+    def _step_deadline(self, reqs: Sequence[Request], tasks: dict[str, asyncio.Task[_Answer]],
+                       human: Request | None) -> float | None:
+        """规定 9：没有真人请求的夜间环节 / 技能环节，AI 的结果在导演那段 hold 到点时提交（返回到点的时刻）。"""
+        if human is not None or not tasks or self.speed == 'instant' or self.time_scale <= 0:
+            return None
+        if not any(r.phase in NIGHT_PHASES or r.phase == Phase.HUNTER for r in reqs if r.id in tasks):
+            return None
+        return self._next_ok
 
     # ---- 收集与提交 ----
 
@@ -573,7 +635,19 @@ class Session:
         if human is not None:
             action = await self._ask_human(human)
             answers.append(_Answer(human, action, human=True))
-        for t in tasks.values():
+        deadline = self._step_deadline(reqs, tasks, human)
+        if deadline is not None:
+            left = [t for t in tasks.values() if not t.done()]
+            if left:
+                await asyncio.wait(left, timeout=max(0.0, deadline - self._now()))
+        by_id = {r.id: r for r in reqs}
+        for rid, t in tasks.items():
+            if deadline is not None and not t.done():
+                t.cancel()
+                await asyncio.wait([t])
+                if t.cancelled():
+                    answers.append(self._late(by_id[rid]))
+                    continue
             answers.append(await t)
         if thinking:
             assert speak is not None
@@ -686,10 +760,11 @@ class Session:
             if self._send is not None:
                 await self.attach(self._send)
         else:
-            await self._deliver(ErrorMsg(code='bad_message', message='这条消息要由服务入口处理'))
+            await self._deliver(ErrorMsg(code='bad_message', message='这条消息要由服务入口处理'), wait=False)
 
     async def _error(self, code: str, message: str, request_id: str | None = None, detail: str | None = None) -> None:
-        await self._deliver(ErrorMsg(code=code, message=message, request_id=request_id, detail=detail))  # type: ignore[arg-type]
+        await self._deliver(ErrorMsg(code=code, message=message, request_id=request_id, detail=detail),  # type: ignore[arg-type]
+                            wait=False)
 
     def _live_open(self, token: str) -> _Open | None:
         op = self._open
@@ -704,7 +779,7 @@ class Session:
                 ok = False
                 await self._error('not_allowed', '现在还不能打开上帝视角')
             elif msg.god_view and not self.god_view:
-                await self._deliver(self._god_msg())
+                await self._deliver(self._god_msg(), wait=False)
                 self.god_view = True
             elif not msg.god_view:
                 self.god_view = False
@@ -713,7 +788,7 @@ class Session:
             if msg.speed == 'instant':
                 self._ack_evt.set()
         if ok or msg.speed is not None:
-            await self._deliver(self._state())
+            await self._deliver(self._state(), wait=False)
 
     def _god_msg(self) -> GodView:
         roles = [SeatRole(seat=s, role=self.game.role_of(s)) for s in range(1, self.game.config.seats + 1)]
@@ -734,12 +809,16 @@ class Session:
         if self._live_open(msg.request_id) is not op:
             return
         await self._deliver(Parsed(preview=True, request_id=op.token, acts=parsed.acts, flags=parsed.flags,
-                                   ignored=parsed.ignored, notice=parsed.notice))
+                                   ignored=parsed.ignored, notice=parsed.notice), wait=False)
 
     async def _parse(self, text: str, seat: Seat) -> ParsedSpeech:
         if text in QUICK_PASS:
             return ParsedSpeech(acts=[SpeechAct(kind=ActKind.PASS)], clean_text=text)
-        return await parse_speech(self.gateway, text, self.game.public_view(), seat)
+        try:
+            return await parse_speech(self.gateway, text, self.game.public_view(), seat)
+        except Exception:  # noqa: BLE001 — 解析出意外也不能卡住真人的请求：只留原话，不记言语行为
+            log.exception('parse_speech failed; keeping raw text only')
+            return ParsedSpeech(acts=[], clean_text=text)
 
     async def _on_action(self, msg: ActionMsg) -> None:
         op = self._live_open(msg.request_id)
@@ -756,7 +835,7 @@ class Session:
         stance = msg.stance if req.kind == RequestKind.WOLF_KILL and req.day == 1 else None
         action = Action(request_id=req.id, seat=req.seat, option_id=msg.option_id, stance=stance)
         self._open = None
-        await self._deliver(Accepted(request_id=op.token, option_id=action.option_id))
+        await self._deliver(Accepted(request_id=op.token, option_id=action.option_id), wait=False)
         if not op.future.done():
             op.future.set_result(action)
 
@@ -768,10 +847,10 @@ class Session:
             await self._error('illegal_action', '发言不能为空', op.token, 'bad_speech')
             return
         self._open = None  # 认领：此后同一请求再来就是 unknown_request
-        await self._deliver(Accepted(request_id=op.token))
+        await self._deliver(Accepted(request_id=op.token), wait=False)
         try:
             speech, parsed = await self._human_speech(op, raw, msg.keep)
-        except _BadAction:  # 解析结果过不了结构校验：只留原话，不记言语行为
+        except Exception:  # noqa: BLE001 — 过不了结构校验（_BadAction）或别的意外：只留原话，不记言语行为
             log.warning('human speech failed structural check; dropping acts')
             limit = min(MAX_SPEECH_CHARS, self.ww.limits.human_speech_chars)
             speech = Speech(text=raw[:limit], acts=[], source='human',
@@ -1021,6 +1100,7 @@ class Session:
                       events=self.game.events('judge'), stats=stats)
 
     async def _finish(self) -> None:
+        await self._settle_side_work(REVIEW_GRACE_S)
         self.review = self._build_review()
         await self._emit(self.review)
         await self._cost()

@@ -12,7 +12,7 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from typing import Literal
 
-from werewolf.kernel.claims import ClaimLedger, speech_acts
+from werewolf.kernel.claims import ClaimLedger, speech_acts, speech_kind
 from werewolf.kernel.rng import Rng
 from werewolf.kernel.types import ActKind, Event, EventType, Phase, Request, Role, Seat, View
 from werewolf.mind.beliefs import Beliefs
@@ -450,6 +450,7 @@ def cite(ctx: Ctx, target: Seat, sign: int = 1, prefer: Sequence[ReasonCode] = (
 
     seer_check 作说出口的理由时，要求那条查验来自自己或自己站边的预言家（站边由调用方补 BACK_CLAIM）。"""
     allowed = _CITABLE_ACCUSE if sign > 0 else _CITABLE_VOUCH
+    hostile = hostile_today(ctx)
     best: tuple[float, ReasonCode, list[int]] | None = None
     by_reason: dict[ReasonCode, list[tuple[float, int]]] = {}
     for e in ctx.beliefs.evidence(target, 'public'):
@@ -461,8 +462,8 @@ def cite(ctx: Ctx, target: Seat, sign: int = 1, prefer: Sequence[ReasonCode] = (
         if ev is None or not evidence_ok(e.reason, ev, target, ctx.seat) or not ctx.memory.has(e.event_id):
             continue
         if e.reason == ReasonCode.SEER_CHECK and e.source is not None and e.source != ctx.seat:
-            if ctx.ledger.current_role(e.source) != Role.SEER:
-                continue
+            if ctx.ledger.current_role(e.source) != Role.SEER or e.source in hostile:
+                continue  # 引他的查验就得站他的边；正在踩我的人，我不站
         by_reason.setdefault(e.reason, []).append((abs(e.delta), e.event_id))
     for r, items in by_reason.items():
         score = sum(d for d, _ in items) + (5.0 if r in prefer else 0.0)
@@ -488,6 +489,49 @@ def enemy_cite(ctx: Ctx, t: Seat) -> Cite | None:
     return None
 
 
+SOFT_SUSPECT = 0.55  # 公开层怀疑度到这里，替他说话的人才算「替可疑的人说话」
+EAGER_SPEAKERS = 2  # 当天前几个发言就号召投人（自己没给证据），算「带节奏太急」
+_SOFT_ORDER = (ReasonCode.DEFENDED_WOLF, ReasonCode.FOLLOWS_CROWD, ReasonCode.QUIET, ReasonCode.TOO_EAGER)
+
+
+def public_cite(ctx: Ctx, t: Seat) -> Cite | None:
+    """怀疑度里没有说得出口的证据时，从 t 今天与昨天的公开发言里找一条软理由（替可疑的人说话、
+    跟着别人号召、不表态、上来就带节奏）。只是给按感觉挑的目标找个说法，所以调用方只给轻重 1。"""
+    mates = set(ctx.teammates())
+    found: dict[ReasonCode, int] = {}
+    called: dict[int, set[Seat]] = {}  # 那一天更早的发言里已被号召或踩过的座位
+    speakers: dict[int, list[Seat]] = {}
+    for e in ctx.view.events:
+        if e.type != EventType.SPEECH or e.vis != 'public' or e.actor is None or e.day < ctx.day - 1:
+            continue
+        acts = speech_acts(e)
+        day_called = called.setdefault(e.day, set())
+        order = speakers.setdefault(e.day, [])
+        if e.actor not in order:
+            order.append(e.actor)
+        if e.actor == t and speech_kind(e) in ('day', 'pk'):
+            pushes = [a for a in acts if a.kind in (ActKind.ACCUSE, ActKind.VOTE_INTENT) and a.target not in (None, t)]
+            props = [a for a in acts if a.kind in (ActKind.VOUCH, ActKind.BACK_CLAIM, ActKind.DEFEND)
+                     and a.target not in (None, t, ctx.seat)]
+            if any(a.target in day_called and a.weight <= 1 for a in pushes):
+                found[ReasonCode.FOLLOWS_CROWD] = e.id
+            if any(a.target not in mates and ctx.p(a.target, 'public') >= SOFT_SUSPECT  # type: ignore[arg-type]
+                   for a in props):
+                found[ReasonCode.DEFENDED_WOLF] = e.id
+            if speech_kind(e) == 'day' and all(a.kind == ActKind.PASS for a in acts):
+                found[ReasonCode.QUIET] = e.id
+            if pushes and all(a.weight <= 1 for a in pushes) and len(order) <= EAGER_SPEAKERS:
+                found[ReasonCode.TOO_EAGER] = e.id
+        day_called.update(a.target for a in acts if a.kind in (ActKind.ACCUSE, ActKind.VOTE_INTENT)
+                          and a.target is not None)
+    for r in _SOFT_ORDER:
+        eid = found.get(r)
+        ev = ctx.events_by_id.get(eid) if eid is not None else None
+        if ev is not None and evidence_ok(r, ev, t, ctx.seat):
+            return Cite(r, [ev.id], False)
+    return None
+
+
 def pa(kind: ActKind, target: Seat | None = None, weight: int = 2, reason: ReasonCode | None = None,
        evidence: Sequence[int] = (), motive: ReasonCode | None = None, truthful: bool = True, fuzzy: bool = False,
        **kw: object) -> PlannedAct:
@@ -503,6 +547,13 @@ def accuse_acts(ctx: Ctx, t: Seat, *, motive: ReasonCode | None = None, truthful
     if c is None:
         c = enemy_cite(ctx, t)
     out: list[PlannedAct] = []
+    soft = public_cite(ctx, t) if c is None else None
+    if soft is not None:  # 只是按感觉挑的人找了个公开的说法：轻重 1，不算硬指认
+        m = motive or ReasonCode.GUT
+        out.append(pa(ActKind.ACCUSE, t, 1, soft.reason, soft.evidence, m, truthful))
+        if intent:
+            out.append(pa(ActKind.VOTE_INTENT, t, 1, soft.reason, soft.evidence, m, truthful))
+        return out
     if c is None:
         out.append(pa(ActKind.ACCUSE, t, 1, ReasonCode.GUT, motive=motive or ReasonCode.GUT, truthful=truthful))
         if intent:
@@ -622,6 +673,16 @@ def rank_targets(ctx: Ctx, layer: Layer = 'private', exclude: Iterable[Seat] = (
     return sorted(items, key=key)
 
 
+def hostile_today(ctx: Ctx) -> set[Seat]:
+    """报过我查杀的人，和今天踩我、号召投我的人。"""
+    out = set(ctx.checked_wolf_by())
+    for e in ctx.view.events:
+        if e.type == EventType.SPEECH and e.day == ctx.day and e.actor not in (None, ctx.seat) and any(
+                a.kind in (ActKind.ACCUSE, ActKind.VOTE_INTENT) and a.target == ctx.seat for a in speech_acts(e)):
+            out.add(e.actor)  # type: ignore[arg-type]
+    return out
+
+
 def claim_backing(ctx: Ctx, layer: Layer = 'private') -> list[PlannedAct]:
     """站边：唯一（或最可信）的预言家声明者。对跳时质疑另一位。"""
     claimants = [c for c in ctx.ledger.claimants(Role.SEER) if c != ctx.seat and c in ctx.living]
@@ -635,6 +696,8 @@ def claim_backing(ctx: Ctx, layer: Layer = 'private') -> list[PlannedAct]:
     lone = len(claimants) == 1
     if lone and ctx.traits.conformity < 0.4:
         pass  # 只有一个人跳、还没人对跳时，不从众的人先不站边
+    elif best in hostile_today(ctx):
+        pass  # 他今天正踩我、报我查杀：嘴上还说「信他的身份」就自相矛盾了
     elif trusts[best] >= 0.5 and not (ctx.hard(best) and ctx.p(best) >= 0.5):
         out.append(pa(ActKind.BACK_CLAIM, best, 1 if lone or trusts[best] < 0.7 else 2))
     for c in claimants:
@@ -710,9 +773,12 @@ def town_variants(ctx: Ctx, request: Request, *, layer: Layer = 'private', exclu
         if crowd is not None and crowd != top and not (ctx.hard(crowd) and ctx.p(crowd) < 0.5):
             m3 = motive or ReasonCode.FOLLOWS_CROWD
             c = cite(ctx, crowd, 1)
+            soft = public_cite(ctx, crowd) if c is None else None
             acts3: list[PlannedAct | None] = [defend_self]
             if c is not None:
                 acts3.append(pa(ActKind.VOTE_INTENT, crowd, 2, c.reason, c.evidence, m3, truthful, c.fuzzy))
+            elif soft is not None:
+                acts3.append(pa(ActKind.VOTE_INTENT, crowd, 1, soft.reason, soft.evidence, m3, truthful))
             else:
                 acts3.append(pa(ActKind.VOTE_INTENT, crowd, 1, ReasonCode.GUT, motive=m3, truthful=truthful))
             u3 = 0.1 + 1.2 * tr.conformity + 1.0 * (ctx.p(crowd, layer) - ptop)

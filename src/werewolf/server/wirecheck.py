@@ -8,6 +8,7 @@
 - 请求号不是内核的 `r<数字>`；
 - 夜间环节与技能环节里不发 `thinking`；
 - 同一时刻至多一个未答的请求。
+重连：带 `replay` 的 `game` 表示浏览器从头重收，计数归零；重放的消息与现场的一样检查，`state.open_request` 算作未答的请求。
 """
 
 from __future__ import annotations
@@ -76,13 +77,15 @@ def wire_check(msgs: Sequence[ServerMsg], game: Game, human_seat: Seat) -> list[
 
     for i, m in enumerate(msgs):
         where = f'#{i} {m.t}'
+        if isinstance(m, GameStarted) and m.replay:
+            sent, next_seq, vis_i, unrestricted, phase, open_req = set(), 1, 0, False, None, None
         if isinstance(m, GameStarted) and (m.you != human_seat or m.your_role != human_role):
             problems.append(f'{where}: 座位或身份不是真人的（{m.you} 号 {m.your_role}）')
         if isinstance(m, GodView):
             unrestricted = True
         if isinstance(m, Review):
             unrestricted = True
-        if isinstance(m, EventMsg) and not m.replay:
+        if isinstance(m, EventMsg):
             if m.seq != next_seq:
                 problems.append(f'{where}: seq {m.seq}，应为 {next_seq}')
             next_seq = m.seq + 1
@@ -104,7 +107,7 @@ def wire_check(msgs: Sequence[ServerMsg], game: Game, human_seat: Seat) -> list[
             if m.ev.type == EventType.GAME_OVER:
                 unrestricted = True
                 continue
-        if isinstance(m, (ReactionMsg, PrivateInfo, Parsed)) and not getattr(m, 'replay', False):
+        if isinstance(m, (ReactionMsg, PrivateInfo, Parsed)):
             seq = m.seq
             if seq is not None and seq not in sent:
                 problems.append(f'{where}: 引用了未发过的 seq {seq}')
@@ -114,8 +117,12 @@ def wire_check(msgs: Sequence[ServerMsg], game: Game, human_seat: Seat) -> list[
             if open_req is not None and open_req != m.id:
                 problems.append(f'{where}: 请求 {open_req} 未答就发了 {m.id}')
             open_req = m.id
-        if isinstance(m, SessionState) and m.open_request is not None and _KERNEL_REQ.match(m.open_request.id):
-            problems.append(f'{where}: 请求号 {m.open_request.id} 像内核编号')
+        if isinstance(m, SessionState) and m.open_request is not None:
+            if _KERNEL_REQ.match(m.open_request.id):
+                problems.append(f'{where}: 请求号 {m.open_request.id} 像内核编号')
+            if open_req is not None and open_req != m.open_request.id:
+                problems.append(f'{where}: 请求 {open_req} 未答就报了 {m.open_request.id}')
+            open_req = m.open_request.id
         if isinstance(m, Accepted) and m.request_id == open_req:
             open_req = None
         if isinstance(m, ErrorMsg) and m.detail == 'unknown_request' and m.request_id == open_req:

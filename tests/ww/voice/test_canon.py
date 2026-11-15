@@ -87,3 +87,46 @@ def test_seats_and_diff() -> None:
     extra, missing = claim_diff('7号很可疑，我跟你出5号。', plan, day=1)
     assert [(a.kind.value, a.target) for a in extra] == [('vote_intent', 5)]
     assert {a.kind.value for a in missing} == {'claim_role', 'claim_check', 'vote_intent'}
+
+
+# ---- 实战里 Claude 写的、被核对误拦的说法（真模型试玩里收集）
+@pytest.mark.parametrize(
+    ('text', 'want'),
+    [
+        ('我跟你们讲，我是预言家。', {('claim_role', None, 'seer')}),  # 对桌上讲，不是转述
+        ('我和你们讲句实话，我是女巫。', {('claim_role', None, 'witch')}),
+        ('你们听我说，我是预言家。', {('claim_role', None, 'seer')}),
+        ('我是预言家，这话我说过就算数。', {('claim_role', None, 'seer')}),  # 「就算数」的「就算」不是假设
+        ('我今天投4号，欢迎指出漏洞，要是有人能拿出新的事实，我会重新看。', {('vote_intent', 4, None)}),
+        ('我投1号，你们要是有不同看法，咱们摆到桌面上说。', {('vote_intent', 1, None)}),
+        ('我昨天投3号，今天还投3号。', {('vote_intent', 3, None)}),
+        ('前面我投了4号，这轮我投5号。', {('vote_intent', 5, None)}),
+    ],
+)
+def test_live_false_blocks_now_read_right(text: str, want: set[tuple]) -> None:
+    assert keys(text) == want
+
+
+@pytest.mark.parametrize(
+    'text',
+    [
+        '话说回来，我也不是随便下结论，前面投4号、投5号，我都是把理由摆出来的。',  # 回顾，过去时管到并列的小句
+        '我第1天怀疑的是1号，表态要投1号，站的也是7号的边，结果1号真出局了。',
+        '投3号的那几个人我都记着。',  # 定语，不是表态
+        '投3号的时候我就觉得不对。',
+        '可我站5号，不等于要跟着4号去投6号，这是两回事。',
+        '如果3号是狼，我投3号。',  # 假设管到后面的小句
+        '就算我是预言家你们也不信。',
+        '3号：我是狼人。',  # 学别人说话
+        '好，3号：我是预言家，验了7号是狼人。',
+        '3号跟你们说他是预言家。',
+    ],
+)
+def test_recaps_and_quotes_yield_nothing(text: str) -> None:
+    assert keys(text) == set()
+
+
+def test_past_marker_does_not_reach_a_fresh_clause() -> None:
+    # 真模型试玩：「第2天」说的是对方什么时候踩我，后面以「我」起头的「我投2号」是这次的表态
+    assert keys('2号你第2天怀疑我，我有点破防，那个，我怀疑你，我投2号。') == {('vote_intent', 2, None)}
+    assert keys('前面我投了4号、投5号，都是有理由的。') == set()

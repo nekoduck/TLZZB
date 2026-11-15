@@ -16,8 +16,18 @@ export function btn(label, onClick, cls = '', props = {}) {
 }
 export function modal({ title, body, wide = false, onClose, actions }) {
   const root = document.getElementById('modal-root');
-  const close = () => { back.remove(); document.removeEventListener('keydown', esc); if (onClose) onClose(); };
-  const esc = (e) => { if (e.key === 'Escape') close(); };
+  const opener = document.activeElement;
+  const close = () => {
+    document.removeEventListener('keydown', esc);
+    if (!back.isConnected) return;
+    back.remove();
+    if (opener && opener.isConnected && typeof opener.focus === 'function') opener.focus(); // 关掉后焦点回到打开它的按钮
+    if (onClose) onClose();
+  };
+  const esc = (e) => { // 叠着多个对话框时 Esc 只关最上面一个
+    if (e.key !== 'Escape' || root.lastElementChild !== back) return;
+    e.stopPropagation(); close();
+  };
   const x = h('button', { type: 'button', class: 'icon-btn modal-x', 'aria-label': '关闭', onClick: close }, '×');
   const box = h('div', { class: `modal ${wide ? 'wide' : ''}`, role: 'dialog', 'aria-modal': 'true', 'aria-label': title },
     h('div', { class: 'modal-head' }, h('h2', null, title), x), h('div', { class: 'modal-body' }, body), actions ? h('div', { class: 'modal-actions' }, actions) : null);

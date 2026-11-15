@@ -42,7 +42,8 @@ _CLAUSE_SPLIT = re.compile(r'[，,、]+')
 _HYPO = re.compile(r'如果|要是|假如|假设|假使|万一|就算|哪怕|即使|倘若|除非')
 _QUESTION = re.compile(r'吗|是不是|难道|会不会|有没有|到底是|谁是|是谁|怎么可能|凭什么|[?？]')
 # 转述：别人做主语的「说、称、跳」
-_REPORTED = re.compile(rf'(?:{_NUM}\s*号|他|她|你|你们|他们|有人|别人|对面|对方|谁)(?:[^，,。]{{0,6}})?(?:说|讲|称|自称|声称|表示|喊|跳|起跳|报|认为|觉得)')
+_REPORTED = re.compile(rf'(?:{_NUM}\s*号|他|她|你|你们|他们|有人|别人|对面|对方|谁)(?:[^，,。]{{0,6}})?(?:说|讲|称|自称|声称|表示|喊|跳|起跳|报|认为|觉得)'
+                       rf'|(?:^|[，,])\s*(?:{_NUM}\s*号|他|她)\s*[:：]')  # 「3号：我是狼」是在学别人说话
 # 别人做主语的动作（验、救、毒、投）
 _OTHER_SUBJ = rf'(?:{_NUM}\s*号|他|她|你|你们|他们|有人|别人|对面|对方|谁|大家|狼|狼人|狼队|预言家|女巫|猎人)'
 
@@ -70,7 +71,19 @@ _VOTE = re.compile(
     rf'(?P<pre>[^，,。]{{0,10}}?)(?:投|出|归票|归|挂|票给|票挂|票)(?P<past>了|过)?\s*{_T}(?!\s*(?:的票|那票|一票))'
 )
 _VOTE_NEG = re.compile(r'(?:不|别|不要|不会|不想|没|没有|先不|未必|不一定|不能|怎么|为什么|凭什么|干嘛)\s*(?:再|就|去|要|会|该|能)?\s*$')
+# 「不等于要跟着4号去投6号」「不是说我要投6号」：前面整段被否定
+_VOTE_NOT = re.compile(r'不等于|不代表|不意味着|不是说|并不是|不是要|不至于|犯不着|没必要')
 _VOTE_PAST = re.compile(r'(?:昨天|昨日|上一轮|上轮|第[一二三四五六七八九\d]天|刚才|之前|当时|前面)')
+# 「今天」「这轮」之类：句子里在过去时标记之后又出现它，后面的「投 T 号」说的就是这次
+_VOTE_NOW = re.compile(r'(?:今天|今日|这一?轮|本轮|这次|现在|待会|等下|一会儿?|这票|这一票)')
+# 逗号之后以「我」开头的小句（「2号你第2天怀疑我，我有点破防，我投2号」）：过去时管不到这里
+_FRESH_ME = re.compile(r'[，,]\s*(?:那个|所以|但是?|可是?|然后|不过|而且|反正|总之)?[，,\s]*我')
+# 「投3号的那几个人」「投3号的时候」：作定语或时间状语，不是表态
+_VOTE_REL = re.compile(r'\s*的\s*(?:人|那|这|几|时候|话|玩家|一些|些|票)|\s*(?:以后|之后|那会)')
+# 「我跟你们讲」「跟大家说句实话」「你们听我说」：说话的人在对桌上讲，不是转述别人
+_ADDRESS = re.compile(r'(?:^|(?<=[，,])|我)\s*(?:跟|和|对|给|同|向)\s*(?:你们|你|大家|各位|在座的?)\s*(?:讲|说)'
+                      r'(?:句|一句|个事儿?|件事)?(?:实话|真话|心里话)?(?:一下)?'
+                      r'|(?:^|(?<=[，,]))\s*(?:你们|大家|各位)?\s*听我(?:说|讲)(?:一句|两句|几句)?')
 
 _NIGHT_ORD = re.compile(r'第\s*([1-9一二三四五六七八九])\s*(?:晚|夜|个晚上|天晚上|天夜里)')
 _NIGHT_FIRST = re.compile(r'首夜|头一晚|头夜|第一个晚上')
@@ -125,6 +138,17 @@ def _other_subject(pre: str) -> bool:
     return last_other > last_me
 
 
+def _past_vote(before: str) -> bool:
+    """「投 T 号」前面这段话里，最近的时间标记是不是过去时。"""
+    past = [m.end() for m in _VOTE_PAST.finditer(before)]
+    if not past:
+        return False
+    if _FRESH_ME.search(before, past[-1]):
+        return False  # 过去时之后又以「我」起了新的小句：说的是现在
+    now = [m.end() for m in _VOTE_NOW.finditer(before)]
+    return not now or past[-1] > now[-1]
+
+
 def claims_in(text: str, day: int | None = None) -> list[SpeechAct]:
     """从文字里读出声明类言语行为。`day` 是说话时的天数，用来把「昨晚」换成夜数。
 
@@ -143,10 +167,15 @@ def claims_in(text: str, day: int | None = None) -> list[SpeechAct]:
         acts.append(SpeechAct(kind=kind, **kw))  # type: ignore[arg-type]
 
     for sentence in _SENT_SPLIT.split(text):
-        sentence = sentence.strip()
+        sentence = _ADDRESS.sub('', sentence).strip()
+        # 假设只管它所在的小句和后面的小句：「我投3号，要是有人拿出新东西我再改」前半句照算
+        h = _HYPO.search(sentence)
+        if h:
+            cut = max(sentence.rfind(c, 0, h.start()) for c in '，,、')
+            sentence = sentence[:cut].strip() if cut > 0 else ''
         if not sentence:
             continue
-        hypo_or_q = bool(_HYPO.search(sentence)) or bool(_QUESTION.search(sentence))
+        hypo_or_q = bool(_QUESTION.search(sentence))
         reported = bool(_REPORTED.search(sentence))
         night = _night_of(sentence, day)
 
@@ -187,12 +216,17 @@ def claims_in(text: str, day: int | None = None) -> list[SpeechAct]:
                 add(ActKind.CLAIM_POISON, target=seat_num(m.group('t')), night=night)
 
         # ---- 表态投票（逐个小句看，免得前半句的否定管到后半句）
+        offset = 0
         for clause in _CLAUSE_SPLIT.split(sentence):
+            start = sentence.find(clause, offset)
+            offset = start + len(clause)
             for m in _VOTE.finditer(clause):
                 pre = m.group('pre')
-                if m.group('past') or _VOTE_PAST.search(clause[: m.start('t')]):
-                    continue  # 说的是过去投过谁
-                if _VOTE_NEG.search(pre) or _other_subject(pre) or _REPORTED.search(clause):
+                if m.group('past') or _past_vote(sentence[: start + m.start('t')]):
+                    continue  # 说的是过去投过谁（「前面投4号、投5号」的过去时管到后面的并列小句）
+                if _VOTE_REL.match(clause, m.end()):
+                    continue
+                if _VOTE_NEG.search(pre) or _VOTE_NOT.search(pre) or _other_subject(pre) or _REPORTED.search(clause):
                     continue
                 add(ActKind.VOTE_INTENT, target=seat_num(m.group('t')))
     return acts

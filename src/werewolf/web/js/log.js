@@ -36,6 +36,9 @@ export function updateLog() {
   const sig = `${S.events.length}:${Object.keys(S.parsedBy).length}:${S.godEvents.length}`;
   if (sig === lastSig) return;
   lastSig = sig;
+  const old = box.querySelector('.log-body');
+  const stick = !old || old.scrollHeight - old.scrollTop - old.clientHeight < 60; // 只有本来就在底部才跟到最新，否则不打断翻看
+  const keep = old ? old.scrollTop : 0;
   const body = h('div', { class: 'log-body' });
   for (const g of logEntries(S.events)) {
     body.append(h('h3', { class: 'log-day' }, g.head));
@@ -51,7 +54,7 @@ export function updateLog() {
   if (!body.childNodes.length) body.append(h('p', { class: 'dim pad' }, '还没有发言。'));
   fill(box, h('div', { class: 'log-head' }, h('h2', null, '发言记录'),
     h('button', { type: 'button', class: 'icon-btn', 'aria-label': '收起', onClick: () => toggleLog(false) }, '×')), body);
-  body.scrollTop = body.scrollHeight;
+  body.scrollTop = stick ? body.scrollHeight : keep;
 }
 
 function entry(ev) {

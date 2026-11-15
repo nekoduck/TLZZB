@@ -147,3 +147,17 @@ def test_hedge_and_reason_woven(pv, voices):
             seen_reason |= '直觉' in text
             assert '8号' in text
     assert seen_reason
+
+
+def test_same_reason_is_said_once_per_speech(pv, voices):
+    # 指认与表态投票用的是同一个理由：一段话里只讲一遍（以前常见「……纯属直觉。……纯属直觉。」）
+    for reason in ('gut', 'accused_me'):
+        acts = [PublicAct(kind=ActKind.ACCUSE, target=8, reason=reason, weight=1, evidence=[60]),
+                PublicAct(kind=ActKind.VOTE_INTENT, target=8, reason=reason, weight=1, evidence=[60])]
+        for v in voices:
+            b = _brief(pv, v, acts, length='long', max_chars=400)
+            core = b.points[0].reason
+            assert core
+            for seed in range(8):
+                text = compose(b, Rng(seed, 'once'))
+                assert text.count(core) <= 1, text

@@ -14,6 +14,7 @@ from werewolf.kernel.rng import Rng
 from werewolf.kernel.types import ActKind, Role, Seat, Tone
 from werewolf.mind.types import BriefPoint, SpeechBrief
 from werewolf.voice import phrases as P
+from werewolf.voice.brief import is_gut
 from werewolf.voice.canon import role_word
 
 _RANK = {
@@ -184,7 +185,7 @@ def _reason_sentence(ctx: _Ctx, pt: BriefPoint, inline_core: str | None) -> str 
     if not pt.reason:
         return None
     rs = pt.reason
-    if '直觉' in rs:
+    if is_gut(rs):
         pool = P.REASON_GUT
     elif pt.hedge:
         pool = P.REASON_HEDGED_SELF if rs.startswith('我') else P.REASON_HEDGED
@@ -265,6 +266,7 @@ def _build(brief: SpeechBrief, rng: Rng, level: int) -> list[tuple[str, bool]]:
 
     first = not opener
     rank = 0
+    said: set[str] = set()  # 已经说过的理由：一段话里同一个理由只讲一遍
     for pt in acts:
         claim = pt.act.kind in _CLAIMS
         if claim:
@@ -273,9 +275,12 @@ def _build(brief: SpeechBrief, rng: Rng, level: int) -> list[tuple[str, bool]]:
             core = _soft_core(ctx, pt)
         if core is None:
             continue
-        with_reason = (
-            ctx.decor and pt.reason and (ctx.verb == 2 or (ctx.verb == 1 and rank < 2) or rank < 1)
+        with_reason = bool(
+            ctx.decor and pt.reason and pt.reason not in said
+            and (ctx.verb == 2 or (ctx.verb == 1 and rank < 2) or rank < 1)
         )
+        if with_reason and pt.reason:
+            said.add(pt.reason)
         rank += 1
         if with_reason and not claim and pt.act.kind != ActKind.QUESTION and ctx.chance(0.4):
             def make_inline(core=core, pt=pt, claim=claim, first=first) -> str:  # noqa: ANN001

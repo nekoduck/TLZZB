@@ -155,6 +155,16 @@ class NpcAgent:
             opts = {o.option_id: option_text(o.label, o.reasons) for o in cands}
             probs = await llm_decide.choose(self.gw, 'J2_act', self._state(view, request), question, opts)
         dec = self.mind.decide(request, view, cands, probs)
+        return self._commit(request, view, intent, dec)
+
+    def fallback_act(self, request: Request, view: View) -> tuple[Action, Decision]:
+        """规则版选择（不调模型）：会话层在夜间 / 技能环节到点而 `act` 还没答完时用。"""
+        self.timeouts += 1
+        intent = self.mind.vote_intent
+        dec = self.mind.decide(request, view, self.mind.options(request, view), None)
+        return self._commit(request, view, intent, dec)
+
+    def _commit(self, request: Request, view: View, intent: Seat | None, dec: Decision) -> tuple[Action, Decision]:
         if request.kind == RequestKind.VOTE and request.context.get('round', 'main') == 'main' \
                 and intent is not None and any(o.target == intent for o in request.options):
             self.commitments.append((self.seat, request.day, intent, dec.option_id))

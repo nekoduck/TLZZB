@@ -19,10 +19,12 @@ from werewolf.kernel.types import ActKind, SpeechAct
 from werewolf.llm.check import check_rules, check_speech
 from werewolf.llm.decide import choose
 from werewolf.llm.gateway import Gateway
-from werewolf.mind.types import PersonaVoice, SpeechBrief
+from werewolf.llm.parse import sanitize
+from werewolf.mind.types import PersonaVoice, Quote, SpeechBrief
 from werewolf.voice import canon
 
 CLAUDE_KIND = 'W_speech'
+QUOTE_CHARS = 80  # 与 Quote.text 的上限一致
 TONE_ZH = {'calm': '平静', 'firm': '笃定', 'angry': '恼火', 'nervous': '紧张', 'joking': '打趣', 'cold': '冷淡',
            'earnest': '恳切', 'hesitant': '犹豫'}
 STATE_ZH = {'steady': '平稳', 'confident': '自信', 'tense': '紧张', 'tilted': '破防'}
@@ -96,6 +98,13 @@ def _seats(xs: list[int]) -> str:
     return '、'.join(f'{x}号' for x in xs) if xs else '无'
 
 
+def _heard_line(q: Quote) -> str:
+    """真人原话再洗一遍再进提示：会话层解析出意外时交来的是没洗过的原话（洗过的再洗不变）。"""
+    text, flags, _ = sanitize(q.text, QUOTE_CHARS)
+    note = '（夹了场外内容，已忽略）' if q.flags or {'stage_direction', 'injection'} & set(flags) else ''
+    return f'- {q.seat}号说：{text or "……"}{note}'
+
+
 def render_brief(b: SpeechBrief) -> str:
     """简报 → user 消息。小节固定。"""
     sit = b.situation
@@ -116,8 +125,7 @@ def render_brief(b: SpeechBrief) -> str:
 
     recent = '\n'.join(f'- {x}' for x in b.recent) or '无'
     own = '\n'.join(f'- {x}' for x in b.own_record) or '无'
-    heard = '\n'.join(
-        f'- {q.seat}号说：{q.text}' + ('（夹了场外内容，已忽略）' if q.flags else '') for q in b.heard) or '无'
+    heard = '\n'.join(_heard_line(q) for q in b.heard) or '无'
 
     pts: list[str] = []
     for i, p in enumerate(b.points, 1):

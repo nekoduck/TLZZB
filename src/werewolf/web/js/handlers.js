@@ -75,11 +75,14 @@ function onGod(msg) {
   const wolves = (msg.roles || []).filter((r) => r.role === 'werewolf').map((r) => r.seat);
   S.wolves = wolves;
 }
+const MAX_BUBBLES = 3;
 function onReaction(msg) {
   if (S.replaying || msg.seq !== S.lastSeq) return;
   const r = { label: msg.label, quip: msg.quip, emote: msg.emote, k: Math.random() };
+  delete S.reactions[msg.seat]; // 重新插入以刷新先后顺序
   S.reactions[msg.seat] = r;
-  setTimeout(() => { if (S.reactions[msg.seat] === r) { delete S.reactions[msg.seat]; refresh(); } }, 3400);
+  for (const old of Object.keys(S.reactions).slice(0, -MAX_BUBBLES)) delete S.reactions[old]; // 同屏最多 3 个气泡，挤掉最旧的
+  setTimeout(() => { if (S.reactions[msg.seat] === r) { delete S.reactions[msg.seat]; refresh(); } }, 2600);
 }
 
 // ---------------------------------------------------------------------------

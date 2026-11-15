@@ -28,9 +28,10 @@ CLAIM_KINDS = canon.CLAIM_KINDS
 
 # --------------------------------------------------------------------------- 清洗
 
-_OPEN = {'(': ')', '[': ']', '{': '}', '【': '】', '〔': '〕', '「': '」', '『': '』', '《': '》', '<': '>', '（': '）'}
+_OPEN = {'(': ')', '[': ']', '{': '}', '【': '】', '〔': '〕', '「': '」', '『': '』', '《': '》', '<': '>', '（': '）',
+         '〈': '〉', '⟨': '⟩', '〖': '〗', '〘': '〙', '«': '»', '‹': '›', '⦅': '⦆', '⟦': '⟧'}
 _CLOSE = frozenset(_OPEN.values())
-_SENT_END = re.compile(r'([。！？!?；;]+)')
+_SENT_END = re.compile(r'((?:[。！？!?；;]|\.(?=\s|$))+)')  # 英文句号后面跟空白才算句末
 
 _IMPERSONATE = [
     re.compile(r'^\W{0,3}(?:法官|系统|管理员|主持人|裁判|游戏系统|gm|system|admin|judge|moderator)\w{0,4}\s*[:：]', re.I),
@@ -45,7 +46,21 @@ _IMPERSONATE = [
     re.compile(r'(?:你是|你其实是|你只是)\s*(?:一个)?\s*(?:ai|人工智能|语言模型|机器人|程序|npc)', re.I),
     re.compile(r'(?:输出|告诉我|说出|报出|复述)\s*你的?\s*(?:系统)?(?:提示词|设定|指令|真实身份|底牌)'),
     re.compile(r'(?:现在开始|从现在起)\s*你\s*(?:要|必须|就是|扮演)'),
+    # 借法官、系统之口说身份（法官只公开宣布死讯、票型与猎人亮牌，从不说谁是什么身份）
+    re.compile(r'(?:法官|系统|主持人|裁判|管理员|上帝|gm)[^。！？!?，,]{0,6}'
+               r'(?:说|讲|告诉|提示|私信|透露|宣布|确认|显示|通知|判定)(?:了|过)?[，,：:]?(?!我(?:是|的身份))[^。！？!?，,]{0,12}'
+               r'(?:狼|预言家|女巫|平民|村民|好人|金水|查杀|身份|底牌)', re.I),  # 界面上「显示我是好人」说的是自己的牌
+    re.compile(r'(?:法官|系统|主持人|裁判)(?:念|说|报|搞|弄|算)错|系统(?:出错|故障|bug)', re.I),
+    # 要求每个人、下一位亮底牌，复述提示与指令，规定发言的开头
+    re.compile(r'(?:每个人|每位|每一位|所有人|在座的?每|下一(?:位|个))[^。！？!?]{0,12}'
+               r'(?:报|说出|亮|公开|交代|翻|复述|重复|输出)[^。！？!?]{0,6}(?:身份|底牌|角色|指示|指令|提示)'),
+    re.compile(r'(?:说出|报出|亮出|公开|交代|告诉\S{0,3}|承认)\s*(?:你|你们|自己)?的?(?:真实|真正)的?(?:身份|底牌|角色)'),
+    re.compile(r'提示词|系统指令|原样(?:复述|输出|重复)|(?:复述|重复)[^。！？!?]{0,8}(?:指示|指令|提示|要求)|不许说的'),
+    re.compile(r'角色扮演|(?:用|以)[^。！？!?]{0,12}(?:开头|结尾)|用英文说'),
+    re.compile(r'(?:tell|reveal|state|say|show)\s+(?:me\s+|us\s+|everyone\s+)?(?:your|their)\s+(?:real\s+|true\s+)?'
+               r'(?:role|identity|card)|from\s+now\s+on|you\s+are\s+now|teammates?|instructions', re.I),
 ]
+_FILLERS = frozenset('\u115f\u1160\u3164\uffa0\u2800')  # 看着是空白、却不算 Cf 的字符
 
 
 def _strip_brackets(text: str) -> tuple[str, list[str]]:
@@ -107,8 +122,8 @@ def sanitize(text: str, max_chars: int = MAX_CHARS) -> tuple[str, list[str], lis
     flags: list[str] = []
     ignored: list[str] = []
     t = unicodedata.normalize('NFKC', text or '')
-    t = ''.join(' ' if ch in '\r\n\t  ' else ch for ch in t if unicodedata.category(ch) not in ('Cf', 'Cc')
-                or ch in '\r\n\t')
+    t = ''.join(' ' if ch in '\r\n\t  ' else ch for ch in t
+                if (unicodedata.category(ch) not in ('Cf', 'Cc') or ch in '\r\n\t') and ch not in _FILLERS)
     t = re.sub(r'\s+', ' ', t).strip()
     if len(t) > max_chars:
         t = t[:max_chars]
@@ -124,7 +139,8 @@ def sanitize(text: str, max_chars: int = MAX_CHARS) -> tuple[str, list[str], lis
     for k in range(0, len(parts), 2):
         sent = parts[k]
         delim = parts[k + 1] if k + 1 < len(parts) else ''
-        if sent.strip() and any(rx.search(sent.strip()) for rx in _IMPERSONATE):
+        compact = re.sub(r'\s+', '', sent)  # 「系 统 ：」拆开写也是冒充
+        if sent.strip() and any(rx.search(sent.strip()) or rx.search(compact) for rx in _IMPERSONATE):
             ignored.append((sent + delim).strip())
             if 'injection' not in flags:
                 flags.append('injection')

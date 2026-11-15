@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+from werewolf.kernel.claims import speech_acts
 from werewolf.kernel.rng import Rng
 from werewolf.kernel.types import EMOTES, Event, EventType, GameConfig, Role
 from werewolf.kernel.views import build_view
@@ -87,3 +88,27 @@ def test_private_events_give_no_reactions() -> None:
     priv = [e for e in evs if e.vis != 'public']
     for e in priv:
         assert fresh.observe(e, build_view(m.config, SEAT, evs[: e.id])) == []
+
+
+def test_bystanders_mostly_keep_a_straight_face() -> None:
+    """话不是冲着自己来的发言，旁观者大多没表情：全桌平均每段发言的旁观反应不到 0.7 个（旁观概率 0.25 时约 0.9 个）。"""
+    sc = duel_scenario()
+    cfg = GameConfig()
+    evs = sc.events
+    speeches = [e for e in evs if e.type == EventType.SPEECH]
+    total = 0
+    n = 0
+    for k in range(12):
+        for seat in range(1, 10):
+            m = Mind(seat, persona(f'b{k}', talkative=0.8), sc.roles[seat], cfg, Rng(100 + k, f'by{seat}'))
+            for i, e in enumerate(evs):
+                if not sc.visible(e, seat):
+                    continue
+                rs = m.observe(e, build_view(cfg, seat, evs[: max(i + 1, 12)]))
+                if e.type == EventType.SPEECH and e.actor != seat:
+                    hit = any(a.target == seat for a in speech_acts(e))
+                    if not hit:
+                        total += len(rs)
+                        n += 1
+    per_speech = total / (n / 8)  # 每段发言约 8 个旁观者
+    assert len(speeches) >= 10 and per_speech < 0.7, per_speech

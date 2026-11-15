@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import zlib
 from collections.abc import Sequence
 
 from werewolf.kernel.types import ActKind, Event, EventType, PublicView, Role, Seat, SpeechAct
@@ -48,9 +49,33 @@ REASON_TEXT: dict[ReasonCode, str] = {
     ReasonCode.VOUCHED_BY_TRUSTED: '我信得过的人保了{t}',
     ReasonCode.SAVED_BY_WITCH: '{t}是夜里被人救下来的',
     ReasonCode.OFF_GAME: '{t}说的话不像是在好好玩游戏',
-    ReasonCode.SELF_PRESERVE: '我得先保住自己',
+    ReasonCode.SELF_PRESERVE: '我自己说过的话都经得起翻',  # 实际按座位从 DEFEND_TEXTS 里挑
     ReasonCode.GUT: '{t}让我不舒服，纯属直觉',
 }
+
+# 凭感觉的说法有几种，按（发言者，天，对象）固定挑一种，免得满桌都是同一句「纯属直觉」
+GUT_TEXTS: tuple[str, ...] = (
+    '{t}让我不舒服，纯属直觉',
+    '{t}给我的感觉不太对',
+    '{t}的状态我看着别扭',
+    '{t}说话的感觉不太自然',
+    '我对{t}的第一印象就不太好',
+)
+
+# 替自己辩解时的说法，同样按（发言者，天）固定挑一种；都不提票（首日还没人投过票）
+DEFEND_TEXTS: tuple[str, ...] = (
+    '我自己说过的话都经得起翻',
+    '我的发言前后一直是一个意思',
+    '踩我的人拿不出实在的东西',
+    '真有问题的人不会这么急着把话摊开',
+    '我的心思一直放在找狼上',
+)
+
+# 引用别人报的查验（站边那位预言家）时的说法：不能说成「我手里有验人的结果」
+_CITED_CHECK = {'wolf': '{s}报了{t}的查杀', 'good': '{s}报了{t}是金水'}
+
+# 这些理由的证据是一段身份声明或一串说法，证据句只能渲染成「怀疑过谁」，反倒说岔了：不加「比如」
+_NO_CLAUSE = {ReasonCode.COUNTER_CLAIM, ReasonCode.LATE_CLAIM, ReasonCode.CLAIM_UNCONTESTED, ReasonCode.CONTRADICTION}
 
 _TARGETLESS_OK = {ReasonCode.SEER_CHECK, ReasonCode.SELF_PRESERVE, ReasonCode.COUNTER_CLAIM}
 
@@ -140,13 +165,40 @@ def _reason_text(a: PublicAct, pv: PublicView, own: Seat, allowed: set[Seat]) ->
     if a.target is None and a.reason not in _TARGETLESS_OK:
         return None  # 没有对象的要点，带「{t}」的理由没处安放
     t = f'{a.target}号' if a.target is not None else '对方'
-    text = REASON_TEXT[a.reason].format(t=t)
     by_id = {e.id: e for e in pv.events}
+    if a.reason == ReasonCode.GUT:
+        h = zlib.crc32(f'{own}|{pv.day}|{a.target}'.encode())
+        return GUT_TEXTS[h % len(GUT_TEXTS)].format(t=t)
+    if a.reason == ReasonCode.SEER_CHECK:
+        return _check_reason(a, by_id, own, t)
+    if a.reason == ReasonCode.SELF_PRESERVE:
+        return DEFEND_TEXTS[zlib.crc32(f'{own}|{pv.day}'.encode()) % len(DEFEND_TEXTS)]
+    text = REASON_TEXT[a.reason].format(t=t)
+    if a.reason in _NO_CLAUSE:
+        return text
     for eid in a.evidence:
         ev = by_id.get(eid)
         if ev is not None and ev.vis == 'public' and (c := _evidence_clause(ev, own, allowed)):
             return f'{text}，比如{c}'
     return text
+
+
+def _check_reason(a: PublicAct, by_id: dict[int, Event], own: Seat, t: str) -> str:
+    """查验作理由：自己报的说「我手里有验人的结果」；别人报的说是谁报的。不带证据句（那会把报查验说成「怀疑过」）。"""
+    for eid in a.evidence:
+        ev = by_id.get(eid)
+        if ev is None or ev.vis != 'public' or ev.type != EventType.SPEECH or ev.actor in (None, own):
+            continue
+        for raw in (ev.data.get('speech') or {}).get('acts') or []:
+            sa = SpeechAct.model_validate(raw)
+            if sa.kind == ActKind.CLAIM_CHECK and sa.target == a.target and sa.result in _CITED_CHECK:
+                return _CITED_CHECK[sa.result].format(s=f'{ev.actor}号', t=t)
+    return REASON_TEXT[ReasonCode.SEER_CHECK]
+
+
+def is_gut(reason: str | None) -> bool:
+    """简报里的这条理由是不是「凭感觉」（模板据此换成留余地的说法）。"""
+    return bool(reason) and any(reason.endswith(g.split('{t}')[-1]) for g in GUT_TEXTS)  # type: ignore[union-attr]
 
 
 def _forbidden(cover: Role | None, points: list[BriefPoint]) -> list[str]:

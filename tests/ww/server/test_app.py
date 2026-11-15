@@ -177,3 +177,24 @@ def test_cli_misc(capsys):
     if importlib.util.find_spec('werewolf.sim.selfplay') is None:
         assert cli_main(['sim']) == 2
         assert '还没装上' in capsys.readouterr().err
+
+
+def test_cli_serve_port_in_use_and_missing_keys(cfg, tmp_path, monkeypatch, capsys):
+    """端口被占：给出清楚的错误、不说「已启动」、不起服务；没有密钥：说明走规则与模板。"""
+    import socket
+
+    import uvicorn
+
+    ran: list[int] = []
+    monkeypatch.setattr(uvicorn, 'run', lambda app, **kw: ran.append(kw['port']))
+    conf = str(tmp_path / 'werewolf.toml')
+    with socket.socket() as busy:
+        busy.bind(('127.0.0.1', 0))
+        busy.listen()
+        port = busy.getsockname()[1]
+        assert cli_main(['serve', '--port', str(port), '--host', '127.0.0.1', '--no-browser', '--config', conf]) == 2
+    out = capsys.readouterr()
+    assert '已启动' not in out.out and f'端口 {port}' in out.err and not ran
+    assert cli_main(['serve', '--port', str(port), '--host', '127.0.0.1', '--no-browser', '--config', conf]) == 0
+    out = capsys.readouterr()
+    assert ran == [port] and '已启动' in out.out and '规则与模板' in out.out

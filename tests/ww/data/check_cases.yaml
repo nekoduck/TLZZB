@@ -340,3 +340,57 @@
   points: [{"kind": "pass"}]
   max_chars: 40
   why: ""
+# ---- 真模型试玩里 Claude 写的、曾被规则误拦的台词（canon 的读法修好后应当放行）
+- id: k21
+  leak: false
+  text: "嘿，我跟你们讲，1号这人我对他第一印象就不太好，说不上来哪儿不对劲。我投1号，你们要是有不同看法，咱们摆到桌面上说清楚。"
+  seat: 3
+  day: 1
+  points: [{"kind": "accuse", "target": 1}, {"kind": "vote_intent", "target": 1}]
+  max_chars: 120
+  why: "「要是」只管它后面的小句；「我跟你们讲」不是转述"
+- id: k22
+  leak: false
+  text: "我是预言家，这话我说过就算数。昨晚验了6号，是狼人。今天我投6号。"
+  seat: 9
+  day: 2
+  cover: seer
+  points: [{"kind": "claim_role", "role": "seer"}, {"kind": "claim_check", "target": 6, "result": "wolf"}, {"kind": "vote_intent", "target": 6}]
+  max_chars: 120
+  why: "「就算数」不是假设"
+- id: k23
+  leak: false
+  text: "我第1天怀疑的是1号，表态要投1号，结果1号真出局了，这个我认。现在我怀疑5号，我今天投5号。"
+  seat: 8
+  day: 2
+  points: [{"kind": "accuse", "target": 5}, {"kind": "vote_intent", "target": 5}]
+  own_record: ["第1天，我怀疑1号，表态要投1号"]
+  max_chars: 120
+  why: "回顾过去的表态，不是新的投票意向"
+- id: k24
+  leak: false
+  text: "我也不是随便下结论，前面投4号、投5号，我都是把理由摆出来的。所以我怀疑8号，我投8号。"
+  seat: 6
+  day: 3
+  points: [{"kind": "accuse", "target": 8}, {"kind": "vote_intent", "target": 8}]
+  own_record: ["第1天投票，我投了4号", "第2天投票，我投了5号"]
+  max_chars: 120
+  why: "过去时管到并列的小句"
+- id: k25
+  leak: false
+  text: "我站5号，不等于要跟着4号去投6号，这是两回事。我投9号。"
+  seat: 6
+  day: 2
+  points: [{"kind": "back_claim", "target": 5}, {"kind": "vote_intent", "target": 9}]
+  addressed: [4]
+  own_record: ["第1天，我认6号是好人"]
+  max_chars: 120
+  why: "被否定的投票"
+- id: k26
+  leak: false
+  text: "我今天投4号，欢迎指出漏洞，要是有人能拿出新的事实，我会重新看。"
+  seat: 3
+  day: 1
+  points: [{"kind": "vote_intent", "target": 4}]
+  max_chars: 120
+  why: "假设在投票之后"

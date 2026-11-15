@@ -65,3 +65,25 @@ async def test_autopilot_games_with_mind_checks(cfg: tuple[Settings, WerewolfSet
         assert s.game.over
         viol = [v for p in s.players.values() if isinstance(p, NpcAgent) for v in p.violations]
         assert viol == []
+
+
+@pytest.mark.parametrize('error', [RuntimeError, ConnectionError, KeyError])
+async def test_model_clients_raising_never_stop_the_game(monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+                                                         error: type[Exception]) -> None:
+    """模型客户端每次都抛意外的错（像被 aclose 之后）：决定走规则、台词退档或交「过」、解析只留原话，一局照样打完。"""
+    from .fakes import recording_gateway
+
+    cfg = offline_cfg(monkeypatch, tmp_path, fake_keys=True)
+
+    def jev(*a: object) -> dict:
+        raise error('jev client closed')
+
+    def claude(*a: object) -> str:
+        raise error('claude client closed')
+
+    gw, log = recording_gateway(cfg, jev_fn=jev, claude_fn=claude)
+    client = ScriptedClient(3)
+    s, _ = await run_game(cfg, seed=3, seat=4, role=Role.VILLAGER, client=client, gateway=gw)  # type: ignore[arg-type]
+    assert s.game.over and s.review is not None
+    assert log, '确实调过模型'
+    assert_clean(s, client.msgs)

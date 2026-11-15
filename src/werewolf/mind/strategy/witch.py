@@ -67,15 +67,18 @@ def score_witch(ctx: Ctx, request: Request) -> list[Score]:
     return out
 
 
-def reveal_acts(ctx: Ctx) -> list[PlannedAct]:
+def reveal_acts(ctx: Ctx, restate: bool = False) -> list[PlannedAct]:
+    """`restate`：遗言与 PK 台上把报过的用药再报一遍。"""
     w = ctx.view.witch
+    saves = set() if restate else set(ctx.cover.saves)
+    poisons = set() if restate else set(ctx.cover.poisons)
     acts: list[PlannedAct] = [pa(ActKind.CLAIM_ROLE, None, 3, role=Role.WITCH)]
     if w is not None:
         for night, s in w.saved:
-            if (night, s) not in ctx.cover.saves:
+            if (night, s) not in saves:
                 acts.append(pa(ActKind.CLAIM_SAVE, s, 2, night=night, motive=ReasonCode.SAVED_BY_WITCH))
         for night, s in w.poisoned:
-            if (night, s) not in ctx.cover.poisons:
+            if (night, s) not in poisons:
                 acts.append(pa(ActKind.CLAIM_POISON, s, 2, night=night))
     impostors = [s for s in ctx.ledger.claimants(Role.WITCH) if s != ctx.seat and s in ctx.living]
     if impostors:
@@ -94,9 +97,10 @@ def reveal_acts(ctx: Ctx) -> list[PlannedAct]:
 
 def speech_candidates(ctx: Ctx, request: Request) -> list[SpeechPlan]:
     out = town_variants(ctx, request)
+    restate = request.speech_kind in ('last_words', 'pk')
     impostor = any(s != ctx.seat and s in ctx.living for s in ctx.ledger.claimants(Role.WITCH))
     if ctx.cover.role == Role.WITCH:
-        return [plan(ctx, request, 'reveal', 'reveal', reveal_acts(ctx), 5.0)]
+        return [plan(ctx, request, 'reveal', 'reveal', reveal_acts(ctx, restate), 5.0)]
     u = -1.5
     if ctx.danger(request):
         u = 3.2 + 0.6 * (1 - ctx.traits.boldness)
@@ -104,5 +108,5 @@ def speech_candidates(ctx: Ctx, request: Request) -> list[SpeechPlan]:
         u = max(u, 3.0)
     if request.speech_kind == 'last_words':
         u = max(u, 0.8)
-    out.append(plan(ctx, request, 'reveal', 'counter_claim' if impostor else 'reveal', reveal_acts(ctx), u))
+    out.append(plan(ctx, request, 'reveal', 'counter_claim' if impostor else 'reveal', reveal_acts(ctx, restate), u))
     return out

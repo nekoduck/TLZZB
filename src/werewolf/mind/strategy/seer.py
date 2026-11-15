@@ -18,7 +18,7 @@ from werewolf.mind.strategy.common import (
 from werewolf.mind.types import PlannedAct, ReasonCode, SpeechPlan
 
 REVEAL_BASE = -0.2  # 首日起跳的基础效用（再加胆量、验到狼、有人悍跳）
-FOUND_WOLF = 2.2  # 验到狼时起跳的额外效用
+FOUND_WOLF = 3.2  # 验到狼时起跳的额外效用（九人局里拿着查杀不跳的预言家几乎没有）
 
 
 def score_vote(ctx: Ctx, request: Request) -> list[Score]:
@@ -63,8 +63,9 @@ def check_evidence(ctx: Ctx, night: int, target: Seat) -> list[int]:
     return [eid] if eid is not None else []
 
 
-def reveal_acts(ctx: Ctx) -> tuple[list[PlannedAct], Seat | None]:
-    claimed = {(c.night, c.target) for c in ctx.cover.checks}
+def reveal_acts(ctx: Ctx, restate: bool = False) -> tuple[list[PlannedAct], Seat | None]:
+    """`restate`：遗言与 PK 台上把报过的查验再报一遍（真人预言家留遗言都这么做）。"""
+    claimed = set() if restate else {(c.night, c.target) for c in ctx.cover.checks}
     acts: list[PlannedAct] = [pa(ActKind.CLAIM_ROLE, None, 3, role=Role.SEER)]
     checks = sorted(ctx.view.seer_checks, key=lambda c: c.night)
     for chk in checks:
@@ -107,7 +108,7 @@ def reveal_acts(ctx: Ctx) -> tuple[list[PlannedAct], Seat | None]:
 
 def speech_candidates(ctx: Ctx, request: Request) -> list[SpeechPlan]:
     tr = ctx.traits
-    acts, _ = reveal_acts(ctx)
+    acts, _ = reveal_acts(ctx, restate=request.speech_kind in ('last_words', 'pk'))
     impostor = any(s != ctx.seat for s in ctx.ledger.claimants(Role.SEER))
     found_wolf = any(c.result == 'wolf' for c in ctx.view.seer_checks)
     if ctx.cover.role == Role.SEER:

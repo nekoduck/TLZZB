@@ -19,6 +19,7 @@ from werewolf.protocol import (
     SetOptions,
 )
 from werewolf.server.session import REPLAY_TYPES
+from werewolf.server.wirecheck import wire_check
 
 from .helpers import ScriptedClient, assert_clean, make_session, play
 
@@ -138,6 +139,7 @@ async def _resume_game(cfg, *, at: str, seed: int = 6) -> None:
     # 现场接着发，整条（重放去掉）与一直连着一样干净
     assert_clean(s, list(s.outbox))
     assert_clean(s, [*c1.msgs, *live])
+    assert wire_check(c2.msgs, s.game, s.human_seat) == []  # 重放 + 现场，就像一条从头收的流
 
 
 async def test_resume_at_open_request(cfg):
@@ -203,6 +205,13 @@ async def _god_game(cfg, seed: int, role: Role) -> bool:
         assert any(e.vis != 'public' for e in after)
     seqs = [m.seq for m in msgs if isinstance(m, EventMsg)]
     assert seqs == list(range(1, len(seqs) + 1))
+    # 终局后重连：重放（含 god）与原来一致，体检照样干净
+    c3 = ScriptedClient(seed)
+    await s.attach(c3.send)
+    replayed = c3.msgs[:-1]
+    assert [m for m in msgs if m.t in REPLAY_TYPES and not (isinstance(m, Parsed) and m.preview)] == \
+        [m.model_copy(update={'replay': False}) if hasattr(m, 'replay') else m for m in replayed]
+    assert wire_check(c3.msgs, s.game, s.human_seat) == []
     return True
 
 
@@ -265,3 +274,17 @@ async def test_acks_gate_ai_speeches(cfg):
     assert all(m.ev.type == EventType.SPEECH and m.ev.actor != s.human_seat for m in waits)
     assert all(m.hold_ms > 0 for m in c.msgs if isinstance(m, EventMsg) and m.ev.type == EventType.PHASE)
     assert_clean(s, c.msgs)
+
+
+async def test_wire_check_covers_replays(cfg):
+    """重放流也逐条体检：重放里混进真人看不见的事件、或 seq 断了，都能抓到。"""
+    s, c = await play(cfg, seed=3, role=Role.VILLAGER)
+    replay = [*s.replay_messages(), s._state()]
+    assert wire_check(replay, s.game, s.human_seat) == []
+    hidden = next(e for e in s.game.events('judge') if not s.game.visible(e, s.human_seat))
+    i = next(i for i, m in enumerate(replay) if isinstance(m, EventMsg) and m.seq == 5)
+    bad = list(replay)
+    bad[i] = bad[i].model_copy(update={'ev': hidden.model_copy(update={'id': 5})})
+    assert wire_check(bad, s.game, s.human_seat)
+    gap = [m for m in replay if not (isinstance(m, EventMsg) and m.seq == 5)]
+    assert any('seq' in p for p in wire_check(gap, s.game, s.human_seat))

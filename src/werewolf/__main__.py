@@ -22,6 +22,20 @@ WEB_DEMO_DIR = Path(__file__).resolve().parent / 'web' / 'demo'
 SPEEDS = ('slow', 'normal', 'fast', 'instant')
 
 
+def _port_problem(host: str, port: int) -> str | None:
+    """端口能不能绑上（与 uvicorn 一样带 SO_REUSEADDR）；不能就返回原因。"""
+    import socket
+
+    fam = socket.AF_INET6 if ':' in host else socket.AF_INET
+    try:
+        with socket.socket(fam, socket.SOCK_STREAM) as sock:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            sock.bind((host, port))
+    except OSError as exc:
+        return exc.strerror or str(exc)
+    return None
+
+
 def _serve(argv: Sequence[str]) -> int:
     ap = argparse.ArgumentParser(prog='python -m werewolf serve', description='启动本地狼人杀服务')
     ap.add_argument('--port', type=int, default=None)
@@ -44,8 +58,20 @@ def _serve(argv: Sequence[str]) -> int:
     if args.port is not None:
         ww = ww.model_copy(update={'port': args.port})
     host = args.host or ww.host
+    problem = _port_problem(host, ww.port)
+    if problem is not None:
+        print(f'端口 {ww.port} 用不了（{problem}）：可能已经有一个服务在跑；换一个端口试试：--port {ww.port + 1}',
+              file=sys.stderr)
+        return 2
     app = create_app(settings, ww, offline=args.offline, dev=args.dev, speed=args.speed or ww.speed,
                      extra_origins=tuple(args.allow_origin))
+    llm = app.state.hub.status_gateway().status()
+    if not args.offline and not (llm.jev or llm.claude):
+        print('没有找到可用的模型密钥（JEV_KEY / ANTHROPIC_API_KEY）：这次全走规则与模板，照样能玩。', flush=True)
+    elif not args.offline and not llm.claude:
+        print('没有找到 Claude 的密钥：台词走模板。', flush=True)
+    elif not args.offline and not llm.jev:
+        print('没有找到 Jev 的密钥：决定只走规则。', flush=True)
     shown = '127.0.0.1' if host in ('0.0.0.0', '::', '') else host
     url = f'http://{shown}:{ww.port}/'
     print(f'狼人杀已启动：{url}  （Ctrl+C 退出）', flush=True)

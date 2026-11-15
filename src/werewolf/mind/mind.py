@@ -54,6 +54,10 @@ from werewolf.mind.types import (
 # 心智对怀疑度模块的调参（BeliefWeights 的默认是设计值；这里压低「口头指认」的分量，免得首日一边倒地跟风）
 BELIEF_WEIGHTS = BeliefWeights(accuse=0.15, accused_by_many=0.0)  # 集成调参：压低首日一边倒的票仓（见 sim 报告）
 
+# 旁观者（话不是冲着我来的）露神态的概率。真人桌上大多数人大多数时候没表情；
+# 原来 0.25 / 0.3 时，平均每段发言有 1.2 个气泡、每三段就有一段冒出两三个
+BYSTANDER = 0.12
+
 _STRATEGY = {Role.WEREWOLF: wolf, Role.SEER: seer, Role.WITCH: witch, Role.HUNTER: hunter, Role.VILLAGER: villager}
 
 
@@ -160,18 +164,18 @@ class Mind:
                 if tgt is not None:
                     p = self.beliefs.p(tgt, 'public')
                     if p >= 0.45:
-                        pick = (0.25, 'nod', 'agree', 0.4)
+                        pick = (BYSTANDER, 'nod', 'agree', 0.4)
                     elif p <= 0.2 or self.mood.trust(tgt) >= 0.3:
-                        pick = (0.25, 'frown', 'doubt', 0.4)
+                        pick = (BYSTANDER, 'frown', 'doubt', 0.4)
                 elif all(a.kind == ActKind.PASS for a in acts):
-                    pick = (0.15, 'sigh' if tr.talkative >= 0.5 else 'shrug', None, 0.3)
+                    pick = (BYSTANDER * 0.6, 'sigh' if tr.talkative >= 0.5 else 'shrug', None, 0.3)
                 if pick is None:
-                    pick = (0.1, 'think', 'thinking', 0.3)
+                    pick = (BYSTANDER * 0.35, 'think', 'thinking', 0.3)
         elif ev.type == EventType.VOTE and ev.target == me:
             pick = (0.45, 'stare' if tr.boldness >= 0.5 else 'sweat', 'annoyed' if tr.vengeful >= 0.5 else None, 0.5)
         elif ev.type == EventType.DEATH and ev.target is not None and ev.target != me:
             friend = self.mood.trust(ev.target) >= 0.25
-            pick = (0.6 if friend else 0.3, 'sigh' if friend else 'shock', 'sigh' if friend else 'surprised',
+            pick = (0.6 if friend else BYSTANDER, 'sigh' if friend else 'shock', 'sigh' if friend else 'surprised',
                     0.7 if friend else 0.4)
         elif ev.type == EventType.ROLE_REVEALED:
             pick = (0.4, 'shock', 'surprised', 0.6)

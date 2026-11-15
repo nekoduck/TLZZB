@@ -122,3 +122,47 @@ def test_heard_passed_through_and_not_in_recent(pv, voices):
     b = build_brief(_plan(), pv, voices[0], PublicMood(), Situation(), [q], 100)
     assert b.heard == [q]
     assert all('金丝雀' not in s for s in [*b.recent, *b.own_record])
+
+
+def test_cited_check_names_its_seer_not_me(pv, voices):
+    # 9 号站 3 号的边、引 3 号给 7 号的金水保 7 号：不能说成「我手里有验人的结果」（那等于自称验过人）
+    plan = _plan(seat=9, cover_role=None, addressed=[], acts=[
+        PublicAct(kind=ActKind.BACK_CLAIM, target=3),
+        PublicAct(kind=ActKind.VOUCH, target=7, reason='seer_check', evidence=[33]),
+    ])
+    b = _build(pv, voices, plan)
+    assert b.points[1].reason == '3号报了7号是金水'
+    own = _build(pv, voices)  # 自己跳了预言家、报自己的查验
+    assert own.points[1].reason == '我手里有验人的结果'
+
+
+def test_reason_texts_read_like_a_player(pv, voices):
+    plan = _plan(acts=[
+        PublicAct(kind=ActKind.DEFEND, reason='self_preserve', weight=3),
+        PublicAct(kind=ActKind.DOUBT_CLAIM, target=8, reason='counter_claim', evidence=[46]),
+        PublicAct(kind=ActKind.ACCUSE, target=8, reason='contradiction', evidence=[46]),
+    ])
+    b = _build(pv, voices, plan)
+    assert '保住自己' not in b.points[0].reason  # 说出口的辩解不是「我得先保住自己」
+    assert b.points[1].reason == '8号在跟别人抢同一个身份'  # 不带会说岔的「比如 8 号第 1 天怀疑过……」
+    assert '比如' not in b.points[2].reason
+
+
+def test_gut_wording_varies_by_target_and_is_deterministic(pv, voices):
+    texts = set()
+    for t in (1, 2, 4, 5, 6, 7, 8, 9):
+        plan = _plan(acts=[PublicAct(kind=ActKind.ACCUSE, target=t, reason='gut', weight=1)])
+        r = _build(pv, voices, plan).points[0].reason
+        assert r == _build(pv, voices, plan).points[0].reason
+        assert brief_mod.is_gut(r) and f'{t}号' in r
+        texts.add(r.replace(f'{t}号', '{t}'))
+    assert len(texts) >= 3
+    assert not brief_mod.is_gut('8号之前踩过我')
+
+
+def test_defend_wording_varies_by_seat(pv, voices):
+    seen = set()
+    for seat in range(1, 10):
+        plan = _plan(seat=seat, acts=[PublicAct(kind=ActKind.DEFEND, reason='self_preserve', weight=3)])
+        seen.add(_build(pv, voices, plan).points[0].reason)
+    assert len(seen) >= 3 and seen <= set(brief_mod.DEFEND_TEXTS)

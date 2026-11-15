@@ -51,12 +51,13 @@ def _sections(user: str) -> dict[str, str]:
 
 
 def _private_part(call: Call) -> str:
-    """去掉公开小节、「不许说」与「已出局」之后剩下的提示（应当只剩固定的说明、人设与自己的座位）。"""
+    """去掉公开小节、「不许说」「已出局」与 PK 对手之后剩下的提示（应当只剩固定的说明、人设与自己的座位）。"""
     secs = _sections(call.user)
     rest = [v for k, v in secs.items() if k not in SECTIONS_PUBLIC]
     text = '\n'.join(rest)  # system 两块是固定的发言规范与人设口吻，单独查
     text = re.sub(r'不许说：[^\n]*', '', text)
     text = re.sub(r'已出局：[^。]*。', '', text)
+    text = re.sub(r'对手：[^。]*。', '', text)  # PK 台上有谁是法官公开宣布的（队友也可能同台）
     return text
 
 
@@ -117,6 +118,18 @@ async def test_canaries_and_wolf_prompts(cfg: tuple[Settings, WerewolfSettings],
             assert w not in rest, (seat, w, rest)
         checked += 1
     assert checked > 0
+
+    # 4. 复盘里有独白（终局时没写完的也等了），没有密钥、没有原始提示
+    assert s.review is not None
+    review = s.review.model_dump_json()
+    assert any(t.kind == 'monologue' for x in s.review.seats for t in x.thoughts)
+    wire = ''.join(m.model_dump_json() for m in s.outbox)
+    for secret in ('test-jev-key', 'test-anthropic-key'):
+        assert secret not in review and secret not in wire
+    for c in log:
+        for chunk in (c.user, *c.system):
+            if len(chunk) >= 40:
+                assert chunk[:40] not in review, c.kind
 
 
 async def test_leaking_or_off_plan_claude_is_replaced_by_template(cfg: tuple[Settings, WerewolfSettings]) -> None:
