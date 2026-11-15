@@ -1,0 +1,209 @@
+# 机会牌（方案 8.5）。格式由 storyteller/opportunities.py 定（D-011），详见那个文件开头的说明。
+#   pre 里 self 指玩家，不引用角色位；角色位的条件写在 pick 的 where 里（$it 指候选）。
+#   effects 里 self 指玩家，$名字 指角色位；可选角色位绑不上时，引用它的效果整条略去。
+#   variants：出牌时在成立的几种里按 weight 取一种。cooldown 以刻计；once 一局只出一次。
+# 牌只带来人、物和消息；来的人照常自己抉择。张力、停滞、每日张数由讲述者控制，不写在这里。
+
+# ---- 山雨：把附近的人都赶到同一处躲雨（在屋里的时候不出）
+mountain_rain:
+  name: 山雨
+  text: 天色骤变，下起山雨，附近赶路的人都奔到你这里来躲雨
+  pre:
+    not:
+      any:
+        - {at: [player, jianhu_hall]}
+        - {at: [player, zhong_hall]}
+        - {at: [player, zhong_inner]}
+        - {at: [player, valley_cave]}
+        - {at: [player, mu_house]}
+  roles:
+    first:
+      pick:
+        near: true
+        where: {all: [{not: {status: [$it, captive]}}, {not: {status: [$it, bound]}}, {not: {status: [$it, hidden]}}]}
+    second:
+      pick:
+        near: true
+        optional: true
+        where: {all: [{not: {status: [$it, captive]}}, {not: {status: [$it, bound]}}, {not: {status: [$it, hidden]}}]}
+  effects:
+    - {emit: {verb: rain, loc: player, text: 天色忽地暗了下来，山雨说来就来，四下里一片哗哗的雨声}}
+    - {move: [$first, player]}
+    - {emit: {actor: $first, verb: shelter, text: '{first}冒着雨奔过来，在这里躲雨'}}
+    - {move: [$second, player]}
+    - {emit: {actor: $second, verb: shelter, text: '{second}也淋得一身湿，跟着躲了过来'}}
+  cooldown: 192
+  weight: 1
+
+# ---- 巡哨：一队巡山的人搜到近处（只在山上）
+patrol:
+  name: 巡哨
+  text: 一队巡山的人一路搜寻，到了你近处
+  pre:
+    any:
+      - {at: [player, jianhu_gate]}
+      - {at: [player, jianhu_back]}
+      - {at: [player, mountain_path]}
+      - {at: [player, back_trail]}
+      - {at: [player, cliff_edge]}
+  roles:
+    scout:
+      pick:
+        near: true
+        where:
+          all:
+            - {any: [{role: [$it, shennong_member]}, {role: [$it, wuliang_disciple]}]}
+            - {not: {status: [$it, captive]}}
+            - {not: {status: [$it, bound]}}
+    scout2:
+      pick:
+        near: true
+        optional: true
+        where:
+          all:
+            - any:
+                - {all: [{role: [$scout, shennong_member]}, {role: [$it, shennong_member]}]}
+                - {all: [{role: [$scout, wuliang_disciple]}, {role: [$it, wuliang_disciple]}]}
+            - {not: {status: [$it, captive]}}
+            - {not: {status: [$it, bound]}}
+  effects:
+    - {move: [$scout, player]}
+    - {emit: {actor: $scout, verb: patrol, text: '{scout}一路搜寻过来，四下里打量'}}
+    - {move: [$scout2, player]}
+    - {emit: {actor: $scout2, verb: patrol, text: '{scout2}跟在后头，手按着兵刃'}}
+  cooldown: 96
+  weight: 1
+
+# ---- 采药人：路遇本地人，问得到路径和传闻
+herb_gatherer:
+  name: 采药人
+  text: 路上遇见一个背竹篓的本地山民，向他问得到路径和传闻
+  pre:
+    all:
+      - {alive: herb_gatherer_1}
+      - {onstage: herb_gatherer_1}
+      - {not: {same_loc: [player, herb_gatherer_1]}}
+      - {not: {status: [herb_gatherer_1, captive]}}
+      - {not: {status: [herb_gatherer_1, bound]}}
+      - not:
+          any:
+            - {at: [player, jianhu_hall]}
+            - {at: [player, zhong_hall]}
+            - {at: [player, zhong_inner]}
+            - {at: [player, valley_floor]}
+            - {at: [player, valley_cave]}
+            - {at: [player, shennong_camp]}
+            - {at: [player, mu_house]}
+  effects:
+    - {learn: [herb_gatherer_1, F_route_wanjie, 0.8, inferred]}
+    - {move: [herb_gatherer_1, player]}
+    - {emit: {actor: herb_gatherer_1, verb: arrive, text: ⟦herb_gatherer_1⟧背着竹篓从路边钻出来，拄着柴棍歇脚}}
+  cooldown: 192
+  weight: 2
+
+# ---- 东家的口信：马五德托人带话，催你归队。他还在世、还在山上时才有这张牌
+master_message:
+  name: 东家的口信
+  text: 东家托人捎来口信，催你回他身边去
+  pre:
+    all:
+      - {alive: ma_wude}
+      - {onstage: ma_wude}
+      - {not: {status: [ma_wude, captive]}}
+      - any:
+          - {at: [ma_wude, jianhu_hall]}
+          - {at: [ma_wude, jianhu_gate]}
+          - {at: [ma_wude, jianhu_back]}
+          - {at: [ma_wude, mountain_path]}
+          - {at: [ma_wude, back_trail]}
+          - {at: [ma_wude, cliff_edge]}
+      - {not: {same_loc: [player, ma_wude]}}
+      - {role: [player, ma_caravan_hand]}
+      - {not: {at: [player, valley_floor]}}
+      - {not: {at: [player, valley_cave]}}
+  roles:
+    master_at: {loc_of: ma_wude}
+    messenger:
+      pick:
+        at: ma_wude
+        where:
+          all:
+            - {not: {status: [$it, captive]}}
+            - {not: {status: [$it, bound]}}
+            - {not: {status: [$it, hidden]}}
+            - {any: [{role: [$it, wuliang_disciple]}, {role: [$it, ma_caravan_hand]}, {role: [$it, wanjie_servant]}]}
+  effects:
+    - {move: [$messenger, player]}
+    - {emit: {actor: $messenger, verb: message, text: '{messenger}匆匆赶来，捎来⟦ma_wude⟧的话：叫你别在外头乱走，快回{master_at}去'}}
+    - {know_term: ma_wude}
+    - {know_term: $master_at}
+    - {thread: {id: 'card:master_call', kind: lead, text: '⟦ma_wude⟧捎话来，催你回{master_at}去', refs: [ma_wude, $master_at], weight: 2}}
+  cooldown: 96
+  weight: 3
+
+# ---- 传闻：路人说起一件你不在场时发生的事
+rumor:
+  name: 传闻
+  text: 身边的人闲谈起一件你不在场时发生的事
+  pre: {others_here: [player, 1]}
+  roles:
+    news: {fact: {}}            # 新近的事在前；要有一个在场的人知道它
+    teller:
+      pick:
+        where:
+          all:
+            - {knows: [$it, $news]}
+            - {not: {status: [$it, captive]}}
+            - {not: {status: [$it, bound]}}
+            - {not: {status: [$it, hidden]}}
+  effects:
+    - {emit: {actor: $teller, verb: gossip, text: '{teller}闲谈中说起一件事：{news}'}}
+    - {learn: [player, $news, 0.7, 'told:$teller']}
+  cooldown: 48
+  weight: 3
+
+# ---- 偶得：捡到一件寻常却有用的东西（柴刀、干粮、蒙童识字的册子，各一次）
+windfall:
+  name: 偶得
+  text: 在地上捡到一件寻常却有用的东西
+  pre:
+    all:
+      - {not: {status: [player, captive]}}
+      - {not: {status: [player, bound]}}
+  roles:
+    here: {loc_of: player}
+  variants:
+    - pre: {not: {flag: windfall_chopper}}
+      effects:
+        - {spawn: [chopper, $here]}
+        - {set_flag: [windfall_chopper, true]}
+        - {emit: {verb: windfall, loc: player, text: 地上不知谁落下了⟦chopper⟧，刃口还亮}}
+    - pre: {not: {flag: windfall_rations}}
+      effects:
+        - {spawn: [extra_rations, $here]}
+        - {set_flag: [windfall_rations, true]}
+        - {emit: {verb: windfall, loc: player, text: 地上不知谁落下了⟦extra_rations⟧，油纸还包得好好的}}
+    - pre: {not: {flag: windfall_primer}}
+      effects:
+        - {spawn: [primer, $here]}
+        - {set_flag: [windfall_primer, true]}
+        - {emit: {verb: windfall, loc: player, text: 地上不知谁落下了⟦primer⟧，封皮卷了角}}
+  cooldown: 96
+  weight: 2
+
+# ---- 饿与乏：把身上的感觉写重一层，引向歇息和找吃的
+hunger_fatigue:
+  name: 饿与乏
+  text: 你身上的饥饿与疲乏一下子重了一层，该歇一歇、找口吃的了
+  pre: {not: {status: [player, asleep]}}
+  variants:
+    - pre: {not: {status: [player, hungry]}}
+      effects:
+        - {add_status: [player, hungry]}
+        - {emit: {actor: player, verb: feel, hidden: true, text: "{self}腹中一阵阵发空，饿得有些发慌"}}
+    - pre: {not: {status: [player, exhausted]}}
+      effects:
+        - {add_status: [player, exhausted]}
+        - {emit: {actor: player, verb: feel, hidden: true, text: "{self}浑身一阵乏力，眼皮直往下坠"}}
+  cooldown: 96
+  weight: 1
