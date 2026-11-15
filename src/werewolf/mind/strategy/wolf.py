@@ -25,11 +25,9 @@ from werewolf.kernel.types import (
     RequestKind,
     Role,
     Seat,
-    Traits,
     View,
     WolfStance,
-) if False else None  # noqa: E501  （占位，真正的导入在下面）
-from werewolf.kernel.types import ActKind, EventType, Phase, Request, RequestKind, Role, Seat, View, WolfStance
+)
 from werewolf.mind.strategy.common import (
     Ctx,
     Score,
@@ -46,13 +44,15 @@ from werewolf.mind.types import PlannedAct, ReasonCode, SpeechPlan, Traits
 STANCES: tuple[str, ...] = get_args(WolfStance)
 
 # 旋钮
-JUMP_BASE = 0.05  # 首夜想悍跳的权重：基础 + 演技 + 胆量（charge、deep 的权重合计约 1）
-JUMP_DECEPTION = 0.45
-JUMP_BOLD = 0.15
+JUMP_BASE = 0.0  # 首夜想悍跳的权重：基础 + 演技 + 胆量（charge、deep 的权重合计约 1）
+JUMP_DECEPTION = 0.27
+JUMP_BOLD = 0.1
 GOLD_MATE_RATE = 0.3  # 悍跳首验给队友发金水的概率（否则查杀一个好人）
-KILL_SEER = 2.5
-KILL_WITCH = 1.8
+KILL_SEER = 0.6
+KILL_WITCH = 1.0
 KILL_HUNTER = -2.0
+WOLF_CROWD = 0.8  # 狼投票时跟大票的分量（藏在人群里）
+SEER_BIAS_SCALE = 4.0  # seer_kill_bias 的放大：刀了对跳的另一位，等于把自家悍跳的送上台
 
 
 def stance_wish(traits: Traits, rng: Rng) -> WolfStance:
@@ -165,7 +165,7 @@ def score_kill(ctx: Ctx, request: Request) -> list[Score]:
         elif role == Role.SEER:
             sc.add(KILL_SEER, 'threat_seer', t)
             if jumper_claimed:
-                sc.add(-ctx.tuning.seer_kill_bias, 'bias', t)
+                sc.add(-SEER_BIAS_SCALE * ctx.tuning.seer_kill_bias, 'bias', t)
         elif role == Role.WITCH or any(pc.seat == t for pc in ctx.ledger.potion_claims()):
             sc.add(KILL_WITCH, 'threat_witch', t)
         sc.add(min(1.4, 0.35 * _threat_logic(ctx, t)), 'threat_logic', t)
@@ -174,6 +174,7 @@ def score_kill(ctx: Ctx, request: Request) -> list[Score]:
                 sc.add(0.6, 'trusted', t)
                 break
         sc.add(-1.0 * (ctx.p(t, 'public') - 0.33), 'unknown', t)
+        sc.add(0.4 * ctx.gut(t))
         if ctx.trust(t) < -0.3:
             sc.add(0.3, 'grudge', t)
         n = sum(1 for p in proposals if p.get('target') == t)
@@ -226,9 +227,10 @@ def score_vote(ctx: Ctx, request: Request) -> list[Score]:
             out.append(sc)
             continue
         sc.add(0.9 * logit(ctx.p(t, 'public')), 'suspect', t)
+        sc.add(0.35 * ctx.gut(t))
         calls = sum(1 for v in intents.values() if v == t)
-        sc.add(1.6 * calls / n_int, 'crowd', t)
-        if t in seers:
+        sc.add(WOLF_CROWD * calls / n_int, 'crowd', t)
+        if t in seers and ctx.pack.get(ctx.seat) != 'deep':
             sc.add(1.0, 'threat_seer', t)
         if t in checkers:
             sc.add(1.2, 'cover', t)
@@ -386,7 +388,7 @@ def speech_candidates(ctx: Ctx, request: Request) -> list[SpeechPlan]:
                      pa(ActKind.ACCUSE, c, 3, ReasonCode.SEER_CHECK, [ph] if ph else [], ReasonCode.TEAM, False),
                      pa(ActKind.DOUBT_CLAIM, c, 2, ReasonCode.CONTRADICTION, ev, ReasonCode.TEAM, False),
                      pa(ActKind.VOTE_INTENT, c, 2, ReasonCode.SEER_CHECK, [ph] if ph else [], ReasonCode.TEAM, False)]
-            u2 = -0.6 + 2.0 * tr.deception + 1.0 * tr.boldness
+            u2 = -1.2 + 2.0 * tr.deception + 1.0 * tr.boldness
             out.append(plan(ctx, request, 'counter_jump', 'counter_claim', acts2, u2, [c]))
     # 将被放逐：冒领猎人或女巫
     if ctx.danger(request) and ctx.cover.role is None and tr.deception >= 0.5:

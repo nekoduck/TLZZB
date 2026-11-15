@@ -17,7 +17,8 @@ from werewolf.mind.strategy.common import (
 )
 from werewolf.mind.types import PlannedAct, ReasonCode, SpeechPlan
 
-REVEAL_BASE = 0.4  # 首日起跳的基础效用（再加胆量、验到狼、有人悍跳）
+REVEAL_BASE = -0.2  # 首日起跳的基础效用（再加胆量、验到狼、有人悍跳）
+FOUND_WOLF = 2.2  # 验到狼时起跳的额外效用
 
 
 def score_vote(ctx: Ctx, request: Request) -> list[Score]:
@@ -111,13 +112,13 @@ def speech_candidates(ctx: Ctx, request: Request) -> list[SpeechPlan]:
     found_wolf = any(c.result == 'wolf' for c in ctx.view.seer_checks)
     if ctx.cover.role == Role.SEER:
         return [plan(ctx, request, 'reveal', 'reveal', acts, 6.0)]
-    u = REVEAL_BASE + 1.4 * tr.boldness + (1.4 if found_wolf else 0.0) + 0.8 * max(0, ctx.day - 1)
+    u = REVEAL_BASE + 2.2 * tr.boldness + (FOUND_WOLF if found_wolf else 0.0) + 1.5 * max(0, ctx.day - 1)
     if impostor:
         u += 4.0
     if request.speech_kind in ('last_words', 'pk'):
         u += 3.0
     if ctx.danger(request):
-        u += 1.0
+        u += 3.0
     variant = 'counter_claim' if impostor else 'reveal'
     out = [plan(ctx, request, 'reveal', variant, acts, u)]
     hidden = {c.target: c.result for c in ctx.view.seer_checks}

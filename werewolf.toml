@@ -27,13 +27,13 @@ server_fallback = true
 [models.W_speech]            # 写台词
 model = 'claude-haiku-5-5'
 effort = 'low'
-max_tokens = 700
+max_tokens = 2000          # 5.5 系列默认自适应思考；700 时偶尔被思考吃光、正文为空
 timeout_s = 20
 
 [models.W_monologue]         # 夜里的内心独白（只进复盘）
 model = 'claude-haiku-5-5'
 effort = 'low'
-max_tokens = 700
+max_tokens = 2000
 timeout_s = 20
 
 [models.W_parse]             # Jev 不可用时，解析真人发言
@@ -81,7 +81,7 @@ min_rule_prob = 0.05
 temperature = 0.5
 mood_temperature = 0.6
 decisive_gap = 2.5
-jev_weight = 0.4
+jev_weight = 0.25            # 集成测量：0.4 时 Jev 让预言家首日起跳率掉 25 点、首日票仓超 60%；0.25 与规则版接近
 commit_bonus = 1.5
 speaker_cap = 1.2
 reflect_weight = 0.25

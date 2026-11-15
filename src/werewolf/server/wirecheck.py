@@ -22,6 +22,7 @@ from werewolf.protocol import (
     Accepted,
     ErrorMsg,
     EventMsg,
+    GameStarted,
     GodView,
     Parsed,
     PrivateInfo,
@@ -75,6 +76,8 @@ def wire_check(msgs: Sequence[ServerMsg], game: Game, human_seat: Seat) -> list[
 
     for i, m in enumerate(msgs):
         where = f'#{i} {m.t}'
+        if isinstance(m, GameStarted) and (m.you != human_seat or m.your_role != human_role):
+            problems.append(f'{where}: 座位或身份不是真人的（{m.you} 号 {m.your_role}）')
         if isinstance(m, GodView):
             unrestricted = True
         if isinstance(m, Review):

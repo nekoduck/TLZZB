@@ -15,6 +15,7 @@ import json
 import logging
 import secrets
 import time
+from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Any
 
@@ -197,6 +198,13 @@ def create_app(settings: Settings, ww: WerewolfSettings, *, offline: bool = Fals
         finally:
             hub.release(ws)
 
+    @contextlib.asynccontextmanager
+    async def lifespan(app: Starlette) -> AsyncIterator[None]:
+        try:
+            yield
+        finally:
+            await hub.shutdown()
+
     app = Starlette(
         routes=[
             Route('/', index),
@@ -204,7 +212,7 @@ def create_app(settings: Settings, ww: WerewolfSettings, *, offline: bool = Fals
             WebSocketRoute('/ws', ws_endpoint),
             Mount('/', StaticFiles(directory=WEB_DIR, html=True), name='web'),
         ],
-        on_shutdown=[hub.shutdown],
+        lifespan=lifespan,
     )
     app.state.hub = hub
     return app

@@ -447,6 +447,10 @@ class Beliefs:
                     continue
                 if tgt == c:
                     continue
+                rival = ledger.role_claims(tgt, Role.SEER)
+                if rival and ledger.current_role(tgt) == Role.SEER and rival[0].event_id < chk.event_id:
+                    # 对方已经自称预言家之后才报他是狼：悍跳的一方总会这么报，这条查验不比对跳本身多带信息
+                    continue
                 d = tr * lw * (self.w.check_wolf if chk.result == 'wolf' else -self.w.check_good)
                 add(tgt, self._stubborn(d, tgt, top), ReasonCode.SEER_CHECK, chk.event_id, chk.day, c)
         # 女巫的银水与毒药

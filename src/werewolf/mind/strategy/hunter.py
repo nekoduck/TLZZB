@@ -19,7 +19,7 @@ from werewolf.mind.strategy.common import (
 from werewolf.mind.types import PlannedAct, ReasonCode, SpeechPlan
 
 SHOOT_SLOPE = 3.5
-SHOOT_AT = 0.45
+SHOOT_AT = 0.3
 
 
 def score_vote(ctx: Ctx, request: Request) -> list[Score]:
@@ -31,7 +31,7 @@ def score_shoot(ctx: Ctx, request: Request) -> list[Score]:
     for o in request.options:
         sc = Score(o.id, o.label, o.target)
         if o.target is None:
-            sc.add(0.6 * (1 - ctx.traits.boldness) - 0.2, 'hold_fire')
+            sc.add(1.4 * (1 - ctx.traits.boldness) - 0.6, 'hold_fire')
             out.append(sc)
             continue
         t = o.target
@@ -74,7 +74,7 @@ def speech_candidates(ctx: Ctx, request: Request) -> list[SpeechPlan]:
         return [plan(ctx, request, 'reveal', 'reveal', reveal_acts(ctx), 5.0)]
     u = -1.8
     if ctx.danger(request):
-        u = 1.6 + 1.0 * ctx.traits.boldness
+        u = 2.6 + 1.0 * ctx.traits.boldness
     if impostor:
         u = max(u, 3.0)
     if request.speech_kind == 'last_words':

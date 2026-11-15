@@ -13,7 +13,7 @@ let seatsFor = null, bannerK = null, bannerTimer = 0;
 
 function render() {
   if (S.game !== seatsFor) { seatsFor = S.game; buildSeats(); }
-  updateTopbar(); updateSeats(); updateCenter(); updateBottom(); updateLog();
+  updateTopbar(); updateCenter(); updateSeats(); updateBottom(); updateLog(); // 座位在中央之后：选目标面板在 updateCenter 里才建好 S.pick
   const b = S.banner;
   if (b && b.k !== bannerK) {
     bannerK = b.k;

@@ -17,8 +17,8 @@ from werewolf.mind.strategy.common import (
 )
 from werewolf.mind.types import PlannedAct, ReasonCode, SpeechPlan
 
-SAVE_FIRST = 2.6  # 首夜救人的效用
-POISON_AT = 0.78  # 怀疑度过了它，毒药才值得用
+SAVE_FIRST = 2.0  # 首夜救人的效用
+POISON_AT = 0.7  # 怀疑度过了它，毒药才值得用
 POISON_SLOPE = 6.0
 
 
@@ -99,7 +99,7 @@ def speech_candidates(ctx: Ctx, request: Request) -> list[SpeechPlan]:
         return [plan(ctx, request, 'reveal', 'reveal', reveal_acts(ctx), 5.0)]
     u = -1.5
     if ctx.danger(request):
-        u = 2.2 + 0.6 * (1 - ctx.traits.boldness)
+        u = 3.2 + 0.6 * (1 - ctx.traits.boldness)
     if impostor:
         u = max(u, 3.0)
     if request.speech_kind == 'last_words':

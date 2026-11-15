@@ -84,3 +84,34 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
             if line:
                 rows.append(json.loads(line))
     return rows
+
+
+DEMO_HELLO: dict[str, Any] = {'t': 'hello', 'version': 1, 'speed': 'normal', 'resumable': False,
+                              'llm': {'jev': False, 'claude': False, 'speech': 'template', 'offline': True}}
+
+
+def wire_to_demo(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """把 wire.jsonl 的行转成前端演示文件 `{version: 1, steps: [{msg, answer?}]}`。
+
+    只取发出的消息（错误与重放的不要）；每条 `request`（或带未答请求的 `state`）附上真人随后对它的答复
+    （`option_id` / `text` / `stance`），没有就不附。开头补一条 hello（落盘里没有它）。
+    """
+    answers: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        msg = row.get('msg') or {}
+        if row.get('dir') == 'in' and msg.get('t') == 'action' and msg.get('request_id'):
+            ans = {k: msg[k] for k in ('option_id', 'text', 'stance') if msg.get(k) is not None}
+            answers.setdefault(msg['request_id'], ans)
+    steps: list[dict[str, Any]] = []
+    if not rows or (rows[0].get('msg') or {}).get('t') != 'hello':
+        steps.append({'msg': dict(DEMO_HELLO)})
+    for row in rows:
+        msg = row.get('msg') or {}
+        if row.get('dir') != 'out' or msg.get('t') == 'error' or msg.get('replay'):
+            continue
+        step: dict[str, Any] = {'msg': msg}
+        req = msg if msg.get('t') == 'request' else (msg.get('open_request') if msg.get('t') == 'state' else None)
+        if req and req.get('id') in answers:
+            step['answer'] = answers[req['id']]
+        steps.append(step)
+    return {'version': 1, 'steps': steps}

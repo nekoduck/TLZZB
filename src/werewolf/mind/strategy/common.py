@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import math
+import zlib
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from typing import Literal
@@ -37,9 +38,20 @@ ACCUSE_LIKE = (ActKind.ACCUSE, ActKind.VOTE_INTENT, ActKind.DOUBT_CLAIM, ActKind
 TILT_BONUS = 1.6  # tilted 时对交情 ≤ -0.5 的座位的投票、指认、开枪加的效用
 TENSE_BONUS = 0.6  # tense 时反击 / 自保的偏向
 CONFIDENT_BONUS = 0.6  # confident 时带队类方案
-CONFORMITY_GAIN = 0.9  # 号召：每个可信号召者 × 从众
+CONFORMITY_GAIN = 2.5  # 号召：每个可信号召者 × 从众的平方（从众低的几乎不跟）
 GRUDGE_TRUST = -0.25  # 交情低于它、且记仇 ≥ 0.6，才会在发言里翻旧账
 GRUDGE_STRENGTH = 2.5  # 旧账对应的记忆当前强度至少多少才提
+GUT_RANK = 0.2  # 第一感觉在挑发言目标时折合多少怀疑度（概率）
+GUT_VOTE = 0.8  # 第一感觉在投票里折合多少效用
+KILLED_RIVAL = 1.4  # 对跳的另一位夜里被刀了：活着的那位更像狼（乘理性权重）
+COUNTER_VOTE = 1.6  # 对跳时投不信的那位预言家（两人里必有一个在说谎）
+KILLED_RIVAL_RANK = 0.3
+CONSOLIDATE = 0.25  # 合票：每份可信号召（至多两份）加的效用，再乘 0.5 + 从众
+CONSOLIDATE_MIN_P = 0.3
+ENEMY_VOTE = 1.0  # 攻击过我认定的真预言家，每次（至多两次）加的投票效用（乘理性权重）
+ENEMY_RANK = 0.12  # 同上，挑发言目标时折合多少怀疑度
+LONE_TRUST = 0.7  # 对跳的另一位出局后，剩下那位的可信度不到它就仍然怀疑他
+CLAIM_GUT = 0.1  # 对跳时站边的第一感觉分量（声明可信度差不多时谁也说不准）  # 同上，挑发言目标时折合多少怀疑度
 
 
 def logit(p: float) -> float:
@@ -67,6 +79,7 @@ class Ctx:
     vote_intent: Seat | None
     pack: dict[Seat, str]
     rng: Rng  # 只用来 fork 出确定性的派生流，不在原流上抽
+    taste: str = ''  # 人设 id：决定没有证据时的「第一感觉」（见 gut）
     events_by_id: dict[int, Event] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -87,6 +100,11 @@ class Ctx:
     @property
     def state(self) -> MindState:
         return self.mood.state('private')
+
+    def gut(self, s: Seat) -> float:
+        """对 s 的第一感觉，-1 到 1：由人设与当天日子决定（不掷骰、不看身份），只在证据相近时起作用。"""
+        h = zlib.crc32(f'{self.taste}|{self.seat}|{s}|{self.day}'.encode())
+        return (h % 2001) / 1000.0 - 1.0
 
     def p(self, s: Seat, layer: Layer = 'private') -> float:
         return self.beliefs.p(s, layer)
@@ -172,6 +190,69 @@ class Ctx:
         return len(self.calls_on(self.seat)) >= 2 or bool(self.checked_wolf_by())
 
 
+def survivor_claimants(ctx: Ctx) -> list[Seat]:
+    """自称预言家、还活着、而同样自称预言家的另一位夜里被刀了的人（狼通常不刀自家悍跳的）。"""
+    cl = ctx.ledger.claimants(Role.SEER)
+    if len(cl) < 2:
+        return []
+    killed = [c for c in cl if (d := ctx.ledger.death_of(c)) is not None and d[1] == 'night']
+    if not killed:
+        return []
+    return [c for c in cl if c in ctx.living and c != ctx.seat and c not in killed]
+
+
+def seer_side(ctx: Ctx) -> list[Seat]:
+    """我认定是真预言家的人：没人对跳、我也信得过的声明者；或夜里被刀的声明者（狼通常不刀自家悍跳的）。"""
+    cl = [c for c in ctx.ledger.claimants(Role.SEER) if c != ctx.seat]
+    if not cl or ctx.ledger.current_role(ctx.seat) == Role.SEER:
+        return []
+    out: list[Seat] = []
+    for c in cl:
+        d = ctx.ledger.death_of(c)
+        if d is not None and d[1] == 'night':
+            out.append(c)
+        elif d is None and len(cl) == 1 and ctx.beliefs.claim_trust(c, 'private', Role.SEER, ctx.ledger) >= 0.55 \
+                and not (ctx.hard(c) and ctx.p(c) >= 0.5):
+            out.append(c)
+    return out
+
+
+def seer_enemies(ctx: Ctx) -> dict[Seat, list[int]]:
+    """踩过、号召投过、质疑过、投过我认定的真预言家的人 → 这些事件的 id。狼常常这样暴露自己。"""
+    side = set(seer_side(ctx))
+    if not side:
+        return {}
+    out: dict[Seat, list[int]] = {}
+    for e in ctx.view.events:
+        if e.vis != 'public' or e.actor is None or e.actor == ctx.seat or e.actor in side:
+            continue
+        hit = e.type == EventType.VOTE and e.target in side
+        if e.type == EventType.SPEECH:
+            hit = any(a.kind in (ActKind.ACCUSE, ActKind.VOTE_INTENT, ActKind.DOUBT_CLAIM) and a.target in side
+                      for a in speech_acts(e))
+        if hit and not (ctx.hard(e.actor) and ctx.p(e.actor) < 0.5):
+            out.setdefault(e.actor, []).append(e.id)
+    return out
+
+
+def doubted_claimant(ctx: Ctx) -> Seat | None:
+    """预言家对跳过（含已出局的一位、我不是其中之一）时，活着的声明者里我更不信的那位；分不出高下时看第一感觉。
+    对跳的另一位出局了，剩下这位仍有一半可能是狼，信得不够就还算「不信的那位」。"""
+    if ctx.ledger.current_role(ctx.seat) == Role.SEER:
+        return None
+    allc = [c for c in ctx.ledger.claimants(Role.SEER) if c != ctx.seat]
+    if len(allc) < 2:
+        return None
+    cl = [c for c in allc if c in ctx.living]
+    if not cl:
+        return None
+    trust = {c: ctx.beliefs.claim_trust(c, 'private', Role.SEER, ctx.ledger) + CLAIM_GUT * ctx.gut(c) for c in cl}
+    worst = min(cl, key=lambda c: (trust[c], c))
+    if len(cl) == 1 and trust[worst] >= LONE_TRUST:
+        return None
+    return worst
+
+
 # --------------------------------------------------------------------------- 选项打分的记账
 
 
@@ -231,7 +312,7 @@ def mood_terms(ctx: Ctx, sc: Score, target: Seat | None, *, accusers: Sequence[S
 
 def evidence_weight(ctx: Ctx) -> float:
     """理性证据在效用里的权重；tilted 减半。"""
-    w = 0.7 + 0.6 * ctx.traits.logic
+    w = 1.0 + 0.8 * ctx.traits.logic
     return w * (0.5 if ctx.state == 'tilted' else 1.0)
 
 
@@ -241,8 +322,18 @@ def conformity_term(ctx: Ctx, sc: Score, target: Seat) -> None:
     if not callers:
         return
     cred = sum(max(0.0, 1.0 - 1.6 * ctx.p(c)) for c in callers)
-    bonus = min(ctx.tuning.speaker_cap, CONFORMITY_GAIN * ctx.traits.conformity * cred)
+    bonus = min(ctx.tuning.speaker_cap, CONFORMITY_GAIN * ctx.traits.conformity ** 2 * cred)
     sc.add(bonus, 'called', target)
+
+
+def consolidate_term(ctx: Ctx, sc: Score, t: Seat, p: float) -> None:
+    """好人合票：自己也觉得可疑、又有不止一位可信的人号召投他时，往一处投，免得票被狼的整票压过。"""
+    if p < CONSOLIDATE_MIN_P:
+        return
+    cred = sum(max(0.0, 1.0 - 1.6 * ctx.p(c)) for c in ctx.calls_on(t))
+    if cred < 1.0:
+        return
+    sc.add(CONSOLIDATE * min(2.0, cred) * (0.5 + ctx.traits.conformity), 'crowd', t)
 
 
 def commit_term(ctx: Ctx, sc: Score, target: Seat, request: Request) -> None:
@@ -261,6 +352,7 @@ def score_vote_town(ctx: Ctx, request: Request) -> list[Score]:
     w = evidence_weight(ctx)
     accusers = [s for s, _ in ctx.accusers()] + [s for s, t in ctx.intents_today().items() if t == ctx.seat]
     probs = {o.target: ctx.p(o.target) for o in request.options if o.target is not None}
+    enemies = seer_enemies(ctx)
     for o in request.options:
         sc = Score(o.id, o.label, o.target)
         if o.target is None:
@@ -280,7 +372,15 @@ def score_vote_town(ctx: Ctx, request: Request) -> list[Score]:
             out.append(sc)
             continue
         sc.add(w * logit(p), 'suspect' if p >= 0.4 else 'trusted', t)
+        sc.add(GUT_VOTE * ctx.gut(t))
+        if t in survivor_claimants(ctx):
+            sc.add(KILLED_RIVAL * w, ReasonCode.KILL_PATTERN.value, t)
+        elif t == doubted_claimant(ctx):
+            sc.add(COUNTER_VOTE * w, ReasonCode.COUNTER_CLAIM.value, t)
+        if t in enemies:
+            sc.add(ENEMY_VOTE * min(2, len(enemies[t])) * w, ReasonCode.VOTED_GOOD.value, t)
         conformity_term(ctx, sc, t)
+        consolidate_term(ctx, sc, t, p)
         commit_term(ctx, sc, t, request)
         mood_terms(ctx, sc, t, accusers=accusers)
         out.append(sc)
@@ -376,6 +476,18 @@ def cite(ctx: Ctx, target: Seat, sign: int = 1, prefer: Sequence[ReasonCode] = (
     return Cite(r, sorted(ids), fuzzy)
 
 
+def enemy_cite(ctx: Ctx, t: Seat) -> Cite | None:
+    """t 投过我认定的真预言家：以那张票为证（VOTED_GOOD），票还在记忆里才算。"""
+    if ctx.role == Role.WEREWOLF:
+        return None
+    for eid in reversed(seer_enemies(ctx).get(t, [])):
+        ev = ctx.events_by_id.get(eid)
+        if ev is not None and ev.type == EventType.VOTE and ctx.memory.has(eid) \
+                and evidence_ok(ReasonCode.VOTED_GOOD, ev, t, ctx.seat):
+            return Cite(ReasonCode.VOTED_GOOD, [eid], ctx.memory.is_fuzzy(eid, ctx.day))
+    return None
+
+
 def pa(kind: ActKind, target: Seat | None = None, weight: int = 2, reason: ReasonCode | None = None,
        evidence: Sequence[int] = (), motive: ReasonCode | None = None, truthful: bool = True, fuzzy: bool = False,
        **kw: object) -> PlannedAct:
@@ -388,6 +500,8 @@ def accuse_acts(ctx: Ctx, t: Seat, *, motive: ReasonCode | None = None, truthful
     """踩 t（带说得出口的理由）并号召投他。找不到公开理由就是 GUT，轻重 1。"""
     prefer = _GRUDGE if ctx.traits.vengeful >= 0.6 else ()
     c = cite(ctx, t, 1, prefer)
+    if c is None:
+        c = enemy_cite(ctx, t)
     out: list[PlannedAct] = []
     if c is None:
         out.append(pa(ActKind.ACCUSE, t, 1, ReasonCode.GUT, motive=motive or ReasonCode.GUT, truthful=truthful))
@@ -495,7 +609,17 @@ def plan(ctx: Ctx, request: Request, pid: str, variant: str, acts: Iterable[Plan
 
 def rank_targets(ctx: Ctx, layer: Layer = 'private', exclude: Iterable[Seat] = ()) -> list[tuple[Seat, float]]:
     ex = set(exclude) | {ctx.seat}
-    return [(s, ctx.p(s, layer)) for s, _ in ctx.beliefs.ranked(layer, ctx.living) if s not in ex]
+    items = [(s, ctx.p(s, layer)) for s, _ in ctx.beliefs.ranked(layer, ctx.living) if s not in ex]
+    surv = set(survivor_claimants(ctx))
+    doubted = doubted_claimant(ctx) if layer == 'private' else None
+    enemies = seer_enemies(ctx) if layer == 'private' else {}
+
+    def key(kv: tuple[Seat, float]) -> tuple[float, Seat]:
+        bonus = KILLED_RIVAL_RANK if kv[0] in surv else (KILLED_RIVAL_RANK if kv[0] == doubted else 0.0)
+        bonus += ENEMY_RANK * min(2, len(enemies.get(kv[0], [])))
+        return (-(kv[1] + GUT_RANK * ctx.gut(kv[0]) + bonus), kv[0])
+
+    return sorted(items, key=key)
 
 
 def claim_backing(ctx: Ctx, layer: Layer = 'private') -> list[PlannedAct]:
@@ -505,11 +629,14 @@ def claim_backing(ctx: Ctx, layer: Layer = 'private') -> list[PlannedAct]:
         return []
     if ctx.ledger.current_role(ctx.seat) == Role.SEER:
         return []
-    trusts = {c: ctx.beliefs.claim_trust(c, layer, Role.SEER, ctx.ledger) for c in claimants}
+    trusts = {c: ctx.beliefs.claim_trust(c, layer, Role.SEER, ctx.ledger) + CLAIM_GUT * ctx.gut(c) for c in claimants}
     best = max(claimants, key=lambda c: (trusts[c], -c))
     out: list[PlannedAct] = []
-    if trusts[best] >= 0.5 and not (ctx.hard(best) and ctx.p(best) >= 0.5):
-        out.append(pa(ActKind.BACK_CLAIM, best, 2 if trusts[best] >= 0.7 else 1))
+    lone = len(claimants) == 1
+    if lone and ctx.traits.conformity < 0.4:
+        pass  # 只有一个人跳、还没人对跳时，不从众的人先不站边
+    elif trusts[best] >= 0.5 and not (ctx.hard(best) and ctx.p(best) >= 0.5):
+        out.append(pa(ActKind.BACK_CLAIM, best, 1 if lone or trusts[best] < 0.7 else 2))
     for c in claimants:
         if c != best and len(claimants) >= 2:
             eid = ctx.claim_event(c, Role.SEER)
@@ -537,6 +664,9 @@ def town_variants(ctx: Ctx, request: Request, *, layer: Layer = 'private', exclu
         e.type == EventType.SPEECH and e.day == ctx.day and e.actor != ctx.seat and speech_acts(e)
         and any(a.kind != ActKind.PASS for a in speech_acts(e)) for e in ctx.view.events)
     backing = claim_backing(ctx, layer)
+    backed = {a.target for a in backing if a.kind == ActKind.BACK_CLAIM}
+    if backed:  # 不踩自己站边的人
+        ranked = [kv for kv in ranked if kv[0] not in backed]
     defend_self = pa(ActKind.DEFEND, None, 2, ReasonCode.SELF_PRESERVE) if accusers else None
     del st
     if ranked:
@@ -605,6 +735,6 @@ def town_variants(ctx: Ctx, request: Request, *, layer: Layer = 'private', exclu
             u4 -= 0.4
         out.append(plan(ctx, request, 'defend', 'defend', acts4, u4, [acc]))
     # 划水
-    u5 = -0.9 + 1.4 * (0.45 - tr.talkative) + (0.5 if first_day_quiet else 0.0)
+    u5 = -0.9 + 2.4 * (0.45 - tr.talkative) + (0.5 if first_day_quiet else 0.0)
     out.append(plan(ctx, request, 'pass', 'pass', [pa(ActKind.PASS, None, 1)], u5))
     return out

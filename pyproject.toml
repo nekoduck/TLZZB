@@ -38,9 +38,9 @@ testpaths = ["tests"]
 asyncio_mode = "auto"
 markers = [
   "network: needs real API access (skipped by default)",
-  "slow: long-running (fuzz, baseline)",
+  "slow: long-running (fuzz, baseline, hundreds of self-play games, browser runs; skipped by default)",
 ]
-addopts = "-m 'not network'"
+addopts = "-m 'not network and not slow'"
 
 [tool.ruff]
 line-length = 110

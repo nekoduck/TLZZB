@@ -53,12 +53,15 @@ export function openNewGame({ first = false } = {}) {
   const err = h('div', { class: 'field-err', role: 'alert' });
   const role = h('select', { 'aria-label': '身份偏好' }, h('option', { value: 'random' }, '随机'), ['werewolf', 'villager', 'seer', 'witch', 'hunter'].map((k) => h('option', { value: k }, ROLE_ZH[k])));
   const seat = h('select', { 'aria-label': '座位' }, h('option', { value: '' }, '随机'), Array.from({ length: 9 }, (_, i) => h('option', { value: i + 1 }, `${i + 1} 号`)));
+  const dev = new URLSearchParams(location.search).has('dev'); // /?dev=1：开发模式下可填种子
+  const seed = dev ? h('input', { type: 'text', inputmode: 'numeric', placeholder: '随机', 'aria-label': '种子', autocomplete: 'off' }) : null;
   const speed = h('select', { 'aria-label': '速度' }, SPEEDS.map((s) => h('option', { value: s, selected: s === S.speed }, SPEED_ZH[s])));
   const start = () => {
     const v = name.value.trim();
     if (!NAME_RE.test(v)) { err.textContent = '名字只能是 1 到 8 个汉字或字母'; name.focus(); return; }
+    const sd = seed && /^\d{1,15}$/.test(seed.value.trim()) ? Number(seed.value.trim()) : null;
     S.playerName = v; store('ww.name', v);
-    net.send({ t: 'new_game', name: v, role: role.value, seat: seat.value ? Number(seat.value) : null, speed: speed.value });
+    net.send({ t: 'new_game', name: v, role: role.value, seat: seat.value ? Number(seat.value) : null, speed: speed.value, ...(sd != null ? { seed: sd } : {}) });
     m.close();
   };
   name.addEventListener('keydown', (e) => { if (e.key === 'Enter') start(); });
@@ -66,7 +69,7 @@ export function openNewGame({ first = false } = {}) {
     h('p', { class: 'dim' }, '9 人局：你和 8 位 AI 玩家。'),
     h('label', null, '你的名字', name), err,
     h('div', { class: 'grid2' }, h('label', null, '身份偏好', role), h('label', null, '座位', seat)),
-    h('label', null, '演出速度', speed));
+    h('label', null, '演出速度', speed), seed ? h('label', null, '种子（开发）', seed) : null);
   const m = modal({ title: first ? '欢迎入座' : '开新局', body, actions: [btn('开始游戏', start, 'primary big')] });
   return m;
 }

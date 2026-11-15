@@ -17,7 +17,7 @@ def test_load_reads_werewolf_sections(cfg: tuple[Settings, WerewolfSettings]) ->
     assert ww.host == '127.0.0.1' and ww.port == 8765 and ww.speed == 'normal' and ww.open_browser is True
     assert ww.route.parse == 'jev' and ww.route.speech == 'claude' and ww.route.monologue == 'claude'
     assert ww.check.block == 0.5 and ww.check.injection == 0.8
-    assert ww.mind.jev_weight == 0.4 and ww.mind.top_k == 4 and ww.mind.seer_kill_bias == 0.8
+    assert ww.mind.jev_weight == 0.25 and ww.mind.top_k == 4 and ww.mind.seer_kill_bias == 0.8
     assert ww.limits.decide_timeout_s == 4.0 and ww.limits.max_speech_chars == 180
     assert ww.limits.human_speech_chars == 500 and ww.limits.quote_chars == 80
     # 公共几节由 tianlong 读

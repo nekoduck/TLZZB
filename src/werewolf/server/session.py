@@ -109,7 +109,8 @@ REPLAY_TYPES = frozenset({'game', 'event', 'narration', 'private', 'parsed', 'go
 GATED_TYPES = frozenset({'event', 'narration', 'request', 'thinking', 'review'})
 QUICK_PASS = frozenset({'过', '过。', '过了', 'pass', 'Pass', 'PASS'})
 REFLECT_GRACE_S = 2.0  # 反思超时之外再宽限多久
-AI_GRACE_S = 5.0  # AI 作答的兜底超时在模型超时之外再宽限多久
+AI_GRACE_S = 5.0
+MAX_SPEECH_CHARS = 600  # 内核对 Speech.text 的上限  # AI 作答的兜底超时在模型超时之外再宽限多久
 
 # 事件 → 停顿种类（director.pacing.HOLD_RANGES）
 EVENT_HOLD: dict[EventType, str] = {
@@ -473,6 +474,8 @@ class Session:
             if ev.type != EventType.PHASE:
                 continue
             ph = ev.data.get('phase')
+            if ph in (Phase.DAY_SPEECH, Phase.PK_SPEECH, Phase.LAST_WORDS):
+                self._heard = []  # 真人的原话只给同一轮里之后发言的 AI；要在起下一批任务之前清
             if ph == Phase.NIGHT_WOLF:
                 self._start_reflections()
             elif ph == Phase.DAY_SPEECH:
@@ -526,9 +529,10 @@ class Session:
     # ---- AI 作答 ----
 
     def _start_ai(self, reqs: Sequence[Request]) -> dict[str, asyncio.Task[_Answer]]:
-        return {r.id: self._spawn(self._ai_answer(r)) for r in reqs if r.seat in self.players}
+        heard = tuple(self._heard)
+        return {r.id: self._spawn(self._ai_answer(r, heard)) for r in reqs if r.seat in self.players}
 
-    async def _ai_answer(self, req: Request) -> _Answer:
+    async def _ai_answer(self, req: Request, heard: Sequence[Quote] = ()) -> _Answer:
         player = self.players[req.seat]
         if req.phase in NIGHT_PHASES:
             await self._await_reflection(req.seat)
@@ -537,7 +541,7 @@ class Session:
         try:
             if req.kind == RequestKind.SPEAK:
                 pv = self.game.public_view()
-                coro = player.speak(req, view, pacing.pace(pv), list(self._heard))
+                coro = player.speak(req, view, pacing.pace(pv), list(heard))
                 action, plan, dec, result = await asyncio.wait_for(
                     coro, lim.speech_timeout_s + lim.decide_timeout_s + AI_GRACE_S)
                 return _Answer(req, action, dec, plan, result, getattr(player, 'last_brief', None))
@@ -743,35 +747,44 @@ class Session:
             await self._error('illegal_action', '这个请求已经失效', msg.request_id, 'unknown_request')
             return
         req = op.req
-        try:
-            if req.kind == RequestKind.SPEAK:
-                speech, parsed = await self._human_speech(op, msg.text, msg.keep)
-                action = Action(request_id=req.id, seat=req.seat, speech=speech)
-            else:
-                if msg.option_id not in {o.id for o in req.options}:
-                    raise _BadAction('not_an_option', '这个选项不在可选范围里')
-                stance = msg.stance if req.kind == RequestKind.WOLF_KILL and req.day == 1 else None
-                action = Action(request_id=req.id, seat=req.seat, option_id=msg.option_id, stance=stance)
-                parsed = None
-        except _BadAction as exc:
-            await self._error('illegal_action', exc.message, op.token, exc.detail)
+        if req.kind == RequestKind.SPEAK:
+            await self._on_speech(op, msg)
             return
-        if self._live_open(msg.request_id) is not op:  # 解析期间请求没了
-            await self._error('illegal_action', '这个请求已经失效', msg.request_id, 'unknown_request')
+        if msg.option_id not in {o.id for o in req.options}:
+            await self._error('illegal_action', '这个选项不在可选范围里', op.token, 'not_an_option')
             return
-        if parsed is not None:
-            self._human_parsed = parsed
-            clean = parsed.clean_text[: min(self.ww.limits.quote_chars, 80)].strip()
-            if clean:
-                self._heard.append(Quote(seat=req.seat, text=clean, flags=list(action.speech.flags)))  # type: ignore[union-attr]
+        stance = msg.stance if req.kind == RequestKind.WOLF_KILL and req.day == 1 else None
+        action = Action(request_id=req.id, seat=req.seat, option_id=msg.option_id, stance=stance)
         self._open = None
         await self._deliver(Accepted(request_id=op.token, option_id=action.option_id))
-        op.future.set_result(action)
+        if not op.future.done():
+            op.future.set_result(action)
 
-    async def _human_speech(self, op: _Open, text: str | None, keep: list[int] | None) -> tuple[Speech, ParsedSpeech]:
-        raw = (text or '').strip()
+    async def _on_speech(self, op: _Open, msg: ActionMsg) -> None:
+        """真人发言：空的回 bad_speech（请求仍有效）；否则先回 accepted（输入框可以关了），再解析、提交。"""
+        req = op.req
+        raw = (msg.text or '').strip()
         if not raw:
-            raise _BadAction('bad_speech', '发言不能为空')
+            await self._error('illegal_action', '发言不能为空', op.token, 'bad_speech')
+            return
+        self._open = None  # 认领：此后同一请求再来就是 unknown_request
+        await self._deliver(Accepted(request_id=op.token))
+        try:
+            speech, parsed = await self._human_speech(op, raw, msg.keep)
+        except _BadAction:  # 解析结果过不了结构校验：只留原话，不记言语行为
+            log.warning('human speech failed structural check; dropping acts')
+            limit = min(MAX_SPEECH_CHARS, self.ww.limits.human_speech_chars)
+            speech = Speech(text=raw[:limit], acts=[], source='human',
+                            flags=['truncated'] if len(raw) > limit else [])
+            parsed = ParsedSpeech(acts=[], flags=list(speech.flags), clean_text=speech.text)
+        self._human_parsed = parsed
+        clean = parsed.clean_text[: min(self.ww.limits.quote_chars, 80)].strip()
+        if clean:
+            self._heard.append(Quote(seat=req.seat, text=clean, flags=list(speech.flags)))
+        if not op.future.done():
+            op.future.set_result(Action(request_id=req.id, seat=req.seat, speech=speech))
+
+    async def _human_speech(self, op: _Open, raw: str, keep: list[int] | None) -> tuple[Speech, ParsedSpeech]:
         if op.preview is not None and op.preview[0] == raw:
             parsed = op.preview[1]
             if keep is not None:
@@ -779,7 +792,7 @@ class Session:
                 parsed = parsed.model_copy(update={'acts': [parsed.acts[i] for i in idx]})
         else:
             parsed = await self._parse(raw, op.req.seat)
-        limit = min(600, self.ww.limits.human_speech_chars)
+        limit = min(MAX_SPEECH_CHARS, self.ww.limits.human_speech_chars)
         flags = [f for f in dict.fromkeys(parsed.flags) if f in SPEECH_FLAGS]
         if len(raw) > limit:
             raw = raw[:limit].rstrip() or raw[:limit]
@@ -871,8 +884,6 @@ class Session:
                 await self._narrate('pk_start', tension, seats=d.get('candidates', []))
             elif ph == Phase.PK_VOTE:
                 await self._narrate('pk_vote', tension)
-            if ph in (Phase.DAY_SPEECH, Phase.PK_SPEECH, Phase.LAST_WORDS):
-                self._heard = []
             return
         if ev.type == EventType.DAWN:
             deaths = d.get('deaths') or []

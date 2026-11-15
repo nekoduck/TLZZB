@@ -53,7 +53,8 @@ export function updateSeats() {
   for (const [k, c] of Object.entries(cards)) {
     const seat = Number(k);
     const alive = S.alive[seat] !== false;
-    const speaking = !!(sp && sp.seat === seat && !sp.done) || (S.request && S.request.kind === 'speak' && seat === S.you);
+    const myTurn = !!(S.request && S.request.kind === 'speak');
+    const speaking = myTurn ? seat === S.you : !!(sp && sp.seat === seat && !sp.done);
     const pk = S.pick;
     const selectable = !!(pk && pk.seats.has(seat));
     const selected = selectable && pk.sel === seat;
