@@ -46,9 +46,11 @@ from tianlong.kernel.state import (
 )
 from tianlong.llm import LLM, make_llm
 from tianlong.llm.record import CALLS_FILE, read_calls
+from tianlong.store.checkpoints import DANGER_LABEL
 from tianlong.ui import commands as ui_commands
 from tianlong.ui.events import Break, Ended, Header, Notice, Options, Text, UIEvent
 from tianlong.ui.text import plain_text
+from tianlong.world import onscene as world_onscene
 from tianlong.world import situations as world_situations
 
 META_FILE = "meta.json"
@@ -62,6 +64,7 @@ TRAVEL_VERBS = ("go", "flee")
 QUIET_VERBS = frozenset({"wait", "look", "listen", "examine", "rest", "study", "practice"})  # 算不上「动静」
 TRAVEL_SUMMARY_MIN = 4  # 走了小半个时辰以上，用一句话带过路上的工夫
 REST_REFLECT = 16  # 歇息满 16 刻，做夜间反思（7.10）
+MAX_DANGER_CHECKPOINTS = 3  # 「大险之前」的检查点至多留几个（反复读档重来时，不让它们把每日之始的挤掉）
 HELPLESS_TICKS = TICKS_PER_HOUR  # 动弹不得时，一次输入过去一个时辰
 PREV_TAIL = 80
 STAT_FIELDS = ("neili", "literacy", "luck", "aptitude", "base_power")
@@ -174,6 +177,7 @@ class Game:
         self._rec: TurnRecord | None = None
         self._t0 = 0.0
         self._danger0 = 0  # 这一回合开始时的 danger（大险之前的检查点据此判断）
+        self._credit: dict[str, int] = {}  # 微轮里已经给在场者的「等」记过、还没从过去的时间里扣掉的刻数（I6）
 
     # ------------------------------------------------------------------ 建局与读档
 
@@ -595,8 +599,7 @@ class Game:
         if any(e.verb == "warn_danger" for e in evs):
             # 2.4、6.10：先警示，局面不变；玩家坚持再做，才真正结算
             self._rec.kind = "warn"
-            with contextlib.suppress(OSError, store.SaveError):
-                self.checkpoints.before_danger(st)
+            self._danger_checkpoint(st)
             text = narrator.warning_text(st, df, fresh or act)
             async for ev in self._still(text):
                 yield ev
@@ -611,8 +614,8 @@ class Game:
             self._mark_chosen(None)
         # 3 在场的人各自反应
         await self._micro_rounds(evs, int(self.settings.limits.max_micro_rounds))
-        credited = self._wait_credit(waits)
-        async for ev in self._advance(act, cost, speech=speech, credited=credited):
+        self._add_credit(waits)
+        async for ev in self._advance(act, cost, speech=speech):
             yield ev
 
     async def _advance(
@@ -621,7 +624,6 @@ class Game:
         ticks: int,
         *,
         speech: Speech | None = None,
-        credited: dict[str, int] | None = None,
         lead: str = "",
         stop_when_able: bool = False,
         interruptible: bool = True,
@@ -635,7 +637,7 @@ class Game:
         warned0 = set(st.warned)
         # 4 时间推进；世界在别处继续走
         elapsed, interrupted = await self._pass_time(
-            act, ticks, credited=credited, stop_when_able=stop_when_able, interruptible=interruptible
+            act, ticks, stop_when_able=stop_when_able, interruptible=interruptible
         )
         self._rec.interrupted = interrupted
         world.end_of_turn(st, df)
@@ -702,22 +704,23 @@ class Game:
         for c in self.state.chars.values():
             if c.id == self.state.player or c.loc != loc or c.agenda is None:
                 continue
-            step = danger.current_step(c)
-            if step is not None:
+            step = world_onscene.waiting_step(self.state, self.defs, c)
+            if step is not None:  # 只有「就在这里等」的一步才由 onscene_elapsed 补时间，也只有它要挂账
                 out[c.id] = (step.id, c.agenda.progress)
         return out
 
-    def _wait_credit(self, before: dict[str, tuple[str, int]]) -> dict[str, int]:
-        """微轮里已经给谁的这一步记过几刻：补时间时扣掉，免得一刻记两回。"""
-        out: dict[str, int] = {}
+    def _add_credit(self, before: dict[str, tuple[str, int]]) -> None:
+        """微轮里已经给谁的这一步记过几刻：记在账上，补时间时扣掉，免得一刻记两回。
+
+        紧张的场面里动作不耗时（2.5），微轮照样一轮记一刻：这些也挂在账上，等时间真的过去时再抵。
+        """
         for cid, (step_id, prog) in before.items():
             c = self.state.chars.get(cid)
             if c is None or c.agenda is None:
                 continue
             step = danger.current_step(c)
             if step is not None and step.id == step_id and c.agenda.progress > prog:
-                out[cid] = c.agenda.progress - prog
-        return out
+                self._credit[cid] = self._credit.get(cid, 0) + c.agenda.progress - prog
 
     # ---- 时间
 
@@ -726,7 +729,6 @@ class Game:
         act: ActionInst,
         ticks: int,
         *,
-        credited: dict[str, int] | None = None,
         stop_when_able: bool = False,
         interruptible: bool = True,
     ) -> tuple[int, bool]:
@@ -756,14 +758,19 @@ class Game:
                     interrupted = True
                     break
             elapsed += done
+            credited, self._credit = self._credit, {}
             evs += self._collect(world.onscene_elapsed(st, df, done, credited=credited))
-            credited = None
+            for cid, n in credited.items():  # 这一段没抵完的，留到下一段
+                if n > done:
+                    self._credit[cid] = n - done
             if st.ended is not None or interrupted:
                 break
             if st.tick % TICKS_PER_HOUR == 0:
                 hour = self._collect(await world.tick(self.llm, st, df, decide=self._decide))
                 if long and elapsed < ticks and st.ended is None:
+                    waits = self._wait_marks()
                     hour += await self._micro_rounds(evs + hour, 1)  # 玩家忙着，在场的人照常过他们的日子
+                    self._add_credit(waits)
                 if interruptible and elapsed < ticks and self._interrupts(act, hour, danger0, sits0):
                     interrupted = True
             if stop_when_able and self._can_act():
@@ -817,9 +824,35 @@ class Game:
         """性命之忧之前的检查点（2.6、8.7）：取上一回合末的自动存档，也就是这一回合开始之前的世界。"""
         try:
             prev = store.load_state(self.save_dir, content_hash=None)
-            self.checkpoints.before_danger(prev)
         except (store.SaveError, OSError) as e:
             log_violation(self.state, f"checkpoint before danger failed: {e}")
+            return
+        self._danger_checkpoint(prev)
+
+    def _danger_checkpoint(self, state: WorldState) -> None:
+        """存一个「大险之前」的检查点。这一类至多留 ``MAX_DANGER_CHECKPOINTS`` 个：
+
+        检查点总共只留最近 10 个（8.7）。死了读档、再死、再读档，每次都会多出一个几乎一样的；
+        不设上限的话，几次重来就把前几日「一日之始」的检查点全挤掉，想退回几天前另寻出路也不能了。
+        """
+        try:
+            cps = self.checkpoints.list()
+            if cps and cps[0].label == DANGER_LABEL and cps[0].tick == state.tick:
+                return  # 同一刻已经存过
+            old = [c for c in cps if c.label == DANGER_LABEL][MAX_DANGER_CHECKPOINTS - 1 :]
+            for c in old:
+                c.path.unlink(missing_ok=True)
+            self.checkpoints.before_danger(state)
+        except (store.SaveError, OSError) as e:
+            log_violation(self.state, f"checkpoint before danger failed: {e}")
+
+    def _drop_checkpoints_after(self, tick: int) -> None:
+        """从检查点重来之后：比它晚的检查点属于放弃了的那条路，删掉；此后每日之始照常另存新的。"""
+        with contextlib.suppress(OSError):
+            for c in self.checkpoints.list():
+                if c.tick > tick:
+                    c.path.unlink(missing_ok=True)
+        self.checkpoints = store.CheckpointManager(self.save_dir)
 
     # ---- 记账（都经效果）
 
@@ -861,6 +894,9 @@ class Game:
             ev for ev in self._events() if not (ev.verb == "wait" and ev.actor != pid and ev.speech is None)
         ]
         view = perception.player_view(st, df, events)
+        if st.ended == "left" and not perception.on_map(self.player):
+            # 人已经走出这一带：身后的地方与留在那里的人不再写（2.6）
+            return view.model_copy(update={"location_desc": "", "present": [], "items_here": [], "heard": []})
         if act is None or act.verb not in TRAVEL_VERBS:
             return view
         mine = [e for e in view.events if e.by_player]
@@ -1108,6 +1144,7 @@ class Game:
             if name.startswith("检查点"):
                 key = name[3:].strip() or None
                 state = self.checkpoints.restore(key, content_hash=self.defs.content_hash)
+                self._drop_checkpoints_after(state.tick)
             else:
                 src = store.save_dir(self.saves_root, name)
                 state = store.load_state(src, content_hash=self.defs.content_hash)
@@ -1123,6 +1160,7 @@ class Game:
         self._mark = state.next_event_id
         self._turn_events = {}
         self._pending_leave = None
+        self._credit = {}
         self._prev_tail = ""
         self._stale = False
         self._started = True

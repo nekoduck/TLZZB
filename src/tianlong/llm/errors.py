@@ -19,10 +19,13 @@ class JevError(LLMError):
         self.status = status
 
 
-class JevTimeout(JevError):
+class JevTimeout(JevError, TimeoutError):
     """这一次 `jev.ask` 超过了调用方给的时限（`timeout_s`），或被调用方取消。
 
     录制里记成一条错误行；重放时在同一处再抛出来，后面的调用不会错位。
+    它同时是内置的 `TimeoutError`：调用方在外面套 `asyncio.wait_for` 而写的 `except TimeoutError`
+    在重放时照样接得住（重放不计时，录制里超时的那一次直接抛本异常），实况与重放走同一条分支。
+    `except TimeoutError` 要写在 `except LLMError` 之前。
     """
 
     def __init__(self, message: str, *, timeout_s: float | None = None) -> None:

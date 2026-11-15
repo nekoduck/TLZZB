@@ -30,7 +30,7 @@ EVAL_SUITES_DIR = ("evals", "data")
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="python -m tianlong", description="天龙八部·无量山与万劫谷：终端里的纯文字沙盒")
+    p = argparse.ArgumentParser(prog="python -m tianlong", description="终端里的纯文字沙盒：一回合一段叙述、三个选项，也可以直接写下想做的事")
     p.add_argument("--config", default="config.toml", help="config.toml 的路径（默认当前目录下的）")
     sub = p.add_subparsers(dest="command", metavar="命令")
 

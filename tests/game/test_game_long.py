@@ -56,7 +56,7 @@ async def test_long_wait_is_interrupted_when_someone_arrives(settings: Settings)
     evs = await s.send("我在这里等上一天")
     assert_full_turn(evs)
     assert s.game.last_turn is not None and s.game.last_turn.interrupted
-    assert st.tick == t0 + 16 and st.tick < t0 + 96  # 在看见来人的那个时辰停下，没有等满一天
+    assert st.tick == t0 + 10  # 就在看见来人的那一刻停下，没有等满一天
     assert "白公子来到" in text_of(evs)
     # 没有人来，就等满
     t1 = st.tick
@@ -79,9 +79,10 @@ async def test_sleeper_wakes_only_for_loud_or_direct_things(settings: Settings) 
     assert "白公子来到" not in text_of(evs)
     # 近旁一声巨响：惊醒
     t1 = st.tick
-    s.fx([{"schedule": [10, [{"emit": {"actor": "guest", "verb": "shout", "text": "⟦guest⟧大喊了一声", "loud": True}}]]}])
+    shout = {"emit": {"actor": "guest", "verb": "shout", "text": "⟦guest⟧大喊了一声", "loud": True}}
+    s.fx([{"schedule": [10, [{"move": ["guest", "yard"]}, shout]]}])
     evs = await s.send("我歇息四个时辰")
-    assert s.game.last_turn.interrupted and st.tick == t1 + 16
+    assert s.game.last_turn.interrupted and st.tick == t1 + 10  # 就在那一声响起的时候
     assert not has_status(st.chars[pid], "asleep")
     assert "惊醒" in text_of(evs)
     assert_full_turn(evs)
@@ -101,7 +102,7 @@ async def test_helpless_player_lets_time_pass(settings: Settings) -> None:
     assert st.tick == t0 + 8 and options_of(evs) is None
     assert "动弹不得" in notices(evs)[-1] and "昏昏沉沉" in text_of(evs)
     evs = await s.send("随便什么")
-    assert st.tick == t0 + 16 and not has_status(st.chars[pid], "unconscious")
+    assert st.tick == t0 + 10 and not has_status(st.chars[pid], "unconscious")  # 一能动就停，不必等满一个时辰
     assert_full_turn(evs)
     evs = await s.send("一")
     assert s.game.last_turn.kind == "turn"
@@ -217,7 +218,7 @@ async def test_debug_summary_and_cheats(settings: Settings) -> None:
     pid = st.player
     me = st.chars[pid]
     out = notices(await s.send("/debug"))[0]
-    assert out.startswith("【调试】") and "种子 1" in out and "模型调用" in out and "J2a" in out
+    assert out.startswith("【调试】") and "种子 1" in out and "模型调用" in out and "J1" in out
     turn, tick = st.turn, st.tick
     # 给东西：经效果，物件确实换了手
     evs = await s.send("/debug give sword")

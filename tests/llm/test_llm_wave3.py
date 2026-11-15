@@ -109,6 +109,27 @@ async def test_mock_jev_accepts_timeout_and_never_times_out(settings: Settings) 
     assert llm.recorder.records[0]['error'] is None
 
 
+async def test_recorded_cancel_replays_into_the_callers_timeout_branch(settings: Settings, tmp_path: Path) -> None:
+    """外面套 wait_for 的调用方：实况走 `except TimeoutError`，重放也走这一支（JevTimeout 是 TimeoutError）。"""
+    run1 = tmp_path / 'run1'
+    client, _, _ = slow_client(settings, run1 / 'calls.jsonl')
+
+    async def guarded(jev: Any) -> str:
+        try:
+            await asyncio.wait_for(jev.ask('J5', 'slow 句子', Q), 0.05)
+        except TimeoutError:
+            return 'timeout'
+        except LLMError:
+            return 'error'
+        return 'ok'
+
+    assert await guarded(client) == 'timeout'
+    await client.aclose()
+    rep = make_llm(settings, mock=False, run_dir=tmp_path / 'run2', replay_dir=run1)
+    assert await guarded(rep.jev) == 'timeout'
+    assert isinstance(JevTimeout('x'), TimeoutError) and isinstance(JevTimeout('x'), JevError)
+
+
 def test_jev_timeout_payload_round_trip() -> None:
     err = JevTimeout('Jev J5: no answer within 0.4s', timeout_s=0.4)
     back = error_from_payload(error_payload(err))
