@@ -15,7 +15,7 @@ choice_margin = 0.15
 needs_thought = 0.60
 noul_yes = 0.60
 sample_floor = 0.15
-narration_flag = 0.70
+narration_flag = 0.80       # M3 评测后由 0.70 调高（见 DECISIONS「M3」一节）
 
 [route]                     # jev_first / claude_first / claude_only / rules_only
 classify = 'jev_first'      # J1，退到 C1
