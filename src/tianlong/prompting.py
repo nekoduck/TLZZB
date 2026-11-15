@@ -43,9 +43,9 @@ def load(name: str) -> str:
     return (_ROOT / f"{name}.md").read_text(encoding="utf-8").strip()
 
 
-def render(name: str, **ctx: Any) -> str:
+def render(_template: str, /, **ctx: Any) -> str:
     """渲染一个模板；缺变量直接报错，免得把空白送给模型。"""
-    return _env().get_template(f"{name}.md").render(**ctx).strip()
+    return _env().get_template(f"{_template}.md").render(**ctx).strip()
 
 
 def exists(name: str) -> bool:
