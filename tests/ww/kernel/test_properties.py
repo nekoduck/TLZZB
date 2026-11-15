@@ -324,7 +324,7 @@ def test_event_shapes_and_json_round_trip_in_random_games() -> None:
 
 
 def test_engine_shapes_match_testing_scenario() -> None:
-    """`werewolf.testing.Scenario` 拼出的事件与引擎的 data 键一致（Scenario 的 wolf_kill 少了 stance，见报告）。"""
+    """`werewolf.testing.Scenario` 拼出的事件与引擎的 data 键一致。"""
     sc = duel_scenario()
     sc2 = Scenario()
     sc2.night(1, kill=9, check=(3, 2, 'wolf'))
