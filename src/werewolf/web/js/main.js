@@ -8,6 +8,7 @@ import { updateCenter } from './center.js';
 import { updateBottom } from './bottom.js';
 import { updateLog, toggleLog } from './log.js';
 import { startLive, startDemo } from './transport.js';
+import { handle } from './handlers.js';
 
 let seatsFor = null, bannerK = null, bannerTimer = 0;
 
@@ -45,6 +46,6 @@ function boot() {
   else startLive();
   // Esc 收起发言记录抽屉（对话框打开时 Esc 归对话框）
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && S.logOpen && !document.querySelector('#modal-root .modal')) toggleLog(false); });
-  window.__ww = { S, refresh };
+  window.__ww = { S, refresh, handle };
 }
 boot();

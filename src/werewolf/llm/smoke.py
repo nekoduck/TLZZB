@@ -193,6 +193,27 @@ def _pct(x: float) -> str:
     return f'{x * 100:.1f}%'
 
 
+def availability_notes(gw: Gateway) -> list[str]:
+    """开跑之前说清楚：缺哪把密钥（环境变量名，不含值）、因此哪些项目跳过或降级。"""
+    if gw.offline:
+        return ['离线模式：不调模型。Jev 决定、解析（Jev）、核对（Jev）跳过，台词只走模板档；只跑规则部分的评测。']
+    jev, claude = gw.llm.jev_available, gw.llm.claude_available
+    cfg = gw.settings
+    notes: list[str] = []
+    if not jev:
+        names = ' / '.join([cfg.jev.api_key_env, *cfg.jev.api_key_env_fallbacks])
+        notes.append(f'缺 Jev 的密钥（环境变量 {names}）：跳过 Jev 决定、解析（Jev）、核对（Jev），只跑规则部分。')
+    if not claude:
+        names = ' / '.join([cfg.claude.api_key_env, *cfg.claude.api_key_env_fallbacks])
+        tier = 'Jev 挑选档' if jev else '模板档'
+        notes.append(f'缺 Claude 的密钥（环境变量 {names}）：台词不调 Claude，只测{tier}。')
+    if (jev or claude) and not gw.budget_left():
+        notes.append('预算已经用完：要调模型的项目全部跳过。')
+    if not notes:
+        notes.append('Jev 与 Claude 的密钥都在：各项都会真调模型（会花钱）。')
+    return notes
+
+
 async def run_smoke(gw: Gateway, *, only: Sequence[str] | None = None, verbose: bool = False) -> dict[str, Any]:
     """真模型冒烟：Jev 一次决定、Claude 一段台词、解析评测、核对评测。打印简报并返回指标。"""
     from werewolf.kernel.rng import Rng
@@ -203,9 +224,14 @@ async def run_smoke(gw: Gateway, *, only: Sequence[str] | None = None, verbose: 
     report: dict[str, Any] = {}
     lines: list[str] = []
     st = gw.status()
+    report['notes'] = availability_notes(gw)
+    print('\n'.join(report['notes']), flush=True)  # 先说缺什么、跳过什么，再开始等模型
     lines.append(f'路由：jev={st.jev} claude={st.claude} 台词档={st.speech} 离线={st.offline}')
 
-    if 'decide' in want:
+    if 'decide' in want and gw.route('decide') != 'jev':
+        report['decide'] = {'skipped': 'Jev 不可用'}
+        lines.append('Jev 决定：Jev 不可用，跳过')
+    elif 'decide' in want:
         t0 = time.perf_counter()
         probs = await choose(
             gw, 'J2_act',

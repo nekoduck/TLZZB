@@ -237,7 +237,7 @@ def seer_enemies(ctx: Ctx) -> dict[Seat, list[int]]:
 
 def doubted_claimant(ctx: Ctx) -> Seat | None:
     """预言家对跳过（含已出局的一位、我不是其中之一）时，活着的声明者里我更不信的那位；分不出高下时看第一感觉。
-    对跳的另一位出局了，剩下这位仍有一半可能是狼，信得不够就还算「不信的那位」。"""
+    对跳的另一位出局了，剩下这位仍有一半可能是狼：信得不够、又不比出局的那位更可信，就还算「不信的那位」。"""
     if ctx.ledger.current_role(ctx.seat) == Role.SEER:
         return None
     allc = [c for c in ctx.ledger.claimants(Role.SEER) if c != ctx.seat]
@@ -248,8 +248,13 @@ def doubted_claimant(ctx: Ctx) -> Seat | None:
         return None
     trust = {c: ctx.beliefs.claim_trust(c, 'private', Role.SEER, ctx.ledger) + CLAIM_GUT * ctx.gut(c) for c in cl}
     worst = min(cl, key=lambda c: (trust[c], c))
-    if len(cl) == 1 and trust[worst] >= LONE_TRUST:
-        return None
+    if len(cl) == 1:
+        if trust[worst] >= LONE_TRUST:
+            return None
+        # 出局的那位我更不信（多半就是因为他更像悍跳才放逐的）：剩下这位是我站的边，不算「不信的那位」
+        gone = [ctx.beliefs.claim_trust(c, 'private', Role.SEER, ctx.ledger) for c in allc if c not in cl]
+        if gone and trust[worst] - CLAIM_GUT * ctx.gut(worst) > max(gone):
+            return None
     return worst
 
 

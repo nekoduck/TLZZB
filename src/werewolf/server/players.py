@@ -59,6 +59,9 @@ class ReviewData(BaseModel):
 
 @runtime_checkable
 class Player(Protocol):
+    """可选钩子（不在协议里，按 getattr 取）：`snapshot()`、`review()`、`fallback_act()`，以及
+    `aclose()`——等自己另起的副任务（独白）写完；它被取消时要连带取消这些副任务（会话取消一局时靠这个不漏任务）。"""
+
     seat: Seat
     persona: Persona
 

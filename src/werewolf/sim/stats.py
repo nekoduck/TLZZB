@@ -140,6 +140,15 @@ def summarize(records: Sequence[GameRecord]) -> dict[str, float]:
         jumpers = [s for s, x in roles.items() if x == Role.WEREWOLF and lg.role_claims(s, Role.SEER)]
         c['fake_seer'] += bool(jumpers)
         c['two_wolf_seer'] += len(jumpers) >= 2
+        # 悍跳分组：有悍跳的局、没有的局；首日就对跳（真预言家与悍跳的狼都在第 1 天自称预言家）的局里谁先出局
+        c['fake_wolf_win' if jumpers else 'nofake_wolf_win'] += rec.winner == 'wolf'
+        real_claim = lg.role_claims(seer, Role.SEER)
+        if real_claim and real_claim[0].day == 1 and any(lg.role_claims(j, Role.SEER)[0].day == 1 for j in jumpers):
+            c['duel'] += 1
+            c['duel_wolf_win'] += rec.winner == 'wolf'
+            exiled_d1 = next((e.target for e in pub if e.type == EventType.EXILE and e.day == 1), None)
+            c['duel_real_exiled_d1'] += exiled_d1 == seer
+            c['duel_fake_exiled_d1'] += exiled_d1 in jumpers
         c['contradictions'] += sum(len(lg.contradictions(s)) for s in roles)
         c['violations'] += len(rec.violations)
         # 发言
@@ -254,6 +263,11 @@ def summarize(records: Sequence[GameRecord]) -> dict[str, float]:
         'days_mean': statistics.fmean(days) if days else 0.0,
         'seer_alive_d3': ratio('seer_alive_d3', n), 'seer_claim_d2': ratio('seer_claim_d2', n),
         'fake_seer': ratio('fake_seer', n), 'two_wolf_seer': float(c['two_wolf_seer']),
+        'wolf_win_fake': ratio('fake_wolf_win', 'fake_seer'),
+        'wolf_win_nofake': c['nofake_wolf_win'] / (n - c['fake_seer']) if n > c['fake_seer'] else 0.0,
+        'duel_d1': ratio('duel', n), 'duel_wolf_win': ratio('duel_wolf_win', 'duel'),
+        'duel_real_exiled_d1': ratio('duel_real_exiled_d1', 'duel'),
+        'duel_fake_exiled_d1': ratio('duel_fake_exiled_d1', 'duel'), 'n_duel': float(c['duel']),
         'non_pass': ratio('non_pass', 'speeches'), 'bloc_d1': ratio('bloc_sum', 'bloc_n'),
         'no_exile': ratio('no_exile', 'vote_days'), 'non_optimal': ratio('non_optimal', 'decisions'),
         'non_optimal_steady': nonopt_state['steady'] / dec_state['steady'] if dec_state['steady'] else 0.0,
@@ -292,6 +306,12 @@ METRICS: list[tuple[str, str, str, str]] = [
     ('seer_claim_d2', '预言家第 2 天前起跳', '≥ 70%', 'pct'),
     ('fake_seer', '出现悍跳的局', '30%–80%', 'pct'),
     ('two_wolf_seer', '两狼都跳预言家（局数）', '0', 'int'),
+    ('wolf_win_fake', '　有悍跳的局：狼人胜率', '40%–70%', 'pct'),
+    ('wolf_win_nofake', '　没有悍跳的局：狼人胜率', '', 'pct'),
+    ('duel_d1', '首日对跳的局', '', 'pct'),
+    ('duel_wolf_win', '　其中狼人胜率', '', 'pct'),
+    ('duel_real_exiled_d1', '　其中真预言家首日被放逐', '≤ 35%', 'pct'),
+    ('duel_fake_exiled_d1', '　其中悍跳的狼首日被放逐', '', 'pct'),
     ('non_pass', '非「过」的发言', '≥ 85%', 'pct'),
     ('bloc_d1', '首日最大票仓占比', '≤ 60%', 'pct'),
     ('no_exile', '无人出局的白天', '≤ 25%', 'pct'),

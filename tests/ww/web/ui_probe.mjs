@@ -1,4 +1,4 @@
-// 演示页上的界面体检（由 test_ui_behavior.py 调用）：气泡不压中央面板、Esc 只关最上层对话框并还原焦点、Esc 收起记录抽屉。
+// 演示页上的界面体检（由 test_ui_behavior.py 调用）：气泡不压中央面板、Esc 只关最上层对话框并还原焦点、Esc 收起记录抽屉、重放的 god 不提示。
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
@@ -32,5 +32,15 @@ await p.click('#topbar [aria-label="发言记录"]');
 out.logOpen = await p.evaluate(() => document.getElementById('logdrawer').classList.contains('open'));
 await p.keyboard.press('Escape');
 out.logClosed = await p.evaluate(() => !document.getElementById('logdrawer').classList.contains('open'));
+out.godToasts = await p.evaluate(() => { // 重放的 god 静默还原（不提示、不动画），现场的 god 提示一次
+  const { S, handle } = window.__ww;
+  const god = { t: 'god', roles: [{ seat: 3, role: 'werewolf' }], events: [] };
+  const n = () => [...document.querySelectorAll('#toasts .toast')].filter((e) => e.textContent.includes('上帝视角')).length;
+  handle({ ...god, replay: true });
+  const afterReplay = n();
+  const wolvesAfterReplay = S.wolves.join(',');
+  handle(god);
+  return [afterReplay, n(), wolvesAfterReplay];
+});
 await b.close();
 console.log(JSON.stringify(out));

@@ -17,7 +17,7 @@ from werewolf.mind.strategy.common import (
 )
 from werewolf.mind.types import PlannedAct, ReasonCode, SpeechPlan
 
-REVEAL_BASE = -0.2  # 首日起跳的基础效用（再加胆量、验到狼、有人悍跳）
+REVEAL_BASE = 0.6  # 首日起跳的基础效用（再加胆量、验到狼、有人悍跳）
 FOUND_WOLF = 3.2  # 验到狼时起跳的额外效用（九人局里拿着查杀不跳的预言家几乎没有）
 
 

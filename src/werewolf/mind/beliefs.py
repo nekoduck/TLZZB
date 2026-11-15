@@ -76,6 +76,14 @@ class BeliefWeights(BaseModel):
     voted_with_wolf: float = 0.3  # 和疑似狼同票
     stubborn_discount: float = 0.7  # 固执 1.0 时，对头号怀疑的「洗白」证据打掉的比例
     credibility_slope: float = 1.6  # 发言者可信度 = 1 − 斜率 × p(发言者)，压在 [-0.3, 1]
+    # 对跳的复盘（都由公开事实重算，乘理性系数）：
+    killed_rival: float = 1.5  # 对跳的一位夜里被刀（狼几乎不刀自家悍跳的）：另一位更像狼
+    check_refuted: float = 2.0  # 查验被公开事实推翻：查杀的人夜里独死（刀口），或查杀了坐实的女巫、金水被坐实的毒
+    rival_check: float = 0.8  # 后跳的一位起跳当场就报先跳的那位是狼：悍跳的老套路（真预言家首夜恰好验到他的机会很小）
+    check_confirmed: float = -0.8  # 查杀的人被坐实的毒药毒死
+    witch_verified: float = -1.2  # 唯一的女巫声明，用药与天亮的死讯对得上（不是被逼到台上才亮的）
+    backed_fake: float = 0.7  # 站边、担保、投票帮过的预言家声明者越像狼，站他的人越可疑（乘 2 × (p − 0.5)）
+    fake_gold: float = 0.6  # 像狼的预言家声明者给的金水：常常是他的队友（同上缩放）
 
 
 class Evidence(BaseModel):
@@ -144,6 +152,7 @@ class Beliefs:
         self._night_dead: list[Seat] = []
         self._votes: list[list[Any]] = []  # [事件 id, 天, 轮, 投票者, 目标]
         self._late: dict[str, int] = {}  # 座位|身份 → 声明事件 id
+        self._backs: list[list[int]] = []  # [事件 id, 天, 发言者, 被站边的预言家声明者]
         self._ledger = ClaimLedger()  # 调用方不给账本时用的内部账本
         self._ledger_stale = False
         self._last_ledger: ClaimLedger | None = None  # 最近一次 observe 用的账本（查询时缺省用它）
@@ -294,6 +303,8 @@ class Beliefs:
                     self._dead_accused(ev, src, tgt, layers)
                 self._count_accuser(ev, src, tgt, layers)
             elif a.kind in _VOUCH_KINDS and tgt != self.seat:
+                if a.kind in (ActKind.BACK_CLAIM, ActKind.VOUCH) and Role.SEER in self._claimed_roles(ledger, tgt):
+                    self._backs.append([ev.id, ev.day, src, tgt])
                 factor = -_VOUCH_KINDS[a.kind] * self.w.vouch * (0.5 + self.traits.conformity)
                 self._push(ev, src, tgt, a.kind, a.weight, factor, layers, cred, top, ReasonCode.VOUCHED_BY_TRUSTED)
                 for st in layers:
@@ -465,7 +476,124 @@ class Beliefs:
                     ReasonCode.SAVED_BY_WITCH, pc.event_id, pc.day, pc.seat)
             elif pc.kind == 'poison' and pc.target in deaths:
                 add(pc.target, self.w.poison_claim * tr * lw, ReasonCode.KILL_PATTERN, pc.event_id, pc.day, pc.seat)
+        out += self._duel_evidence(st, ledger, probs, wtrust)
         return out
+
+    def _duel_evidence(self, st: _LayerState, ledger: ClaimLedger, probs: dict[Seat, float],
+                       wtrust: dict[Seat, float]) -> list[Evidence]:
+        """预言家对跳怎么分高下：只用公开事实，像会玩的真人那样复盘（每次观察后整批重算）。
+
+        - 夜里的刀口：天亮只死一个人时那就是刀口（同一夜女巫至多用一瓶药）。对跳的一位被刀，另一位更像狼；
+          被查杀的人（报查杀之后）成了刀口，那条查杀就是假的（不论有没有对跳）。
+        - 女巫：唯一的女巫声明、用药与天亮的死讯对得上，就很可信；查杀她的人可疑；她毒死的人，给他发金水的人可疑。
+        - 后跳的一位起跳时当场查杀先跳的那位：悍跳的老套路，后跳的这位更像狼。
+        - 像狼的声明者：他的金水、站他边的人、帮他投对跳另一位的人，跟着可疑。
+        """
+        out: list[Evidence] = []
+        lw = self._logic()
+
+        def add(seat: Seat, delta: float, reason: ReasonCode, eid: int, day: int, source: Seat | None) -> None:
+            if seat == self.seat or seat in st.hard or delta == 0:
+                return
+            out.append(Evidence(seat=seat, delta=delta, reason=reason, event_id=eid, day=day, layer=st.name,
+                                source=source, derived=True))
+
+        def prob(s: Seat) -> float:
+            if s == self.seat:
+                return 1.0 if (st.name == 'private' and self.role == Role.WEREWOLF) else 0.0
+            return st.hard.get(s, probs.get(s, 0.5))
+
+        def knifed(s: Seat) -> float:
+            """s 夜里死、且多半是被狼刀的：独死 1.0，两人同死（其中一个是毒）0.25，被坐实的毒死 0。"""
+            d = ledger.death_of(s)
+            if d is None or d[1] != 'night' or s in poisoned:
+                return 0.0
+            dawn = ledger.dawn_deaths(d[0]) or [s]
+            return 1.0 if len(dawn) == 1 else 0.25
+
+        poisoned: set[Seat] = set()
+        for pc in ledger.potion_claims():
+            deaths = ledger.dawn_deaths(pc.night)
+            if pc.kind == 'poison' and deaths and pc.target in deaths and wtrust.get(pc.seat, 0.0) > 0:
+                poisoned.add(pc.target)
+        # 坐实的女巫
+        witches = self._claimers(ledger, Role.WITCH)
+        witch: Seat | None = None
+        if len(witches) == 1 and _k(witches[0], Role.WITCH.value) not in self._late:
+            w = witches[0]
+            for pc in ledger.potions_by(w):
+                deaths = ledger.dawn_deaths(pc.night)
+                if deaths is not None and ((pc.kind == 'save' and not deaths) or
+                                           (pc.kind == 'poison' and pc.target in deaths)):
+                    witch = w
+                    rc = (ledger.role_claims(w, Role.WITCH) or [None])[0]
+                    eid, day = (rc.event_id, rc.day) if rc else (pc.event_id, pc.day)
+                    add(w, self.w.witch_verified * lw, ReasonCode.CLAIM_UNCONTESTED, eid, day, w)
+                    break
+        cl = ledger.claimants(Role.SEER)
+        duel = len(cl) >= 2
+        first = {c: ledger.role_claims(c, Role.SEER)[0] for c in cl}
+        for c in cl:
+            rc = first[c]
+            # 刀口：c 被刀了，对跳的另一位更像狼
+            k = knifed(c) if duel else 0.0
+            if k:
+                for r in cl:
+                    if r != c:
+                        add(r, self.w.killed_rival * k * lw, ReasonCode.KILL_PATTERN, first[r].event_id,
+                            first[r].day, r)
+            # 查验与公开事实对不对得上
+            latest: dict[Seat, Any] = {}
+            for chk in ledger.checks_by(c):
+                latest[chk.target] = chk
+            for tgt, chk in latest.items():
+                if tgt == c:
+                    continue
+                if duel and tgt in first and chk.result == 'wolf' and chk.event_id == rc.event_id \
+                        and first[tgt].event_id < rc.event_id:
+                    add(c, self.w.rival_check * lw, ReasonCode.COUNTER_CLAIM, rc.event_id, rc.day, c)
+                d = ledger.death_of(tgt)
+                refuted = confirmed = 0.0
+                if chk.result == 'wolf':
+                    if d is not None and d[0] > chk.day:
+                        refuted = knifed(tgt)
+                    if tgt == witch:
+                        refuted = max(refuted, wtrust.get(tgt, 0.0))
+                    if tgt in poisoned:
+                        confirmed = 1.0
+                elif tgt in poisoned:
+                    refuted = 1.0
+                if refuted:
+                    add(c, self.w.check_refuted * refuted * lw, ReasonCode.CONTRADICTION, chk.event_id, chk.day, c)
+                if confirmed:
+                    add(c, self.w.check_confirmed * lw, ReasonCode.KILL_PATTERN, chk.event_id, chk.day, c)
+                fake = max(0.0, prob(c) - 0.5) * 2
+                if chk.result == 'good' and fake > 0:
+                    add(tgt, self.w.fake_gold * fake * lw, ReasonCode.VOUCHED_BY_TRUSTED, chk.event_id, chk.day, c)
+        if not duel:
+            return out
+        # 站边与帮票：一个人一条（取最像狼的那位声明者）
+        sided: dict[Seat, tuple[float, int, int, ReasonCode]] = {}
+        for eid, day, src, c in self._backs:
+            if c in cl and src not in cl:
+                f = max(0.0, prob(c) - 0.5) * 2
+                if f > sided.get(src, (0.0,))[0]:
+                    sided[src] = (f, eid, day, ReasonCode.DEFENDED_WOLF)
+        for eid, day, _rnd, voter, tgt in self._votes:
+            if voter is None or voter in cl or tgt not in cl:
+                continue
+            for c in cl:
+                if c != tgt and first[c].event_id < eid and first[tgt].event_id < eid:
+                    f = max(0.0, prob(c) - 0.5) * 2
+                    if f > sided.get(voter, (0.0,))[0]:
+                        sided[voter] = (f, eid, day, ReasonCode.VOTED_WITH_WOLF)
+        for s, (f, eid, day, reason) in sorted(sided.items()):
+            add(s, self.w.backed_fake * f * lw, reason, eid, day, s)
+        return out
+
+    @staticmethod
+    def _claimed_roles(ledger: ClaimLedger, seat: Seat) -> set[Role]:
+        return {rc.role for rc in ledger.role_claims(seat)}
 
     def _vote_evidence(self, st: _LayerState, probs: dict[Seat, float]) -> list[Evidence]:
         out: list[Evidence] = []
@@ -552,6 +680,7 @@ class Beliefs:
             'accusers': {k: list(v) for k, v in self._accusers.items()}, 'done': sorted(self._done),
             'accusations': {s: {t: list(r) for t, r in m.items()} for s, m in self._accusations.items()},
             'night_dead': list(self._night_dead), 'votes': [list(v) for v in self._votes], 'late': dict(self._late),
+            'backs': [list(b) for b in self._backs],
         }
 
     def load(self, data: dict[str, Any]) -> None:
@@ -573,6 +702,7 @@ class Beliefs:
         self._night_dead = [int(s) for s in data['night_dead']]
         self._votes = [list(v) for v in data['votes']]
         self._late = {k: int(v) for k, v in data['late'].items()}
+        self._backs = [[int(x) for x in b] for b in data.get('backs', [])]
         self._ledger = ClaimLedger()
         self._ledger_stale = True
         self._last_ledger = None

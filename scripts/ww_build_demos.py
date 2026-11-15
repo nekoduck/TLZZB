@@ -650,7 +650,7 @@ def build_resume() -> list[dict[str, Any]]:
             continue
         if m['t'] == 'hello':
             m['resumable'] = True
-        if m['t'] in ('game', 'event', 'narration', 'private', 'parsed'):
+        if m['t'] in ('game', 'event', 'narration', 'private', 'parsed', 'god'):
             m['replay'] = True
         if m['t'] == 'event':
             m['wait_ack'] = False

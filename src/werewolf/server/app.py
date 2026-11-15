@@ -140,7 +140,7 @@ class Hub:
         if isinstance(msg, Resume):
             await self.session.attach(send)
             return
-        await self.session.on_client(msg)
+        await self.session.on_client(msg, send)
 
     async def shutdown(self) -> None:
         await self.stop()

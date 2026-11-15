@@ -397,7 +397,7 @@ async def monologue(gw: Gateway, state: str, persona: Persona) -> str | None: ..
 
 ## 7 协议（`protocol.py`）
 
-WebSocket 在 `/ws`，一条消息一个 JSON 对象，用 `t` 区分。静态页面在 `/`，健康检查在 `/api/health`。服务端只接受来自本机页面（`http://127.0.0.1:{port}`、`http://localhost:{port}`）的握手，同一时刻只保留一个连接。
+WebSocket 在 `/ws`，一条消息一个 JSON 对象，用 `t` 区分。静态页面在 `/`，健康检查在 `/api/health`。服务端只接受来自本机页面（`http://127.0.0.1:{port}`、`http://localhost:{port}`，外加 `serve --allow-origin` 逐个列出的来源，精确匹配）的握手；没有 Origin 的握手只在 `--dev` 下放行。同一时刻只保留一个连接：新连接顶掉旧的（旧的以关闭码 4000 断开），旧连接上还没处理完的消息，回复不会发到新连接上。
 
 服务端 → 浏览器：`hello`、`game`、`state`、`event`、`narration`、`thinking`、`reaction`、`request`、`accepted`、`parsed`、`private`、`god`、`review`、`cost`、`error`。
 浏览器 → 服务端：`new_game`、`resume`、`preview`、`action`、`ack`、`set`。
@@ -407,15 +407,15 @@ WebSocket 在 `/ws`，一条消息一个 JSON 对象，用 `t` 区分。静态�
 1. **开局。** 连上后服务端先发 `hello`。浏览器发 `new_game`，服务端回 `game`（真人的座位与身份、九张座位卡、规则）和 `state`，随后是事件流。
 2. **编号不上线。** `event.seq` 是「这名观众看得见的事件」的连续编号，`ev.id` 被改写成同一个数；`request.id` 是服务端另发的令牌。内核的原始编号只出现在 `review` 与（上帝视角的）`god` 里。
 3. **只发看得见的。** `event` 只发对真人可见的内核事件，顺序与内核一致。真人的私有事件除了作为 `event` 发出，还附一条 `private` 给出可直接显示的中文。
-4. **节奏。** 画面与顶栏只由 `phase` 事件驱动；`narration` 只是要显示的文字。每条 `event` 与 `narration` 带 `hold_ms`：服务端在这之后至少这么久不发下一条，前端的动画要在这段时间内演完。别人的发言事件带 `wait_ack: true`：前端打字演完（或被玩家点击跳过）回 `ack{seq}`，服务端收到或等满 `ack_timeout_s` 才继续。重放与 `instant` 档不等。`request` 只在前一条的 `hold_ms` 或 `ack` 结束后才发。
+4. **节奏。** 画面与顶栏只由 `phase` 事件驱动；`narration` 只是要显示的文字。每条 `event` 与 `narration` 带 `hold_ms`：服务端在这之后至少这么久不发下一条，前端的动画要在这段时间内演完。别人的发言事件带 `wait_ack: true`：前端打字演完（或被玩家点击跳过）回 `ack{seq}`，服务端收到或等满 `ack_timeout_s` 才继续（在服务端记下要等哪个 `seq` 之前就到的 `ack` 也算数）。重放与 `instant` 档不等。`request` 只在前一条的 `hold_ms` 或 `ack` 结束后才发。
 5. **AI 发言。** 先 `thinking{on:true}`，写好后 `thinking{on:false}`，接着发 `speech` 事件。服务端在上一段发言发出之后立刻开始算下一位的发言（不等 `ack`），所以玩家几乎不用等；但下一位的 `thinking` 要等上一段的 `ack` 之后才发。
 6. **真人行动。** 同一时刻至多一个未答的请求，v1 不限时。真人答复 `action`；受理后服务端回 `accepted`。不合法回 `error{code:'illegal_action', request_id, detail}`：`detail` 是 `not_an_option`、`bad_speech` 时请求仍然有效，是 `unknown_request` 时前端丢弃它。
 7. **真人发言。** `request.context.confirm` 为真时，前端先发 `preview{request_id, text}`，服务端回 `parsed{preview:true}`（理解到的言语行为、被忽略的片段）；玩家可以去掉读错的条目，然后发 `action{text, keep}`。`keep` 只能删不能加；文字与预览时不同则重新解析。全部由快捷短语构成的发言可以不预览。受理后服务端先回 `accepted`，再发 `speech` 事件（文字是玩家的原话，截断到上限），再发 `parsed{preview:false, seq}`。
 8. **投票。** 所有 AI 的票在真人投出之前就已算好，但内核在收齐之前不产生任何事件，所以浏览器不可能提前看到。
-9. **夜里与技能环节的时长不漏信息。** 夜里不发 `thinking`。每个夜间环节与每个技能环节对外的时长由导演抽取，与局面无关：AI 的决定在环节开始时起算，结果到点才提交；已死身份的环节、死者不是猎人的技能环节，照样等同样分布的一段时间。真人自己有请求的环节，以真人作答为准。`cost` 只在每个白天开始和终局时发，不带调用次数。
+9. **夜里与技能环节的时长不漏信息。** 夜里不发 `thinking`。每个夜间环节与每个技能环节对外的时长由导演抽取（「睁眼」旁白的 `hold_ms`，取 `night_step` / `skill` 分布），与局面无关：AI 的决定在环节开始时起算，到点时提交；到点还没算完的 AI 任务被取消，改交该玩家的规则版选择（`fallback_act`，不调模型），没有这个钩子才随机作答。已死身份的环节、死者不是猎人的技能环节，照样等同样分布的一段时间。真人自己有请求的环节，以真人作答为准，不设到点。`instant` 档不等、不设到点。`cost` 只在每个白天开始和终局时发，不带调用次数。
 10. **终局。** `game_over` 事件之后发一条 `review`。
-11. **上帝视角。** 只有真人已死、且内核不会再向他要任何决定（他的开枪与遗言已提交或不适用）时，服务端才发 `state{can_god_view:true}`。此后收到 `set{god_view:true}`，先发一条 `god`（全部身份加此前不可见的事件），再发 `state{god_view:true}`，此后 `event` 改发全部事件。其他时候回 `error{code:'not_allowed'}`。上帝视角不含内心想法。
-12. **断线重连。** 没有连接时会话暂停在下一条消息之前，计时器不走。浏览器重连后发 `resume`，并丢弃本地的对局状态。服务端按原顺序带 `replay:true` 重发 `game`、`event`、`narration`、`private`、`parsed`、（已打开过的）`god`、（已终局的）`review`；不重发 `thinking`、`reaction`、`cost`、`error`、`accepted` 和已答过的请求。最后发一条 `state`（其中 `open_request` 是此刻未答的请求）；`state` 之后的都是现场。未完成的 `ack` 视为已收到。
+11. **上帝视角。** 只有真人已死、且内核不会再向他要任何决定（他的开枪与遗言已提交或不适用）时，服务端才发 `state{can_god_view:true}`。此后收到 `set{god_view:true}`，先发一条 `god`（全部身份加此前不可见的事件；与别的可重放消息一样带 `replay` 字段），再发 `state{god_view:true}`，此后 `event` 改发全部事件。其他时候回 `error{code:'not_allowed'}`。上帝视角不含内心想法。
+12. **断线重连。** 没有连接时会话暂停在下一条消息之前，计时器不走。浏览器重连后发 `resume`，并丢弃本地的对局状态。服务端按原顺序带 `replay:true` 重发 `game`、`event`、`narration`、`private`、`parsed`、（已打开过的）`god`、（已终局的）`review`；不重发 `thinking`、`reaction`、`cost`、`error`、`accepted` 和已答过的请求。最后发一条 `state`（其中 `open_request` 是此刻未答的请求）；`state` 之后的都是现场。未完成的 `ack` 视为已收到。前端对带 `replay:true` 的消息立即呈现：不播动画、不打字、不回 `ack`、不弹提示（重放的 `god` 只静默还原身份）。
 13. **速度。** `new_game.speed` 为空时用服务端的默认；`hello` 与 `state` 报告当前的速度档。
 14. **种子。** `new_game.seed` 只在服务以 `--dev` 启动时生效；种子在 `review.stats` 里才告诉玩家。
 
@@ -441,15 +441,30 @@ class NpcAgent:
     async def act(self, request: Request, view: View) -> tuple[Action, Decision]: ...
     async def speak(self, request: Request, view: View, pace: Pace,
                     heard: Sequence[Quote] = ()) -> tuple[Action, SpeechPlan, Decision, SpeechResult]: ...
-    async def reflect(self, view: View) -> None: ...          # 规则版一定做；Jev 版超时就算了
+    async def reflect(self, view: View) -> None: ...          # 规则版一定做；Jev 版超时就算了；独白另起副任务
+    def fallback_act(self, request: Request, view: View) -> tuple[Action, Decision]: ...  # 规则版选择，不调模型（规定 9 的到点兜底）
+    async def aclose(self) -> None: ...                       # 等副任务写完；被取消时连带取消副任务
 
 # server/session.py
+Send = Callable[[ServerMsg], Awaitable[None]]
+PlayerFactory = Callable[[Seat, Role, Persona, Rng], Player]   # Player 见 server/players.py（协议 + 可选钩子）
 class Session:
     def __init__(self, gateway: Gateway, ww: WerewolfSettings, *, human_seat: Seat | None, human_role: Role | None,
                  seed: int, speed: Speed, send: Callable[[ServerMsg], Awaitable[None]] | None,
-                 run_dir: Path | None, autopilot: bool = False) -> None: ...
-    async def run(self) -> GameResult: ...                     # 打完一局
-    async def on_client(self, msg: ClientMsg) -> None: ...     # 浏览器来的消息
+                 run_dir: Path | None, autopilot: bool = False,
+                 player_factory: PlayerFactory | None = None,  # 默认 npc.make_npc；测试换成 RandomPlayer 等
+                 dev: bool = False, human_name: str = '你', game_id: str | None = None,
+                 time_scale: float = 1.0) -> None: ...         # time_scale 只缩放真实等待（测试用）
+    async def run(self) -> GameResult: ...                     # 打完一局；被取消时连带取消玩家的副任务（独白）
+    async def on_client(self, msg: ClientMsg, origin: Send | None = None) -> None: ...
+    # 浏览器来的消息；origin 是发来消息的那条连接，处理期间它被顶掉的话，回复只记下、不发给新连接
+    async def attach(self, send: Send) -> None: ...            # （重新）接上浏览器：重放 + state
+    def detach(self) -> None: ...
+
+# server/app.py
+def create_app(settings: Settings, ww: WerewolfSettings, *, offline: bool = False, dev: bool = False,
+               speed: Speed | None = None, runs_dir: Path | None = None, player_factory: PlayerFactory | None = None,
+               time_scale: float = 1.0, extra_origins: tuple[str, ...] = ()) -> Starlette: ...
 
 # server/wirecheck.py
 def wire_check(msgs: Sequence[ServerMsg], game: Game, human_seat: Seat) -> list[str]: ...
@@ -463,7 +478,8 @@ def wire_check(msgs: Sequence[ServerMsg], game: Game, human_seat: Seat) -> list[
 - **夜间反思。** 天黑时对每个存活的 AI 起一个反思任务，与夜间行动并行；每个座位每夜恰好 `apply_reflection` 一次，在该座位当夜第一个请求之前，没有请求的在 `dawn` 喂给 `observe` 之前。
 - **托管。** 真人座位可以交给一个 `NpcAgent`（`autopilot`），用于自对弈与自动化测试。
 - **落盘（`server/store.py`）。** `runs/<game_id>/`：`events.jsonl`（全部事件）、`decisions.jsonl`（每个 AI 的每个决定）、`briefs.jsonl`（`{request_id, brief, text, tier, rejected}`）、`wire.jsonl`（`{ts_ms, dir: 'out'|'in', msg}`）、`calls.jsonl`（模型调用，由 `tianlong.llm` 写）。
-- **服务（`server/app.py`）。** Starlette 应用；静态文件来自 `web/`。
+- **服务（`server/app.py`）。** Starlette 应用；静态文件来自 `web/`。同一时刻一个连接、一局：`new_game` 先取消并等完当前这局（连同 AI 的副任务），`resume` 把这条连接接回当前这局。
+- **真人发言的兜底。** 解析出意外或过不了结构校验时只留原话、不记言语行为，但 `clean_text`、`flags`、`ignored` 仍是 `llm.parse.sanitize` 清洗过的，所以 `briefs.jsonl` 与摘要只见清洗后的文字。
 
 ## 9 前端（`web/`）
 
@@ -483,7 +499,7 @@ def wire_check(msgs: Sequence[ServerMsg], game: Game, human_seat: Seat) -> list[
 
 ## 10 验收
 
-「像真人」拆成七个性质，每个都有自动测试，全部进回归。
+「像真人」拆成七个性质，每个都有自动测试，全部进回归。表里的数是测试断言的阈值，不是测得的结果；每一行对应哪个测试，见 `tests/ww/acceptance/test_index.py`（有测试核对索引里的文件与函数都在）。标了 `slow` 的（300 局、1,000 局、浏览器整局）默认不跑，要用 `-m slow` 显式跑；标了 `network` 的要真密钥，用 `-m network`。
 
 | 性质 | 测试 | 通过标准 |
 | --- | --- | --- |
@@ -508,14 +524,20 @@ def wire_check(msgs: Sequence[ServerMsg], game: Game, human_seat: Seat) -> list[
 - **平衡与分布**（规则版自对弈 300 局，另加 300 局带托管真人座位；数值是起点，随调参修订）：狼人胜率在 30% 到 70% 之间；预言家活到第 3 天开始的局 ≥ 25%；首日主投票里最大票仓占比的均值 ≤ 60%；无人出局的白天 ≤ 25%；托管真人座位的被刀率与被放逐率在 AI 座位均值的 0.5 到 2 倍之间；每局首日发言方案的种类 ≥ 3。
 - **基线对照：** `sim --mode rules|jev|full --compare` 在同一批种子上报告规则版与 Jev 版的差别：狼人胜率、非最优选择率、跟票率、票型分散度、起跳率、台词各档占比、核对拦截率。知道模型买到了什么，再决定 `jev_weight`。
 - **真模型冒烟**（联网才跑）：Jev 解析一份标注集（`tests/ww/data/parse_cases.yaml`，至少 60 条，其中至少 15 条是陷阱：否定、转述、假设、疑问）：声明类的精确率 ≥ 95%；正则版在同一份上的陷阱误报为零。核对标注集（20 段露底、20 段干净的台词，含狼人正当的谎话）：露底的零放行。真模型自对弈 5 局能打完：Claude 档的台词 ≥ 80%，核对拦截率 ≤ 15%，记录调用次数、花费、时延。
-- **浏览器整局：** Playwright 以五种身份各打一局（离线模式），无报错，截图检查画面；对这五局的 `wire.jsonl` 跑 `wire_check`。
+- **浏览器整局：** Playwright 以五种身份各打一局（离线模式、`instant` 档），另在手机尺寸以 `fast` 档打一局，无报错，截图检查画面；对这些局的 `wire.jsonl` 跑 `wire_check`（`tests/ww/e2e/`，`slow`，需要 node 与 playwright，缺了跳过）。
 
 ## 11 命令行
 
 ```
 python -m werewolf                 # 等同 serve
-python -m werewolf serve [--port 8765] [--offline] [--no-browser] [--speed normal] [--dev]
-python -m werewolf sim --games 300 [--mode rules|jev|full] [--compare] [--human-seat N] [--seed 1] [--report runs/sim.md]
-python -m werewolf smoke           # 真模型冒烟：Jev 与 Claude 各发一次，外加解析与核对的标注集评测
-python -m werewolf demo <game_id> <名字>   # 把一局的 wire.jsonl 转成前端演示文件
+python -m werewolf serve [--port 8765] [--host 127.0.0.1] [--offline] [--no-browser] [--speed normal] [--dev]
+                         [--config werewolf.toml] [--allow-origin ORIGIN ...]
+python -m werewolf sim [--games 20] [--mode rules|jev|full] [--compare] [--human-seat N] [--seed 1]
+                       [--report runs/sim.md] [--engine session|arena] [--parallel N] [--budget 1.0]
+                       [--jev-weight W] [--check] [--config werewolf.toml]
+python -m werewolf smoke [decide] [speech] [parse] [check] [-v]   # 真模型冒烟；先说缺哪把密钥、哪些项目跳过
+python -m werewolf demo <game_id> <名字> [--runs DIR] [--out DIR]   # 把一局的 wire.jsonl 转成前端演示文件
 ```
+
+- `serve`：缺密钥时启动前说明哪部分退到规则或模板；端口被占用时提示换端口并以 2 退出。`--allow-origin` 可重复，经反向代理访问时用。
+- `sim`：`--engine` 只对 `rules` 模式有意义（`session` 走会话层与 NpcAgent，`arena` 走纯规则循环）；`--parallel 0` 表示默认（rules 1 局，模型模式 4 局）；`--budget` 是模型模式的总花费上限（美元）；`--jev-weight` 覆盖 `MindTuning.jev_weight`；`--check` 每步跑心智不变量（慢）。

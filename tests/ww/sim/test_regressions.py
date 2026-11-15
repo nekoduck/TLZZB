@@ -45,9 +45,11 @@ def _counter(order_checked_first: bool) -> Scenario:
 
 def test_counter_check_on_an_already_claimed_rival_is_not_extra_evidence() -> None:
     """对方已自称预言家之后才报他「查杀」：悍跳的一方总会这么报，不能让被报的那位凭这一条就更像狼
-    （此前这条会让后跳的悍跳狼几乎必赢首日的对跳）。"""
+    （此前这条会让后跳的悍跳狼几乎必赢首日的对跳）。反过来，后跳的一位起跳当场查杀先跳的那位是悍跳的
+    老套路（真预言家首夜恰好验到他的机会很小），会玩的好人因此更怀疑后跳的这位。"""
     b = _beliefs(_counter(order_checked_first=False), 7)
-    assert abs(b.p(4) - b.p(2)) < 0.12, (b.p(4), b.p(2))
+    assert b.p(2) > b.p(4) + 0.1, (b.p(4), b.p(2))
+    assert any(e.reason.value == 'counter_claim' and e.delta >= 0.7 for e in b.evidence(2, 'public'))
 
 
 def test_check_made_before_the_target_claimed_still_counts() -> None:

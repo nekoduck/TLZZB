@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import contextvars
 import importlib
 import logging
 import time
@@ -58,7 +59,7 @@ from werewolf.kernel.types import (
 )
 from werewolf.llm.config import WerewolfSettings
 from werewolf.llm.gateway import Gateway
-from werewolf.llm.parse import ParsedSpeech, parse_speech
+from werewolf.llm.parse import ParsedSpeech, parse_speech, sanitize
 from werewolf.llm.speak import SpeechResult
 from werewolf.mind.types import Decision, Persona, Quote, Reaction, SpeechPlan
 from werewolf.protocol import (
@@ -104,6 +105,8 @@ log = logging.getLogger(__name__)
 
 Send = Callable[[ServerMsg], Awaitable[None]]
 PlayerFactory = Callable[[Seat, Role, Persona, Rng], Player]
+# 正在处理的浏览器消息来自哪条连接（on_client 的 `origin`）：回复只发回这条连接，它已被顶掉就不发
+_ORIGIN: contextvars.ContextVar[Send | None] = contextvars.ContextVar('ww_reply_origin', default=None)
 
 REPLAY_TYPES = frozenset({'game', 'event', 'narration', 'private', 'parsed', 'god', 'review'})
 GATED_TYPES = frozenset({'event', 'narration', 'request', 'thinking', 'review'})
@@ -253,6 +256,7 @@ class Session:
         self._next_ok = 0.0
         self._ack_seq: int | None = None
         self._ack_evt = asyncio.Event()
+        self._early_ack: int | None = None  # 在会话记下要等的 seq 之前就到了的 ack（客户端在 send 里就回了）
         self._open: _Open | None = None
         self._tokens: set[str] = set()
         self.god_view = False
@@ -334,13 +338,14 @@ class Session:
         if self._headless:
             self._log_out(msg)
             return
+        origin = _ORIGIN.get() if not wait else None
         while True:
             if wait:
                 await self._attached.wait()
             async with self._wire_lock:
-                if not self._attached.is_set() or self._send is None:
+                if not self._attached.is_set() or self._send is None or (origin is not None and origin != self._send):
                     if not wait:
-                        self._log_out(msg)
+                        self._log_out(msg)  # 问的那条连接已经不在了：只记下（可重放的重连时重放），不发给新连接
                         return
                     continue
                 self._log_out(msg)
@@ -360,7 +365,10 @@ class Session:
             self._next_ok = max(self._next_ok, self._now() + hold / 1000 * self.time_scale)
         if isinstance(msg, EventMsg) and msg.wait_ack:
             self._ack_seq = msg.seq
-            self._ack_evt.clear()
+            if self._early_ack == msg.seq:
+                self._ack_evt.set()
+            else:
+                self._ack_evt.clear()
 
     def detach(self) -> None:
         """连接断了：会话在下一条消息之前暂停。"""
@@ -433,6 +441,8 @@ class Session:
             self.result = self.game.result
             return self.result
         except asyncio.CancelledError:
+            self._cancel_tasks()
+            await self._abort_side_work()
             raise
         except Exception:
             log.exception('session crashed')
@@ -461,6 +471,18 @@ class Session:
                 t.cancel()
             if late:
                 await asyncio.wait(late)
+
+    async def _abort_side_work(self) -> None:
+        """这局被取消（new_game 或关服）：玩家另起的副任务（独白）一并取消并等完，不漏任务。
+        约定（players.Player）：`aclose()` 等着副任务，它被取消时连带取消副任务（NpcAgent 用 gather 等）。"""
+        closers = [asyncio.ensure_future(fn()) for p in self.players.values()
+                   if callable(fn := getattr(p, 'aclose', None))]
+        if not closers:
+            return
+        await asyncio.sleep(0)  # 先让 aclose 走到它等副任务的地方
+        for t in closers:
+            t.cancel()
+        await asyncio.wait(closers)
 
     def _cancel_tasks(self) -> None:
         for t in [*self._tasks, *self._reflect.values()]:
@@ -744,12 +766,22 @@ class Session:
             if self._open is op:
                 self._open = None
 
-    async def on_client(self, msg: ClientMsg) -> None:
-        """浏览器来的消息（app 已用 TypeAdapter(ClientMsg) 校验过）。new_game 由 app 处理。"""
+    async def on_client(self, msg: ClientMsg, origin: Send | None = None) -> None:
+        """浏览器来的消息（app 已用 TypeAdapter(ClientMsg) 校验过）。new_game 由 app 处理。
+        `origin`：这条消息来自哪条连接（app 传它的 send）；处理期间连接被顶掉的话，回复不发给新连接。"""
+        token = _ORIGIN.set(origin)
+        try:
+            await self._on_client(msg)
+        finally:
+            _ORIGIN.reset(token)
+
+    async def _on_client(self, msg: ClientMsg) -> None:
         self.store.wire('in', msg)
         if isinstance(msg, Ack):
             if self._ack_seq is not None and msg.seq == self._ack_seq:
                 self._ack_evt.set()
+            else:
+                self._early_ack = msg.seq
         elif isinstance(msg, SetOptions):
             await self._on_set(msg)
         elif isinstance(msg, Preview):
@@ -818,7 +850,12 @@ class Session:
             return await parse_speech(self.gateway, text, self.game.public_view(), seat)
         except Exception:  # noqa: BLE001 — 解析出意外也不能卡住真人的请求：只留原话，不记言语行为
             log.exception('parse_speech failed; keeping raw text only')
-            return ParsedSpeech(acts=[], clean_text=text)
+            return self._raw_parsed(text)
+
+    def _raw_parsed(self, text: str) -> ParsedSpeech:
+        """兜底：不记言语行为，但 clean_text / flags / ignored 照样是清洗过的（briefs 与摘要只见清洗后的）。"""
+        clean, flags, ignored = sanitize(text, self.ww.limits.human_speech_chars)
+        return ParsedSpeech(acts=[], flags=flags, clean_text=clean, ignored=ignored)
 
     async def _on_action(self, msg: ActionMsg) -> None:
         op = self._live_open(msg.request_id)
@@ -853,9 +890,12 @@ class Session:
         except Exception:  # noqa: BLE001 — 过不了结构校验（_BadAction）或别的意外：只留原话，不记言语行为
             log.warning('human speech failed structural check; dropping acts')
             limit = min(MAX_SPEECH_CHARS, self.ww.limits.human_speech_chars)
-            speech = Speech(text=raw[:limit], acts=[], source='human',
-                            flags=['truncated'] if len(raw) > limit else [])
-            parsed = ParsedSpeech(acts=[], flags=list(speech.flags), clean_text=speech.text)
+            parsed = self._raw_parsed(raw)
+            flags = [f for f in dict.fromkeys(parsed.flags) if f in SPEECH_FLAGS]
+            if len(raw) > limit and 'truncated' not in flags:
+                flags.append('truncated')
+            speech = Speech(text=raw[:limit], acts=[], source='human', flags=flags)
+            parsed = parsed.model_copy(update={'flags': flags})
         self._human_parsed = parsed
         clean = parsed.clean_text[: min(self.ww.limits.quote_chars, 80)].strip()
         if clean:

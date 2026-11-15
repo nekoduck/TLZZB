@@ -162,3 +162,54 @@ async def test_human_quote_reaches_later_speakers_only(cfg):
         assert (day, kind) in human_turns
         assert all(q.seat == 4 and len(q.text) <= 80 for q in heard)
         assert heard[0].text.startswith('我觉得3号')
+
+
+async def test_cancel_stops_npc_monologues(cfg, monkeypatch):
+    """new_game 取消旧局时，NpcAgent 另起的独白任务也被取消并等完，不漏任务。"""
+    import werewolf.server.npc as npc_mod
+    from werewolf.kernel.types import GameConfig
+    from werewolf.llm.gateway import Gateway
+    from werewolf.server.npc import NpcAgent, make_npc
+
+    started: list[int] = []
+    cancelled: list[int] = []
+
+    async def endless(gw, state, persona):
+        started.append(1)
+        try:
+            await asyncio.sleep(3600)
+        except asyncio.CancelledError:
+            cancelled.append(1)
+            raise
+    monkeypatch.setattr(npc_mod.llm_reflect, 'monologue', endless)
+    real_route = Gateway.route
+    monkeypatch.setattr(Gateway, 'route', lambda self, cat: 'claude' if cat == 'monologue' else real_route(self, cat))
+
+    settings, ww = cfg
+    gw = gateway(cfg)
+    npcs: list[NpcAgent] = []
+
+    s_cfg = GameConfig(human_seat=5)
+
+    def factory(seat, role, p, rng):
+        npc = make_npc(seat, role, p, rng, gw, ww, s_cfg)
+        npcs.append(npc)
+        return npc
+
+    c = ScriptedClient(3)
+    s = Session(gw, ww, human_seat=5, human_role=Role.VILLAGER, seed=3, speed='instant', send=c.send, run_dir=None,
+                player_factory=factory)
+    c.session = s
+    task = asyncio.ensure_future(s.run())
+    for _ in range(2000):
+        await asyncio.sleep(0.005)
+        if started:
+            break
+    assert started, '独白应该已经起了'
+    sides = [t for n in npcs for t in n._side]
+    assert sides
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert all(t.done() for t in sides), '旧局的独白任务还在跑'
+    assert cancelled

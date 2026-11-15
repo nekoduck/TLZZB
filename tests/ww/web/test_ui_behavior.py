@@ -47,3 +47,4 @@ def test_bubbles_dialogs_log(base, size):
     assert (r['stacked'], r['afterOneEsc'], r['afterTwoEsc']) == (2, 1, 0), 'Esc 一次只关最上层对话框'
     assert r['focusBack'] == '规则', '关闭对话框后焦点应回到触发按钮'
     assert r['logOpen'] and r['logClosed'], 'Esc 应收起发言记录抽屉'
+    assert r['godToasts'] == [0, 1, '3'], '重放的 god 只静默还原身份，现场的 god 才提示'

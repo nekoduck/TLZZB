@@ -12,6 +12,7 @@ from werewolf.kernel.types import RequestKind, Role
 from werewolf.mind.mind import Mind
 from werewolf.mind.speechplan import validate_plan
 from werewolf.mind.types import MindTuning
+from werewolf.sim import stats
 from werewolf.sim.arena import ArenaResult, play, summarize
 
 N_FAST = 60
@@ -45,6 +46,17 @@ def test_distribution_loose_bounds(fast: list[ArenaResult]) -> None:
     assert s['no_exile'] <= 0.3, s
     assert 0.1 <= s['non_optimal'] <= 0.4, s
     assert 0.6 <= s['respond'] <= 0.98, s
+
+
+def test_fake_seer_split_loose_bounds(fast: list[ArenaResult]) -> None:
+    """悍跳分组（常驻小样本，宽界）：有悍跳的局狼人不再几乎必胜；首日对跳里真预言家不是多半被放逐。"""
+    s = stats.summarize([stats.from_arena(r, i) for i, r in enumerate(fast)])
+    assert s['fake_seer'] > 0 and s['n_duel'] >= 5, s
+    assert 0.2 <= s['wolf_win_fake'] <= 0.85, s
+    assert s['duel_real_exiled_d1'] <= 0.55, s
+    assert s['duel_real_exiled_d1'] + s['duel_fake_exiled_d1'] <= 1.0
+    md = stats.report_md('x', {'rules': s})
+    assert '有悍跳的局' in md and '真预言家首日被放逐' in md
 
 
 def test_good_ais_mostly_keep_their_word(fast: list[ArenaResult]) -> None:
@@ -106,9 +118,14 @@ def test_mercy_only_affects_night_one_human_kill_probability() -> None:
             break
 
 
+@pytest.fixture(scope='module')
+def slow300() -> list[ArenaResult]:
+    return [play(seed, check_kernel=False, check_mind=(seed < 100)) for seed in range(300)]
+
+
 @pytest.mark.slow
-def test_balance_and_distribution_300_games() -> None:
-    results = [play(seed, check_kernel=False, check_mind=(seed < 100)) for seed in range(300)]
+def test_balance_and_distribution_300_games(slow300: list[ArenaResult]) -> None:
+    results = slow300
     s = summarize(results)
     assert all(r.game.over for r in results)
     assert s['violations'] == 0 and s['contradictions'] == 0 and s['two_wolf_seer'] == 0, s
@@ -120,3 +137,13 @@ def test_balance_and_distribution_300_games() -> None:
     assert 0.1 <= s['non_optimal'] <= 0.4, s
     assert 0.8 <= s['commit'] < 1.0, s
     assert 0.7 <= s['respond'] <= 0.95, s
+
+
+@pytest.mark.slow
+def test_seer_duel_300_games(slow300: list[ArenaResult]) -> None:
+    """悍跳分组（规则版 300 局）：有悍跳的局狼人胜率 40%–70%（此前约 80%–90%）；总胜率 40%–60%；
+    首日对跳里真预言家首日被放逐 ≤ 35%。"""
+    s = stats.summarize([stats.from_arena(r, i) for i, r in enumerate(slow300)])
+    assert 0.4 <= s['wolf_win_fake'] <= 0.7, s
+    assert 0.4 <= s['wolf_win'] <= 0.6, s
+    assert s['n_duel'] >= 60 and s['duel_real_exiled_d1'] <= 0.35, s

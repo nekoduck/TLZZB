@@ -213,6 +213,7 @@ class GodView(_Msg):
     t: Literal['god'] = 'god'
     roles: list[SeatRole]
     events: list[Event]
+    replay: bool = False
 
 
 class ReviewThought(_Msg):

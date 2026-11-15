@@ -19,7 +19,7 @@ export function handle(msg) {
     case 'accepted': onAccepted(msg); break;
     case 'parsed': onParsed(msg); break;
     case 'private': S.secret = { key: msg.key, text: msg.text, seq: msg.seq }; break;
-    case 'god': onGod(msg); break;
+    case 'god': onGod(msg, rep); break;
     case 'review': S.review = msg; break;
     case 'cost': S.cost = msg; break;
     case 'error': onError(msg); break;
@@ -68,7 +68,8 @@ function onError(msg) {
     toast(msg.message || '没有进行中的对局'); if (net.onNoGame) net.onNoGame();
   } else toast(msg.message || '出错了', 'warn');
 }
-function onGod(msg) {
+function onGod(msg, rep) {
+  if (!rep) toast('上帝视角已打开：补上了全部身份与此前看不到的事件'); // 重放时只静默还原，不提示
   S.godRoles = {};
   for (const r of msg.roles || []) { S.godRoles[r.seat] = r.role; S.roles[r.seat] = r.role; }
   S.godEvents = msg.events || [];

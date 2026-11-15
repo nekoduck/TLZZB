@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 
 from werewolf.kernel.types import EventType, Role
 from werewolf.protocol import (
     Accepted,
+    Ack,
     ActionMsg,
     ErrorMsg,
     EventMsg,
@@ -209,6 +211,8 @@ async def _god_game(cfg, seed: int, role: Role) -> bool:
     c3 = ScriptedClient(seed)
     await s.attach(c3.send)
     replayed = c3.msgs[:-1]
+    assert all(m.replay for m in replayed if hasattr(m, 'replay'))
+    assert [m for m in replayed if isinstance(m, GodView)], '已打开过的 god 也重放，且带 replay:true（规则 12）'
     assert [m for m in msgs if m.t in REPLAY_TYPES and not (isinstance(m, Parsed) and m.preview)] == \
         [m.model_copy(update={'replay': False}) if hasattr(m, 'replay') else m for m in replayed]
     assert wire_check(c3.msgs, s.game, s.human_seat) == []
@@ -288,3 +292,72 @@ async def test_wire_check_covers_replays(cfg):
     assert wire_check(bad, s.game, s.human_seat)
     gap = [m for m in replay if not (isinstance(m, EventMsg) and m.seq == 5)]
     assert any('seq' in p for p in wire_check(gap, s.game, s.human_seat))
+
+
+class SyncAcker(ScriptedClient):
+    """在 send() 里同步回 ack：ack 在会话的 send 返回之前就到了。"""
+
+    async def send(self, msg: ServerMsg) -> None:
+        if isinstance(msg, EventMsg) and msg.wait_ack:
+            assert self.session is not None
+            await self.session.on_client(Ack(seq=msg.seq))
+            self.data['acked'] = self.data.get('acked', 0) + 1
+            self.msgs.append(msg)
+            return
+        await super().send(msg)
+
+
+async def test_ack_inside_send_is_not_missed(cfg):
+    """早到的 ack（会话还没记下在等哪个 seq）不能丢：丢了就要白等 ack 超时。"""
+    settings, ww = cfg
+    ww.limits.ack_timeout_s = 4000.0  # × time_scale 0.001 = 每漏一次白等 4 秒
+    c = SyncAcker(4)
+    s = make_session((settings, ww), seed=4, role=Role.VILLAGER, client=c, speed='normal', time_scale=0.001)
+    await asyncio.wait_for(s.run(), 3.5)
+    await c.drain()
+    assert c.data['acked'] > 0
+    assert_clean(s, c.msgs)
+
+
+async def test_reply_goes_only_to_the_connection_that_asked(cfg, monkeypatch):
+    """旧连接的消息还在处理（预览解析中）时被新连接顶掉：旧消息的回复不能发到新连接上。"""
+    import werewolf.server.session as session_mod
+
+    gate = asyncio.Event()
+    started = asyncio.Event()
+    real = session_mod.parse_speech
+
+    async def slow_parse(*a, **kw):
+        started.set()
+        await gate.wait()
+        return await real(*a, **kw)
+    monkeypatch.setattr(session_mod, 'parse_speech', slow_parse)
+
+    def hook_a(c: ScriptedClient, msg: ServerMsg) -> bool:
+        if isinstance(msg, RequestMsg) and msg.kind == 'speak' and 'asked' not in c.data:
+            c.data['asked'] = msg.id
+            c.answered.add(msg.id)
+            assert c.session is not None
+            c.spawn(c.session.on_client(Preview(request_id=msg.id, text='我是好人，今天出3号'), a.send))
+            return True
+        return False
+
+    a = ScriptedClient(5, hook=hook_a)
+    b = ScriptedClient(5, hook=lambda c, m: isinstance(m, SessionState))  # 新连接：先不作答
+    s = make_session(cfg, seed=5, role=Role.VILLAGER, client=a)
+    run = asyncio.ensure_future(s.run())
+    try:
+        await asyncio.wait_for(started.wait(), 30)
+        s.detach()
+        await s.attach(b.send)
+        n_b, n_a = len(b.msgs), len(a.msgs)
+        gate.set()
+        await a.drain()
+        assert not [m for m in b.msgs[n_b:] if isinstance(m, Parsed)], '旧连接的预览结果发到了新连接'
+        assert len(a.msgs) == n_a
+        state = next(m for m in b.msgs if isinstance(m, SessionState))
+        assert state.open_request is not None and state.open_request.id == a.data['asked']
+    finally:
+        run.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await run

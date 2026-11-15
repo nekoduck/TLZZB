@@ -48,6 +48,8 @@ JUMP_BASE = 0.0  # 首夜想悍跳的权重：基础 + 演技 + 胆量（charge�
 JUMP_DECEPTION = 0.27
 JUMP_BOLD = 0.1
 GOLD_MATE_RATE = 0.3  # 悍跳首验给队友发金水的概率（否则查杀一个好人）
+RIVAL_HIT = 0.9  # 后跳时当场查杀先跳的真预言家的概率，再减 RIVAL_HIT_DECEPTION × 演技（老套路，好人会起疑）
+RIVAL_HIT_DECEPTION = 0.6
 KILL_SEER = 0.6
 KILL_WITCH = 1.0
 KILL_HUNTER = -2.0
@@ -262,11 +264,11 @@ def fake_check(ctx: Ctx, request: Request) -> tuple[Seat, str] | None:
         return None
     mates = set(ctx.teammates())
     real = [s for s in real_seer_claimants(ctx) if s in pool]
-    if real:
-        return real[0], 'wolf'
-    goods = [s for s in pool if s not in mates]
-    golds = [s for s in pool if s in mates]
     r = ctx.rng.fork(f'fake:{request.id}')
+    if real and r.random() < RIVAL_HIT - RIVAL_HIT_DECEPTION * ctx.traits.deception:
+        return real[0], 'wolf'
+    goods = [s for s in pool if s not in mates and s not in real]
+    golds = [s for s in pool if s in mates]
     if golds and (not goods or r.random() < GOLD_MATE_RATE):
         return r.choice(sorted(golds)), 'good'
     ranked = sorted(goods, key=lambda s: (-(ctx.p(s, 'public') + 0.3 * _threat_logic(ctx, s)), s))
