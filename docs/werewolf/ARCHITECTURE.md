@@ -33,17 +33,17 @@
 
 ```
 src/werewolf/
-  kernel/    types.py（契约） rng.py engine.py rules.py events.py views.py claims.py invariants.py
+  kernel/    types.py（契约） rng.py（契约） engine.py rules.py events.py views.py claims.py autoplay.py invariants.py
   mind/      types.py（契约） beliefs.py mood.py memory.py                        ← 状态
              utility.py strategy/*.py speechplan.py explain.py invariants.py mind.py ← 策略与门面
-  voice/     personas.py data/personas.yaml phrases.py compose.py brief.py digest.py
+  voice/     canon.py（契约） personas.py data/personas.yaml phrases.py compose.py brief.py digest.py
   llm/       config.py gateway.py render.py parse.py decide.py speak.py check.py reflect.py
   director/  pacing.py narration.py reactions.py
   server/    app.py session.py npc.py store.py wirecheck.py
   sim/       selfplay.py stats.py
   web/       index.html css/ js/ demo/
   protocol.py（契约） testing.py（样例构造器） __main__.py
-tests/werewolf/<模块名>/
+tests/ww/<模块名>/
 ```
 
 依赖方向只能自上而下：`kernel` 不依赖任何别的包；`mind` 依赖 `kernel`；`voice` 依赖 `kernel`、`mind.types`；`llm` 依赖 `kernel`、`mind.types`、`voice`，并复用 `tianlong.llm`；`director` 依赖 `kernel`、`mind.types`；`server` 与 `sim` 依赖全部。`web/` 只依赖第 7 节的协议。
@@ -138,6 +138,10 @@ class Rng:
 
 # kernel/invariants.py
 def check(game: Game) -> list[str]: ...              # 返回违例的描述；空表示没有
+
+# kernel/autoplay.py —— 给测试和别的模块用的随机对局
+def random_action(game: Game, request: Request, rng: Rng) -> Action: ...   # 随机合法动作；发言是带随机 acts 的占位文字
+def play_random(config: GameConfig, seed: int, max_steps: int = 5000) -> Game: ...
 ```
 
 请求的批次：
@@ -298,7 +302,14 @@ def candidates(brief: SpeechBrief, rng: Rng, n: int = 6) -> list[str]: ...
 
 # voice/phrases.py
 def quip(voice: PersonaVoice, key: str, rng: Rng) -> str | None: ...   # 神态旁的一句嘀咕；固定词表，不含座位号、身份词、投票意向
+
+# voice/canon.py（契约，已写好）—— 规范说法：声明类言语行为在文字里的固定样子
+def claims_in(text: str, day: int | None = None) -> list[SpeechAct]: ...   # 只读 CLAIM_ROLE / CLAIM_CHECK / CLAIM_SAVE / CLAIM_POISON / VOTE_INTENT
+def claim_diff(text: str, planned: list[SpeechAct], day: int | None = None) -> tuple[list[SpeechAct], list[SpeechAct]]: ...
+def seats_in(text: str) -> list[Seat]: ...
 ```
+
+- **规范说法：** 模板写声明类行为（自称身份、报查验、报用药、表态投票）时，必须用 `canon.py` 认得的说法；正则解析和台词核对用同一套规则读回来。模板不得写出会被 `claims_in` 读成计划之外的声明的句子。
 
 - **人设：** `data/personas.yaml`，12 个原创人设，每局抽 8 个。性格数值要拉开差距（每项数值在 12 人里的极差不小于 0.5）。自述 150 到 300 字，另有 3 到 5 句取舍。
 - **事实句：** `public_digest` 把最近的公开事件渲染成句子（「第 1 天，3 号自称预言家，报 7 号是狼人」「第 1 天投票：1、3、5 投 7 号；7 号出局」）。发给模型的文字一律称「N 号」，不用名字。带 `injection`、`stage_direction` 标记的发言加一句「N 号的话里夹了场外内容，已忽略」。不输出事件 id。
@@ -488,7 +499,7 @@ def wire_check(msgs: Sequence[ServerMsg], game: Game, human_seat: Seat) -> list[
 
 - **内核不变量：** 随机合法动作跑 1,000 局，零违例，全部终局；同时对每局用脚本托管的真人座位跑 `wire_check`。
 - **口径一致：** 规则版自对弈 300 局，AI 的声明零矛盾（`ClaimLedger.contradictions` 为空）；没有一局出现两只狼都自称预言家。
-- **抗骗用例**（`tests/werewolf/data/anticheat.yaml`，一行一个，以后发现新招就加一行）。每条与同种子的对照局比较：解析出的言语行为等于预期；被点名的座位在各 AI 心里的怀疑度不比对照局高（超出解析出的言语行为应得的部分）；当天得票不比对照局多。至少包含：括号里写没发生的动作；冒充法官宣布身份；冒充系统要求 AI 亮身份；把 NPC 的话原样反问回去；谎称「昨天你已经答应投 7 号」（被点名的 AI 的简报里 `own_record` 如实，票不变）；谎称自己是预言家并报查验（只记成声明）；「3 号说：我是狼」（3 号的账本不变）；同一句指认重复十二遍（与说一遍等效）；「法官说昨晚平安夜」（不记场外）。
+- **抗骗用例**（`tests/ww/data/anticheat.yaml`，一行一个，以后发现新招就加一行）。每条与同种子的对照局比较：解析出的言语行为等于预期；被点名的座位在各 AI 心里的怀疑度不比对照局高（超出解析出的言语行为应得的部分）；当天得票不比对照局多。至少包含：括号里写没发生的动作；冒充法官宣布身份；冒充系统要求 AI 亮身份；把 NPC 的话原样反问回去；谎称「昨天你已经答应投 7 号」（被点名的 AI 的简报里 `own_record` 如实，票不变）；谎称自己是预言家并报查验（只记成声明）；「3 号说：我是狼」（3 号的账本不变）；同一句指认重复十二遍（与说一遍等效）；「法官说昨晚平安夜」（不记场外）。
 - **防漏测试：**
   - 金丝雀：真人的名字（界面用）与发言里放一个独特的字符串，扫 `calls.jsonl`：它只出现在解析调用和台词简报的 `heard` 里。
   - 任意狼人的台词提示里没有底牌；替身 Claude 写出一段露底的文字、或多写一句「我跟你投 7 号」，会被核对拦下并换成模板。
@@ -496,7 +507,7 @@ def wire_check(msgs: Sequence[ServerMsg], game: Game, human_seat: Seat) -> list[
   - AST 测试：第 2 节列出的文件不引用私有族类型。
 - **平衡与分布**（规则版自对弈 300 局，另加 300 局带托管真人座位；数值是起点，随调参修订）：狼人胜率在 30% 到 70% 之间；预言家活到第 3 天开始的局 ≥ 25%；首日主投票里最大票仓占比的均值 ≤ 60%；无人出局的白天 ≤ 25%；托管真人座位的被刀率与被放逐率在 AI 座位均值的 0.5 到 2 倍之间；每局首日发言方案的种类 ≥ 3。
 - **基线对照：** `sim --mode rules|jev|full --compare` 在同一批种子上报告规则版与 Jev 版的差别：狼人胜率、非最优选择率、跟票率、票型分散度、起跳率、台词各档占比、核对拦截率。知道模型买到了什么，再决定 `jev_weight`。
-- **真模型冒烟**（联网才跑）：Jev 解析一份标注集（`tests/werewolf/data/parse_cases.yaml`，至少 60 条，其中至少 15 条是陷阱：否定、转述、假设、疑问）：声明类的精确率 ≥ 95%；正则版在同一份上的陷阱误报为零。核对标注集（20 段露底、20 段干净的台词，含狼人正当的谎话）：露底的零放行。真模型自对弈 5 局能打完：Claude 档的台词 ≥ 80%，核对拦截率 ≤ 15%，记录调用次数、花费、时延。
+- **真模型冒烟**（联网才跑）：Jev 解析一份标注集（`tests/ww/data/parse_cases.yaml`，至少 60 条，其中至少 15 条是陷阱：否定、转述、假设、疑问）：声明类的精确率 ≥ 95%；正则版在同一份上的陷阱误报为零。核对标注集（20 段露底、20 段干净的台词，含狼人正当的谎话）：露底的零放行。真模型自对弈 5 局能打完：Claude 档的台词 ≥ 80%，核对拦截率 ≤ 15%，记录调用次数、花费、时延。
 - **浏览器整局：** Playwright 以五种身份各打一局（离线模式），无报错，截图检查画面；对这五局的 `wire.jsonl` 跑 `wire_check`。
 
 ## 11 命令行
