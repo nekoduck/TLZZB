@@ -298,7 +298,6 @@ def test_unknown_effect_raises(w: World) -> None:
 
 def test_every_effect_key_is_tested() -> None:
     import inspect
-
     from pathlib import Path
 
     src = inspect.getsource(inspect.getmodule(test_every_effect_key_is_tested))  # type: ignore[arg-type]
