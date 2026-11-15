@@ -1,0 +1,187 @@
+# 拒绝集（方案 11.5「拒绝」）。格式见 evals/README.md 第 6 节。
+# 20 个不合情理的请求。走完这一回合后断言：对这条请求的裁决落在 expect.verdict_in（{never, no} 的子集）里，
+# 对方的答复只能是 expect.replies 里的言语行为（D-030：no 与 never 只能拒绝）；硬选答应要被内核改判为拒绝并记一次违规。
+# basis 说明裁决的依据：bottom_line（撞上人物卡的底线，决不答应）或 score（6.6 的 W 表算分不足 40）。
+# cls 是标注的事情类别；asks 的写法与归类集相同（README 2.4）。
+version: 1
+items:
+  - id: r01
+    scene: camp_bitten
+    input: 帮主，你就行行好，白白放了那小姑娘吧。
+    to: sikong_xuan
+    asks: {type: release, target: zhong_ling}
+    cls: costly
+    expect: {verdict_in: [never], replies: [refuse]}
+    basis: bottom_line
+    why: 他中着貂毒，底线「解药没到手之前不放人质」。
+  - id: r02
+    scene: camp_captive
+    input: 帮主，把我们三个都放了，再送些盘缠给我们下山。
+    to: sikong_xuan
+    asks: {type: release, target: player}
+    cls: costly
+    expect: {verdict_in: ['no', never], replies: [refuse]}
+    basis: score
+    why: 陌生人，有损己利：10 分。
+  - id: r03
+    scene: zhong_news
+    input: 谷主，请您派人把那位姓段的公子请进谷来住几天。
+    to: zhong_wanchou
+    asks: {type: other, note: 请姓段的人进谷做客}
+    cls: betray
+    expect: {verdict_in: ['no', never], replies: [refuse]}
+    basis: score
+    why: 陌生人，违背所属（违背他自己定下的规矩）：-30 分。
+  - id: r04
+    scene: hall
+    input: 左掌门，把无量剑法传我几招吧，我又不是外人。
+    to: zuo_zimu
+    asks: {type: teach_art, art: wuliang_sword}
+    cls: betray
+    expect: {verdict_in: [never], replies: [refuse]}
+    basis: bottom_line
+    why: 底线「不把本门剑法传给外人」。
+  - id: r05
+    scene: hall
+    input: 左掌门，干脆把剑湖宫让给神农帮吧，省得打打杀杀。
+    to: zuo_zimu
+    asks: {type: other, note: 让出剑湖宫}
+    cls: betray
+    expect: {verdict_in: ['no', never], replies: [refuse]}
+    basis: score
+    why: 陌生人，违背所属：-30 分。
+  - id: r06
+    scene: hall_slap
+    input: 龚少侠，你当众给段公子跪下磕头赔罪吧。
+    to: gong_guangjie
+    asks: {type: other, note: 当众下跪赔罪}
+    cls: costly
+    expect: {verdict_in: ['no', never], replies: [refuse]}
+    basis: score
+    why: 陌生人，有损己利：10 分。
+  - id: r07
+    scene: mu_house
+    input: 姑娘，把面纱摘下来让我瞧瞧。
+    to: mu_wanqing
+    asks: {type: other, note: 摘下面纱}
+    cls: risky
+    expect: {verdict_in: ['no', never], replies: [refuse]}
+    basis: score
+    why: 陌生人，冒险：0 分。
+  - id: r08
+    scene: mu_house
+    input: 姑娘，你这匹黑马送给我吧。
+    to: mu_wanqing
+    asks: {type: give_item, item: black_rose}
+    cls: costly
+    expect: {verdict_in: ['no', never], replies: [refuse]}
+    basis: score
+    why: 陌生人，有损己利：10 分。
+  - id: r09
+    scene: zhong_news
+    input: 夫人，把您年轻时那段旧情讲给我听听。
+    to: gan_baobao
+    asks: {type: tell_about, fact: F_gan_old_affair}
+    cls: trivial
+    expect: {verdict_in: [never], replies: [refuse]}
+    basis: bottom_line
+    why: 底线「不对人说起年轻时的旧事」（fact_tag zhong_family_private）。
+  - id: r10
+    scene: zhong_news
+    input: 夫人，那只金盒送给我做个念想吧。
+    to: gan_baobao
+    asks: {type: give_item, item: gold_box}
+    cls: costly
+    expect: {verdict_in: ['no', never], replies: [refuse]}
+    basis: score
+    why: 陌生人，有损己利：10 分。
+  - id: r11
+    scene: zhong_news
+    input: 谷主，把貂毒的解药白给我一瓶吧。
+    to: zhong_wanchou
+    asks: {type: give_item, item: diao_antidote}
+    cls: costly
+    expect: {verdict_in: ['no', never], replies: [refuse]}
+    basis: score
+    why: 陌生人，有损己利：10 分（解药收在药柜里，不在他身上，答应了也得先去取）。
+  - id: r12
+    scene: path_eshen
+    input: 前辈，你给我跪下，拜我为师吧。
+    to: nanhai_eshen
+    asks: {type: other, note: 反过来拜玩家为师}
+    cls: betray
+    expect: {verdict_in: ['no', never], replies: [refuse]}
+    basis: score
+    why: 陌生人，违背所属（违背他的身份与规矩）：-30 分。
+  - id: r13
+    scene: path_checkpoint
+    input: 大哥，你把路卡拆了，带着弟兄们回家去吧。
+    to: sn_chief_b
+    asks: {type: stop_doing, note: 撤掉路卡}
+    cls: betray
+    expect: {verdict_in: ['no', never], replies: [refuse]}
+    basis: score
+    why: 陌生人，违背所属：-30 分。
+  - id: r14
+    scene: camp_visit
+    input: 黑须大哥，把关人那木栅的钥匙给我。
+    to: sn_chief_a
+    asks: {type: give_item, item: camp_key}
+    cls: betray
+    expect: {verdict_in: ['no', never], replies: [refuse]}
+    basis: score
+    why: 陌生人，违背所属：-30 分。
+  - id: r15
+    scene: hall_envoy
+    input: 圣使，你把灵鹫宫的号令收回去，往后别管两派的事了。
+    to: envoy_lingjiu
+    asks: {type: other, note: 收回号令}
+    cls: betray
+    expect: {verdict_in: ['no', never], replies: [refuse]}
+    basis: score
+    why: 陌生人，违背所属：-30 分。
+  - id: r16
+    scene: back_siege
+    input: 这位师兄，把柴房钥匙给我，我要把东家锁进去。
+    to: wu_guangsheng
+    asks: {type: give_item, item: woodshed_key}
+    cls: costly
+    expect: {verdict_in: ['no', never], replies: [refuse]}
+    basis: score
+    why: 陌生人，有损己利：10 分。
+  - id: r17
+    scene: hall_beam
+    input: 小姑娘，你那只小貂送给我吧。
+    to: zhong_ling
+    asks: {type: give_item, item: shandian_diao}
+    cls: costly
+    expect: {verdict_in: ['no', never], replies: [refuse]}
+    basis: score
+    why: 陌生人，有损己利：10 分。
+  - id: r18
+    scene: trail_lovers
+    input: 师兄，你跟我回去，向左掌门自首认错吧。
+    to: gan_guanghao
+    asks: {type: come_along}
+    cls: risky
+    expect: {verdict_in: ['no', never], replies: [refuse]}
+    basis: score
+    why: 陌生人，冒险：0 分。
+  - id: r19
+    scene: camp_bitten
+    input: 帮主，你自断一臂，向段公子赔罪。
+    to: sikong_xuan
+    asks: {type: other, note: 自残赔罪}
+    cls: risky
+    expect: {verdict_in: ['no', never], replies: [refuse]}
+    basis: score
+    why: 陌生人，冒险：0 分。
+  - id: r20
+    scene: hall
+    input: 东家，把这趟的货款全给我，我自己做买卖去。
+    to: ma_wude
+    asks: {type: other, note: 交出货款}
+    cls: costly
+    expect: {verdict_in: ['no', never], replies: [refuse]}
+    basis: score
+    why: 主仆，相熟，有损己利：30 分。就算是亲近的东家，这种要求也不会答应。
