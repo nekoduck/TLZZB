@@ -7,3 +7,15 @@
 - [done] CLI hook (__main__ eval), tests/evalrun/test_scoring.py + test_assertions.py (12 pass); real smoke of all suites with --limit 6 OK. Started the real 'eval all' (log in scratchpad real_all.log, results → evals/results, evals/report.md). Next: tests/evalrun/test_suites.py, CLI test update, full suite + ruff, review real numbers, final report.
 - [done] tests/evalrun/test_suites.py (29 tests pass in tests/evalrun), tests/e2e/test_cli.py::test_eval_lists_suites_and_runs_one (renamed from test_eval_stub_lists_datasets). Real classify finding: J1 pipeline core 55% < rules 60%; raw J1 kind 96% verb 84% target 64%; parser intent_from_jev loses answers (spurious target2 on no-target verbs, give/show item never chosen, has_speech false positives → both). Added raw per-question table + 'repaired mapping' reference column (65% core). 决定：归类集的闸用整条解析链的「六项全对」，J1 原始各题准确率与修补映射另列作诊断。 Next: wait real eval all, rerun classify (new tables), regenerate report, full test suite, final report.
 - [done] real 'eval all' finished (results in evals/results/*.json, evals/report.md); classify rerun with raw/repaired tables; evals/results/findings.md (hand-written, merged into report). Next: full test suite, final answer.
+- [final] All items done. tests/evalrun 31 pass, tests/e2e/test_cli.py 9 pass, full suite 851 pass; ruff clean on src tests scripts. Real results in evals/results/*.json + evals/report.md (regenerate without rerunning: `python -m tianlong eval report`). Nothing pending for label 'eval-runner'.
+- DECISIONS.md 的候选条目（本人不拥有该文件，由负责的人并入）：
+  - 评测跑手在 `src/tianlong/evalrun/`，与 game 同层；`python -m tianlong eval <套件|all|report>`，结果写 `evals/results/<套件>.json`，Mock 的写 `evals/results/mock/`，不覆盖真模型的结果。
+  - 归类集按整条解析链（classify 加 bind）计分；7.12 的「与人工标注一致」取「六项全对」（kind、verb、target、act、to、asks），claims、cls、urgent 另列；「过门槛」就是解析器自己不升级的条件。
+  - J1 归类没过闸（门槛之上覆盖 72.0%、一致 56.0%）：`route.classify = 'claude_first'`；没有 Claude 钥匙时 `rules_only`（六项全对 60.3%）比退回 J1（56.3%）准。
+  - J2 抉择过闸（覆盖 52.5%、一致 85.7%）：`decide_soul`、`decide_named` 维持 `jev_first`，`choice_confidence` 维持 0.55。
+  - J5 核对在 0.70 上误杀 22% 没过，0.80 上检出 96%、误杀 6%：`check = 'jev_first'`，`narration_flag = 0.80`。
+  - 中英问法打平（中文 77.1%、英文 78.8%），维持 `jev.lang = 'zh'`；同一请求重复 5 次判定全同 93.3%。
+  - 拒绝集的 Mock 闸按「归类照条目标注」的一遍计（验 6.6 的裁决与答复）；规则猜测的一遍与真 J1 的一遍另列。
+  - 评测里 Jev 超时放宽到 15 秒、不设预算上限；时延与成本由 latency_cost 用 config.toml 原样设置去量。
+  - 英文问法模板放 `src/tianlong/evalrun/en/`，跑英文时临时换 prompts 根目录，不动 `prompts/`。
+  - 读结果后手写的问题清单放 `evals/results/findings.md`，重出报告时原样并入。
