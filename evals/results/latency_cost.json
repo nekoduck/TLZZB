@@ -1,0 +1,650 @@
+{
+ "suite": "latency_cost",
+ "meta": {
+  "generated": "2026-11-15T11:39:04+00:00",
+  "mock": false,
+  "jev_model": "jev-1.14.0",
+  "lang": "zh",
+  "limit": null,
+  "n": 30,
+  "thresholds": {
+   "choice_confidence": 0.55,
+   "choice_margin": 0.15,
+   "needs_thought": 0.6,
+   "noul_yes": 0.6,
+   "sample_floor": 0.15,
+   "narration_flag": 0.7
+  },
+  "claude_key": false,
+  "jev_key": true
+ },
+ "summary": {
+  "turns": 30,
+  "inputs": 35,
+  "games": 1,
+  "first_text": {
+   "median_s": 0.39035683499992047,
+   "p90_s": 0.7077224764999756,
+   "max_s": 0.9624938110000585
+  },
+  "jev": {
+   "requests": 284,
+   "errors": 0,
+   "timeouts": 0,
+   "median_s": 0.09925,
+   "p95_s": 0.14338,
+   "max_s": 0.3982,
+   "input_tokens": 448420,
+   "output_tokens": 76353,
+   "cost_usd": 0.01883364,
+   "by_kind": {
+    "J1": {
+     "n": 11,
+     "median_s": 0.1097,
+     "p95_s": 0.14095000000000002
+    },
+    "J2a": {
+     "n": 178,
+     "median_s": 0.09914999999999999,
+     "p95_s": 0.14428000000000002
+    },
+    "J2b": {
+     "n": 46,
+     "median_s": 0.09815,
+     "p95_s": 0.121175
+    },
+    "J3": {
+     "n": 18,
+     "median_s": 0.08835,
+     "p95_s": 0.16214999999999968
+    },
+    "J4": {
+     "n": 31,
+     "median_s": 0.1015,
+     "p95_s": 0.13505
+    }
+   }
+  },
+  "per_turn": {
+   "requests": 9.366666666666667,
+   "input_tokens": 14185.6,
+   "cost_usd": 0.0005957952
+  },
+  "ledger": {
+   "spent_usd": 0.018834,
+   "budget_usd": 5.0
+  }
+ },
+ "gates": [
+  {
+   "name": "首字时延（11.7）",
+   "passed": true,
+   "detail": "30 回合：中位数 390 ms（要求 ≤ 3 秒），P90 708 ms（要求 ≤ 6 秒）。",
+   "fallback": ""
+  },
+  {
+   "name": "每回合成本（11.7）",
+   "passed": true,
+   "detail": "每回合 0.0596 美分（要求 ≤ 2 美分）；只含 Jev。",
+   "fallback": ""
+  }
+ ],
+ "skipped": [
+  "Claude 的部分（SKIPPED：没有 ANTHROPIC_API_KEY）：C3 叙述的首字时延与花费、C4、升级到 C1/C2 的调用都没量；方案 7.13 估叙述约 0.7 美分一回合。有钥匙后重跑：python -m tianlong eval latency_cost --limit 100"
+ ],
+ "notes": [
+  "共发出 35 个输入，开了 1 局；耗时的回合 30 个，不耗时的回话等 5 个。方案要求量 100 回合，这里量 30 回合（--limit 可改）。"
+ ],
+ "tables": [
+  {
+   "title": "首字时延（从输入到第一段叙述）",
+   "headers": [
+    "回合数",
+    "中位数",
+    "P90",
+    "最大",
+    "闸：中位数 ≤ 3 秒",
+    "闸：P90 ≤ 6 秒"
+   ],
+   "rows": [
+    [
+     "30",
+     "390 ms",
+     "708 ms",
+     "962 ms",
+     "是",
+     "是"
+    ]
+   ],
+   "note": ""
+  },
+  {
+   "title": "Jev 单个请求",
+   "headers": [
+    "请求数",
+    "中位数",
+    "P95",
+    "最大",
+    "失败",
+    "其中超时"
+   ],
+   "rows": [
+    [
+     "284",
+     "99 ms",
+     "143 ms",
+     "398 ms",
+     "0",
+     "0"
+    ]
+   ],
+   "note": ""
+  },
+  {
+   "title": "Jev 各类请求",
+   "headers": [
+    "调用",
+    "次数",
+    "中位数",
+    "P95"
+   ],
+   "rows": [
+    [
+     "J1",
+     "11",
+     "110 ms",
+     "141 ms"
+    ],
+    [
+     "J2a",
+     "178",
+     "99 ms",
+     "144 ms"
+    ],
+    [
+     "J2b",
+     "46",
+     "98 ms",
+     "121 ms"
+    ],
+    [
+     "J3",
+     "18",
+     "88 ms",
+     "162 ms"
+    ],
+    [
+     "J4",
+     "31",
+     "102 ms",
+     "135 ms"
+    ]
+   ],
+   "note": ""
+  },
+  {
+   "title": "每回合的用量（只算耗时的回合）",
+   "headers": [
+    "每回合请求数",
+    "每回合输入 token",
+    "每回合花费（美分）",
+    "闸：≤ 2 美分",
+    "全程花费（美元）"
+   ],
+   "rows": [
+    [
+     "9.4",
+     "14186",
+     "0.0596",
+     "是",
+     "0.01883"
+    ]
+   ],
+   "note": ""
+  }
+ ],
+ "items": [
+  {
+   "game": 1,
+   "raw": "一",
+   "kind": "turn",
+   "first_text_s": 0.9624938110000585,
+   "total_s": 1.1219184950000454,
+   "calls": [
+    1,
+    23
+   ],
+   "notes": []
+  },
+  {
+   "game": 1,
+   "raw": "二",
+   "kind": "turn",
+   "first_text_s": 0.5462456630002634,
+   "total_s": 0.6906560779998472,
+   "calls": [
+    23,
+    45
+   ],
+   "notes": []
+  },
+  {
+   "game": 1,
+   "raw": "我四下看看，留神周围的动静。",
+   "kind": "turn",
+   "first_text_s": 0.7142085650002628,
+   "total_s": 0.8713655830001699,
+   "calls": [
+    45,
+    68
+   ],
+   "notes": [
+    "parse via jev: action"
+   ]
+  },
+  {
+   "game": 1,
+   "raw": "三",
+   "kind": "turn",
+   "first_text_s": 0.7472994300001119,
+   "total_s": 0.9521877279998989,
+   "calls": [
+    68,
+    91
+   ],
+   "notes": []
+  },
+  {
+   "game": 1,
+   "raw": "一",
+   "kind": "turn",
+   "first_text_s": 0.6940592239998296,
+   "total_s": 0.8458067399997162,
+   "calls": [
+    91,
+    115
+   ],
+   "notes": []
+  },
+  {
+   "game": 1,
+   "raw": "向身边的人打听这里出了什么事。",
+   "kind": "reply",
+   "first_text_s": 0.1290548030001446,
+   "total_s": 0.12912542599997323,
+   "calls": [
+    115,
+    117
+   ],
+   "notes": [
+    "parse via jev: unclear"
+   ]
+  },
+  {
+   "game": 1,
+   "raw": "二",
+   "kind": "turn",
+   "first_text_s": 0.7070017999999436,
+   "total_s": 0.8597516529998757,
+   "calls": [
+    117,
+    142
+   ],
+   "notes": []
+  },
+  {
+   "game": 1,
+   "raw": "一",
+   "kind": "turn",
+   "first_text_s": 0.006321198000023287,
+   "total_s": 0.14507082099999025,
+   "calls": [
+    142,
+    143
+   ],
+   "notes": []
+  },
+  {
+   "game": 1,
+   "raw": "我先等一等，看看再说。",
+   "kind": "reply",
+   "first_text_s": 0.12358694800013836,
+   "total_s": 0.12367005400028575,
+   "calls": [
+    143,
+    145
+   ],
+   "notes": [
+    "parse via jev: impossible"
+   ]
+  },
+  {
+   "game": 1,
+   "raw": "三",
+   "kind": "turn",
+   "first_text_s": 0.019335830000272836,
+   "total_s": 0.17002540300018154,
+   "calls": [
+    145,
+    146
+   ],
+   "notes": []
+  },
+  {
+   "game": 1,
+   "raw": "二",
+   "kind": "turn",
+   "first_text_s": 0.16508584700022766,
+   "total_s": 0.3325761139999486,
+   "calls": [
+    146,
+    151
+   ],
+   "notes": []
+  },
+  {
+   "game": 1,
+   "raw": "仔细听听旁人在说些什么。",
+   "kind": "reply",
+   "first_text_s": 0.1139020310001797,
+   "total_s": 0.1139814880002632,
+   "calls": [
+    151,
+    152
+   ],
+   "notes": [
+    "parse via jev: impossible"
+   ]
+  },
+  {
+   "game": 1,
+   "raw": "一",
+   "kind": "turn",
+   "first_text_s": 0.24560396800006856,
+   "total_s": 0.41537137400018764,
+   "calls": [
+    152,
+    156
+   ],
+   "notes": []
+  },
+  {
+   "game": 1,
+   "raw": "二",
+   "kind": "turn",
+   "first_text_s": 0.2599482139999054,
+   "total_s": 0.4197450890001164,
+   "calls": [
+    156,
+    159
+   ],
+   "notes": []
+  },
+  {
+   "game": 1,
+   "raw": "我四下看看，留神周围的动静。",
+   "kind": "turn",
+   "first_text_s": 0.32497463500021695,
+   "total_s": 0.47312663999991855,
+   "calls": [
+    159,
+    163
+   ],
+   "notes": [
+    "parse via jev: action"
+   ]
+  },
+  {
+   "game": 1,
+   "raw": "三",
+   "kind": "turn",
+   "first_text_s": 0.4988752879999083,
+   "total_s": 0.6464364829998885,
+   "calls": [
+    163,
+    170
+   ],
+   "notes": []
+  },
+  {
+   "game": 1,
+   "raw": "一",
+   "kind": "turn",
+   "first_text_s": 0.4721508430002359,
+   "total_s": 0.6115489750000052,
+   "calls": [
+    170,
+    177
+   ],
+   "notes": []
+  },
+  {
+   "game": 1,
+   "raw": "向身边的人打听这里出了什么事。",
+   "kind": "reply",
+   "first_text_s": 0.12371739999980491,
+   "total_s": 0.12378554899987648,
+   "calls": [
+    177,
+    179
+   ],
+   "notes": [
+    "parse via jev: unclear"
+   ]
+  },
+  {
+   "game": 1,
+   "raw": "二",
+   "kind": "turn",
+   "first_text_s": 0.3059477829997377,
+   "total_s": 0.45615310599987424,
+   "calls": [
+    179,
+    183
+   ],
+   "notes": []
+  },
+  {
+   "game": 1,
+   "raw": "一",
+   "kind": "turn",
+   "first_text_s": 0.3320623159997922,
+   "total_s": 0.48578892899968196,
+   "calls": [
+    183,
+    187
+   ],
+   "notes": []
+  },
+  {
+   "game": 1,
+   "raw": "我先等一等，看看再说。",
+   "kind": "turn",
+   "first_text_s": 0.5750305379997371,
+   "total_s": 0.715887525999733,
+   "calls": [
+    187,
+    194
+   ],
+   "notes": [
+    "parse via jev: action"
+   ]
+  },
+  {
+   "game": 1,
+   "raw": "三",
+   "kind": "turn",
+   "first_text_s": 0.3909439320000274,
+   "total_s": 0.5741852109999854,
+   "calls": [
+    194,
+    199
+   ],
+   "notes": []
+  },
+  {
+   "game": 1,
+   "raw": "二",
+   "kind": "turn",
+   "first_text_s": 0.3897697379998135,
+   "total_s": 0.5200704399999267,
+   "calls": [
+    199,
+    204
+   ],
+   "notes": []
+  },
+  {
+   "game": 1,
+   "raw": "仔细听听旁人在说些什么。",
+   "kind": "turn",
+   "first_text_s": 0.37368371299999126,
+   "total_s": 0.5348052459999053,
+   "calls": [
+    204,
+    208
+   ],
+   "notes": [
+    "parse via jev: action"
+   ]
+  },
+  {
+   "game": 1,
+   "raw": "一",
+   "kind": "turn",
+   "first_text_s": 0.19204936899996028,
+   "total_s": 0.3502239289996396,
+   "calls": [
+    208,
+    211
+   ],
+   "notes": []
+  },
+  {
+   "game": 1,
+   "raw": "二",
+   "kind": "turn",
+   "first_text_s": 0.12141222199988988,
+   "total_s": 0.2665500829998564,
+   "calls": [
+    211,
+    214
+   ],
+   "notes": []
+  },
+  {
+   "game": 1,
+   "raw": "我四下看看，留神周围的动静。",
+   "kind": "turn",
+   "first_text_s": 0.4666032109998923,
+   "total_s": 0.6421327179996297,
+   "calls": [
+    214,
+    219
+   ],
+   "notes": [
+    "parse via jev: action"
+   ]
+  },
+  {
+   "game": 1,
+   "raw": "三",
+   "kind": "turn",
+   "first_text_s": 0.48820010500003264,
+   "total_s": 0.6255913039999541,
+   "calls": [
+    219,
+    228
+   ],
+   "notes": []
+  },
+  {
+   "game": 1,
+   "raw": "一",
+   "kind": "turn",
+   "first_text_s": 0.28850571500015576,
+   "total_s": 0.44300353900007394,
+   "calls": [
+    228,
+    237
+   ],
+   "notes": []
+  },
+  {
+   "game": 1,
+   "raw": "向身边的人打听这里出了什么事。",
+   "kind": "reply",
+   "first_text_s": 0.1531518589999905,
+   "total_s": 0.15321856099990327,
+   "calls": [
+    237,
+    239
+   ],
+   "notes": [
+    "parse via jev: unclear"
+   ]
+  },
+  {
+   "game": 1,
+   "raw": "二",
+   "kind": "turn",
+   "first_text_s": 0.2804896750003536,
+   "total_s": 0.43552339400002893,
+   "calls": [
+    239,
+    248
+   ],
+   "notes": []
+  },
+  {
+   "game": 1,
+   "raw": "一",
+   "kind": "turn",
+   "first_text_s": 0.30209729900025195,
+   "total_s": 0.4807154290001563,
+   "calls": [
+    248,
+    257
+   ],
+   "notes": []
+  },
+  {
+   "game": 1,
+   "raw": "我先等一等，看看再说。",
+   "kind": "turn",
+   "first_text_s": 0.5040156640002351,
+   "total_s": 0.6665177160002713,
+   "calls": [
+    257,
+    268
+   ],
+   "notes": [
+    "parse via jev: action"
+   ]
+  },
+  {
+   "game": 1,
+   "raw": "三",
+   "kind": "turn",
+   "first_text_s": 0.5617918739999368,
+   "total_s": 0.7210459099997024,
+   "calls": [
+    268,
+    280
+   ],
+   "notes": []
+  },
+  {
+   "game": 1,
+   "raw": "二",
+   "kind": "turn",
+   "first_text_s": 0.46509492199993474,
+   "total_s": 0.6294988219997322,
+   "calls": [
+    280,
+    291
+   ],
+   "notes": []
+  }
+ ]
+}

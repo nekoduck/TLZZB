@@ -1,6 +1,9 @@
 # 通用：有人被追（状态 pursued），追的人与他敌对。逐段判定。
 id: pursuit
 origin: generic
+title: '{hunter}在追{quarry}'
+chronicle_open: '{hunter}追起了{quarry}'
+chronicle_close: '{hunter}追{quarry}的事有了结果'
 when: true
 roles:
   quarry: {pick: {where: {all: [{status: [$it, pursued]}, {not: {status: [$it, captive]}}]}}}

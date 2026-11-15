@@ -1,6 +1,9 @@
 # 通用：互相敌对的两人同处一地。实力相当无法写成谓词，这里只看敌意（好感不高于 -30）。
 id: standoff
 origin: generic
+title: '{side_a}与{side_b}对峙'
+chronicle_open: '{side_a}与{side_b}对峙起来'
+chronicle_close: '{side_a}与{side_b}的对峙有了结果'
 when: true
 roles:
   side_a: {pick: {where: {all: [{not: {status: [$it, standoff_recent]}}, {not: {status: [$it, captive]}}, {not: {status: [$it, bound]}}, {not: {status: [$it, hidden]}}]}}}

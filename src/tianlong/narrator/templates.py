@@ -573,7 +573,7 @@ def _speech_variants(state: WorldState, defs: Defs, speech: Any, desc: str = '')
     act = str(_sp(speech, 'act') or '')
     to = [x for x in (_sp(speech, 'to') or []) if x]
     t = _addressee(state, defs, speech)
-    shown = _pv(state, defs, desc)
+    shown = _pv(state, defs, desc).split('：', 1)[0]  # 描述里冒号后面是那件事的全文，选项里不照抄
     ask = _sp(speech, 'ask_action') or {}
     what = _pv(state, defs, ask.get('desc'))
     if act in _ASK_ACTS:

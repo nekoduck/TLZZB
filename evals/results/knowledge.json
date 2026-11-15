@@ -1,0 +1,2106 @@
+{
+ "suite": "knowledge",
+ "meta": {
+  "generated": "2026-11-15T11:38:20+00:00",
+  "mock": false,
+  "jev_model": "jev-1.14.0",
+  "lang": "zh",
+  "limit": null,
+  "n": 100,
+  "thresholds": {
+   "choice_confidence": 0.55,
+   "choice_margin": 0.15,
+   "needs_thought": 0.6,
+   "noul_yes": 0.6,
+   "sample_floor": 0.15,
+   "narration_flag": 0.7
+  },
+  "claude_key": false,
+  "jev_key": true
+ },
+ "summary": {
+  "chars": 10,
+  "questions": 100,
+  "static_violations": 0,
+  "dynamic_violations": 0,
+  "errors": 0,
+  "spoke": 52,
+  "facts_said": 8,
+  "judged": 0,
+  "judged_leaks": 0
+ },
+ "gates": [
+  {
+   "name": "知识边界（结构核对）",
+   "passed": true,
+   "detail": "静态越界 0 处；Mock 回合里越界的问题 0/100，跑崩 0。要求全为零。",
+   "fallback": ""
+  }
+ ],
+ "skipped": [
+  "台词一级的判读（SKIPPED：没有 ANTHROPIC_API_KEY）：C 模型对照 forbidden 与 forbidden_desc 读叙述里他那句话。有钥匙后重跑：python -m tianlong eval knowledge"
+ ],
+ "notes": [
+  "21 个问题带 forbidden_desc（事实库里没有的后文），其中 12 个只有 forbidden_desc：结构核对管不到，要看台词。",
+  "开了口的问题 52.0% (52/100)；Mock 的人物多半不答或拒答，说出的事实共 8 条。",
+  "回合一律用 Mock 模型走（不论带不带 --mock）：验的是整条链上有没有别的口子，不是模型的口风。"
+ ],
+ "tables": [
+  {
+   "title": "结构核对（静态 + Mock 回合）",
+   "headers": [
+    "人物",
+    "此刻能说的事实",
+    "其中不在 may_use",
+    "其中属 forbidden",
+    "状态文字里的 forbidden",
+    "问题数",
+    "开了口的问题",
+    "说出的事实条数",
+    "越界的问题",
+    "跑崩的问题"
+   ],
+   "rows": [
+    [
+     "duan_yu",
+     "2",
+     "0",
+     "0",
+     "0",
+     "10",
+     "9",
+     "1",
+     "0",
+     "0"
+    ],
+    [
+     "zhong_ling",
+     "8",
+     "0",
+     "0",
+     "0",
+     "10",
+     "0",
+     "0",
+     "0",
+     "0"
+    ],
+    [
+     "sikong_xuan",
+     "7",
+     "0",
+     "0",
+     "0",
+     "10",
+     "9",
+     "2",
+     "0",
+     "0"
+    ],
+    [
+     "zuo_zimu",
+     "4",
+     "0",
+     "0",
+     "0",
+     "10",
+     "1",
+     "0",
+     "0",
+     "0"
+    ],
+    [
+     "gong_guangjie",
+     "2",
+     "0",
+     "0",
+     "0",
+     "10",
+     "1",
+     "0",
+     "0",
+     "0"
+    ],
+    [
+     "ma_wude",
+     "3",
+     "0",
+     "0",
+     "0",
+     "10",
+     "2",
+     "0",
+     "0",
+     "0"
+    ],
+    [
+     "gan_baobao",
+     "8",
+     "0",
+     "0",
+     "0",
+     "10",
+     "10",
+     "3",
+     "0",
+     "0"
+    ],
+    [
+     "zhong_wanchou",
+     "8",
+     "0",
+     "0",
+     "0",
+     "10",
+     "2",
+     "1",
+     "0",
+     "0"
+    ],
+    [
+     "mu_wanqing",
+     "5",
+     "0",
+     "0",
+     "0",
+     "10",
+     "9",
+     "1",
+     "0",
+     "0"
+    ],
+    [
+     "nanhai_eshen",
+     "3",
+     "0",
+     "0",
+     "0",
+     "10",
+     "9",
+     "0",
+     "0",
+     "0"
+    ]
+   ],
+   "note": ""
+  }
+ ],
+ "items": [
+  {
+   "char": "duan_yu",
+   "scene": "hall",
+   "static": {
+    "sayable": [
+     "F_duan_no_kungfu",
+     "F_wuliang_two_sects"
+    ],
+    "outside_may_use": [],
+    "forbidden_sayable": [],
+    "forbidden_in_state_text": []
+   },
+   "questions": [
+    {
+     "id": "k001",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [
+      "F_wuliang_two_sects"
+     ],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k002",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k003",
+     "desc_only": false,
+     "has_desc": true,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k004",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k005",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k006",
+     "desc_only": false,
+     "has_desc": true,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k007",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k008",
+     "desc_only": false,
+     "has_desc": true,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k009",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k010",
+     "desc_only": false,
+     "has_desc": true,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    }
+   ]
+  },
+  {
+   "char": "zhong_ling",
+   "scene": "hall_girl",
+   "static": {
+    "sayable": [
+     "F_diao_antidote_father",
+     "F_diao_venom",
+     "F_gate_knock",
+     "F_route_wanjie",
+     "F_valley_hates_duan",
+     "F_wuliang_two_sects",
+     "F_zhong_ling_daughter",
+     "exit:pine_wood:valley_gate"
+    ],
+    "outside_may_use": [],
+    "forbidden_sayable": [],
+    "forbidden_in_state_text": []
+   },
+   "questions": [
+    {
+     "id": "k011",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E20"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k012",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E20"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k013",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E20"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k014",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E20"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k015",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E20"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k016",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E20"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k017",
+     "desc_only": false,
+     "has_desc": true,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E20"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k018",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E20"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k019",
+     "desc_only": true,
+     "has_desc": true,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E20"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k020",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E20"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    }
+   ]
+  },
+  {
+   "char": "sikong_xuan",
+   "scene": "camp_visit",
+   "static": {
+    "sayable": [
+     "F_duanchang_antidote_sikong",
+     "F_envoy_due",
+     "F_four_evils",
+     "F_lingjiu_rules",
+     "F_shennong_orders",
+     "F_shennong_siege",
+     "F_wuliang_two_sects"
+    ],
+    "outside_may_use": [],
+    "forbidden_sayable": [],
+    "forbidden_in_state_text": []
+   },
+   "questions": [
+    {
+     "id": "k021",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k022",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [
+      "F_wuliang_two_sects"
+     ],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k023",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k024",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [
+      "F_wuliang_two_sects"
+     ],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k025",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k026",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k027",
+     "desc_only": true,
+     "has_desc": true,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k028",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k029",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k030",
+     "desc_only": true,
+     "has_desc": true,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    }
+   ]
+  },
+  {
+   "char": "zuo_zimu",
+   "scene": "hall",
+   "static": {
+    "sayable": [
+     "F_backhill_forbidden",
+     "F_four_evils",
+     "F_lingjiu_rules",
+     "F_wuliang_two_sects"
+    ],
+    "outside_may_use": [],
+    "forbidden_sayable": [],
+    "forbidden_in_state_text": []
+   },
+   "questions": [
+    {
+     "id": "k031",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k032",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: meta",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k033",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E20"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k034",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E20"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k035",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E20"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k036",
+     "desc_only": false,
+     "has_desc": true,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E20"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k037",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E20"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k038",
+     "desc_only": true,
+     "has_desc": true,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E20"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k039",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E20"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k040",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E20"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    }
+   ]
+  },
+  {
+   "char": "gong_guangjie",
+   "scene": "hall",
+   "static": {
+    "sayable": [
+     "F_backhill_forbidden",
+     "F_wuliang_two_sects"
+    ],
+    "outside_may_use": [],
+    "forbidden_sayable": [],
+    "forbidden_in_state_text": []
+   },
+   "questions": [
+    {
+     "id": "k041",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k042",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E19"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k043",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E19"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k044",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E20"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k045",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E20"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k046",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E20"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k047",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E20"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k048",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E20"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k049",
+     "desc_only": true,
+     "has_desc": true,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E20"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k050",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E20"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    }
+   ]
+  },
+  {
+   "char": "ma_wude",
+   "scene": "hall",
+   "static": {
+    "sayable": [
+     "F_four_evils",
+     "F_tea_gift",
+     "F_wuliang_two_sects"
+    ],
+    "outside_may_use": [],
+    "forbidden_sayable": [],
+    "forbidden_in_state_text": []
+   },
+   "questions": [
+    {
+     "id": "k051",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k052",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k053",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E19"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k054",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k055",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E20"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k056",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E20"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k057",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E20"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k058",
+     "desc_only": true,
+     "has_desc": true,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E20"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k059",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E20"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k060",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [
+      "E20"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    }
+   ]
+  },
+  {
+   "char": "gan_baobao",
+   "scene": "zhong_hall_visit",
+   "static": {
+    "sayable": [
+     "F_diao_antidote_cabinet",
+     "F_diao_antidote_father",
+     "F_diao_venom",
+     "F_gate_knock",
+     "F_mu_lodging",
+     "F_route_wanjie",
+     "F_wuliang_two_sects",
+     "F_zhong_ling_daughter"
+    ],
+    "outside_may_use": [],
+    "forbidden_sayable": [],
+    "forbidden_in_state_text": []
+   },
+   "questions": [
+    {
+     "id": "k061",
+     "desc_only": false,
+     "has_desc": true,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k062",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k063",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [
+      "F_wuliang_two_sects"
+     ],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k064",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k065",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k066",
+     "desc_only": false,
+     "has_desc": true,
+     "lines": 1,
+     "facts_said": [
+      "F_mu_lodging"
+     ],
+     "learned": [
+      "E6"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k067",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k068",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k069",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [
+      "F_mu_lodging"
+     ],
+     "learned": [
+      "E6"
+     ],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k070",
+     "desc_only": true,
+     "has_desc": true,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    }
+   ]
+  },
+  {
+   "char": "zhong_wanchou",
+   "scene": "zhong_hall_visit",
+   "static": {
+    "sayable": [
+     "F_diao_antidote_cabinet",
+     "F_diao_antidote_father",
+     "F_diao_venom",
+     "F_gan_old_affair",
+     "F_gate_knock",
+     "F_route_wanjie",
+     "F_wuliang_two_sects",
+     "F_zhong_ling_daughter"
+    ],
+    "outside_may_use": [],
+    "forbidden_sayable": [],
+    "forbidden_in_state_text": []
+   },
+   "questions": [
+    {
+     "id": "k071",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k072",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k073",
+     "desc_only": false,
+     "has_desc": true,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k074",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k075",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k076",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k077",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k078",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k079",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k080",
+     "desc_only": true,
+     "has_desc": true,
+     "lines": 1,
+     "facts_said": [
+      "F_zhong_ling_daughter"
+     ],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    }
+   ]
+  },
+  {
+   "char": "mu_wanqing",
+   "scene": "mu_house",
+   "static": {
+    "sayable": [
+     "F_eshen_disciple_killed",
+     "F_four_evils",
+     "F_mu_hunted",
+     "F_mu_lodging",
+     "F_wuliang_two_sects"
+    ],
+    "outside_may_use": [],
+    "forbidden_sayable": [],
+    "forbidden_in_state_text": []
+   },
+   "questions": [
+    {
+     "id": "k081",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k082",
+     "desc_only": true,
+     "has_desc": true,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k083",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k084",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k085",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k086",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k087",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k088",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [
+      "F_eshen_disciple_killed"
+     ],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k089",
+     "desc_only": true,
+     "has_desc": true,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k090",
+     "desc_only": true,
+     "has_desc": true,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    }
+   ]
+  },
+  {
+   "char": "nanhai_eshen",
+   "scene": "highroad_eshen",
+   "static": {
+    "sayable": [
+     "F_eshen_disciple_killed",
+     "F_eshen_wants_heir",
+     "F_four_evils"
+    ],
+    "outside_may_use": [],
+    "forbidden_sayable": [],
+    "forbidden_in_state_text": []
+   },
+   "questions": [
+    {
+     "id": "k091",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k092",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k093",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k094",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k095",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k096",
+     "desc_only": true,
+     "has_desc": true,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k097",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k098",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 0,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action",
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k099",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    },
+    {
+     "id": "k100",
+     "desc_only": false,
+     "has_desc": false,
+     "lines": 1,
+     "facts_said": [],
+     "learned": [],
+     "said_outside": [],
+     "said_forbidden": [],
+     "sayable_outside": [],
+     "sayable_forbidden": [],
+     "ok": true,
+     "parse": [
+      "parse via jev: action"
+     ]
+    }
+   ]
+  }
+ ]
+}

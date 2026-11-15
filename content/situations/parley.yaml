@@ -2,6 +2,9 @@
 # 或由世界层在有人提出请求时开场；自己不会凭空开场。
 id: parley
 origin: generic
+title: '{asker}在同{other}谈条件'
+chronicle_open: '{asker}同{other}谈起了条件'
+chronicle_close: '{asker}同{other}的这场商谈有了结果'
 when: false
 roles:
   asker: {pick: {where: {not: {status: [$it, bound]}}}}
@@ -11,6 +14,7 @@ actions:
   propose:
     role: asker
     lean: true
+    pre: {not: {flag: .proposed}}
     desc: '{asker}说出自己的条件'
     effects:
       - {set_flag: [.proposed, true]}
@@ -27,7 +31,7 @@ actions:
   counter:
     role: other
     lean: true
-    pre: {flag: .proposed}
+    pre: {all: [{flag: .proposed}, {not: {flag: .countered}}]}
     desc: '{other}开出自己的条件'
     effects:
       - {set_flag: [.countered, true]}

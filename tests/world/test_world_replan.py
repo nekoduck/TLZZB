@@ -164,14 +164,15 @@ async def test_keep_current_agenda_when_an_event_triggers(llm, world, recorded):
 
 
 async def test_keep_offered_for_a_step_not_started_yet(llm, world):
-    """前提写的是动手那一刻的条件：还没开始做的一步，前提此刻不成立也照旧（例如「被扣在营里，听候发落」）。"""
+    """前提写的是动手那一刻的条件：还没开始做的一步，前提此刻不成立也照旧（例如「服了毒，往渡口赶」）。"""
     defs, state = world
     dy = state.chars["duan_yu"]
     fx(state, defs, [{"step_state": ["duan_yu", "dy_watch_bout", "done"]}, {"step_state": ["duan_yu", "dy_plead_shennong", "done"]}])
     state.replan_queue.clear()
-    assert dy.agenda.steps[dy.agenda.cursor].id == "dy_held"
+    st = dy.agenda.steps[dy.agenda.cursor]
+    assert st.id == "dy_leave_camp"
     assert goals.keep_allowed(state, defs, dy)
-    fx(state, defs, [{"progress": ["duan_yu", 3]}, {"move": ["duan_yu", "shennong_camp"]}])
+    fx(state, defs, [{"progress": ["duan_yu", 3]}, {"move": ["duan_yu", st.at]}])
     assert not goals.keep_allowed(state, defs, dy)  # 已经在做了，前提却不成立：不再照旧
 
 

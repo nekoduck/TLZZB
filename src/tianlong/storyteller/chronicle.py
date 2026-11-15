@@ -131,12 +131,11 @@ def record(state: WorldState, defs: Defs, events: Iterable[Event] = ()) -> list[
             entries.append(({"tick": state.tick, "text": f"⟦{state.player}⟧识得的字又多了些", "known_to_player": True}, True))
     # 分岔
     marks = list(common.teller(state, "chron_marks", []))
-    texts = {m.id: m.text for m in defs.baseline}
     for d in state.divergences:
         if d.mark in marks:
             continue
         marks.append(d.mark)
-        text = f"与原著的分岔：{texts.get(d.mark, d.mark)}——这件事没有照原样发生"
+        text = f"与原著的分岔：{mark_text(defs, d.mark)}——这件事没有照原样发生"
         entry = {"tick": d.tick, "text": text, "event": d.cause_event, "known_to_player": divergence_known(state, d)}
         entries.append((entry, False))
     seen = list(common.teller(state, "chron_seen", []))
@@ -160,6 +159,12 @@ def record(state: WorldState, defs: Defs, events: Iterable[Event] = ()) -> list[
 
 
 # ---------------------------------------------------------------- 分岔（只读）
+
+
+def mark_text(defs: Defs, mark: str) -> str:
+    """参照点那句话，专名换成 ⟦id⟧：游戏中按玩家所知的叫法显示，收场后才用真名。"""
+    m = next((m for m in defs.baseline if m.id == mark), None)
+    return common.linked(defs, m.text) if m is not None and m.text else mark
 
 
 def divergence_known(state: WorldState, d: Divergence) -> bool:
@@ -246,10 +251,10 @@ def _player_knows_death(state: WorldState, cid: str) -> bool:
 
 def divergence_lines(state: WorldState, defs: Defs, *, final: bool = False) -> list[str]:
     """与原著的分岔：游戏中只列玩家亲历的；收场时列全部，附上追溯到的起因。"""
-    texts = {m.id: m.text for m in defs.baseline}
+    show = common.omni if final else common.pv
     out: list[str] = []
     for d in divergences(state, final=final):
-        line = f"  · {texts.get(d.mark, d.mark)}——没有照原样发生（{common.clock(d.tick)}认定）"
+        line = f"  · {show(state, defs, mark_text(defs, d.mark))}——没有照原样发生（{common.clock(d.tick)}认定）"
         cause = cause_text(state, d) if final else ""
         if cause:
             line += f"；起因：{common.omni(state, defs, cause)}"

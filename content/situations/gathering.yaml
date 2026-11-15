@@ -2,6 +2,9 @@
 # 只要求挑出的两人彼此没有敌意。
 id: gathering
 origin: generic
+title: '{talker}和{listener}在闲谈'
+chronicle_open: '{talker}和{listener}闲谈起来'
+chronicle_close: '{talker}和{listener}的闲谈散了'
 when: true
 roles:
   talker: {pick: {where: {all: [{others_here: [$it, 4]}, {not: {status: [$it, chatted]}}, {not: {status: [$it, captive]}}, {not: {status: [$it, bound]}}]}}}
@@ -26,8 +29,10 @@ actions:
   ask_news:
     role: listener
     lean: true
+    pre: {not: {flag: .asked}}
     desc: '{listener}打听最近的消息'
     effects:
+      - {set_flag: [.asked, true]}
       - {emit: {actor: $listener, verb: ask, text: '{listener}向{talker}打听这一带最近出了什么事'}}
 exit_when: {any: [{flag: .chatted}, {not: {same_loc: [$talker, $listener]}}]}
 max_turns: 3

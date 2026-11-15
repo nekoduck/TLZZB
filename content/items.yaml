@@ -13,13 +13,22 @@ waterskin:
   unknown_alias: 一只水囊
   holder: player
   tags: [tool]
-  props: {}
+  props:
+    # 喝几口水：定一定神（不解饿）。喂给别人喝，是一点小小的照应。
+    on_use:
+      - {mood: [$target, fear, -5]}
+      - {mood: [$target, anger, -5]}
+      - {emit: {actor: $target, verb: drink, text: '{target}就着⟦waterskin⟧喝了几口水'}}
 tinder:
   name: 火折子
   unknown_alias: 一支火折子
   holder: player
   tags: [tool, fire]
-  props: {}
+  props:
+    # 晃亮了照个亮：半个时辰之内手里有火光（状态 lit），夜里、洞里的人老远就看得见这点光（loud）。
+    on_use:
+      - {add_status: [self, lit, {ticks: 4}]}
+      - {emit: {actor: self, verb: light, text: '{self}晃亮了⟦tinder⟧，一小团火光照亮了身周几步', loud: true}}
 silver:
   name: 碎银
   unknown_alias: 几钱碎银
@@ -109,7 +118,12 @@ gate_hammer:
   loc: valley_gate
   feature: knock_tree
   tags: [tool]
-  props: {}
+  props:
+    # 敲树（C13）：细看大树知道规矩，搜一搜取下小锤，拿在手里「用」它。人在谷口时，敲过的人两个时辰之内
+    # 带状态 knocked，里头的人听见了（loud）出来，盘问时认这个状态（challenge 的 admit）。在别处敲不出名堂。
+    on_use:
+      - {schedule: [0, [{add_status: [self, knocked, {ticks: 16}]}, {learn: [self, F_gate_knock, 1.0, saw]}, {emit: {actor: self, verb: knock, text: '{self}拿小锤在谷口的大树上敲了几下，声音传进谷里去', loud: true}}], {at: [self, valley_gate]}]}
+      - {schedule: [0, [{emit: {actor: self, verb: knock, text: '{self}拿小锤敲了几下，没有什么动静'}}], {not: {at: [self, valley_gate]}}]}
 silk_scroll:
   name: 帛卷
   unknown_alias: 一卷帛书

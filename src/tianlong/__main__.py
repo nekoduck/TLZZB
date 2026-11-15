@@ -4,7 +4,7 @@
                             [--save 名字] [--load 名字] [--plain]
     python -m tianlong pipeline <p0..p7|all> [--mock] [--direct]
     python -m tianlong baseline [--seeds 20] [--days 12] [--lucky] [--mock] [--strict]
-    python -m tianlong eval <套件名>
+    python -m tianlong eval <套件名|all|report> [--mock] [--limit N] [--lang zh|en] [--model jev-…] [--out 目录]
 
 ``--config`` 指明 config.toml（默认取当前目录下的）。密钥只从环境变量与 .env 读，从不打印。
 """
@@ -22,9 +22,6 @@ from pathlib import Path
 from typing import Any
 
 from tianlong.config import Settings, load_settings
-
-EVAL_SUITES_DIR = ("evals", "data")
-
 
 # ---------------------------------------------------------------- 参数
 
@@ -59,7 +56,13 @@ def build_parser() -> argparse.ArgumentParser:
     base.add_argument("--strict", action="store_true", help="到期的参照点没有按时成立也算失败（M5 的闸）")
 
     ev = sub.add_parser("eval", help="方案第 11 节的评测")
-    ev.add_argument("suite", nargs="?", default=None, help="套件名")
+    ev.add_argument("suite", nargs="?", default=None, help="套件名；all 跑全部并重出 evals/report.md；不给就列出套件")
+    ev.add_argument("--mock", action="store_true", help="用替身模型，不联网（结果写在 evals/results/mock/）")
+    ev.add_argument("--limit", type=int, default=None, metavar="N", help="每个数据集只跑前 N 条（回合类的套件是回合数）")
+    ev.add_argument("--lang", choices=("zh", "en"), default="zh", help="Jev 的问题用中文还是英文模板（状态仍是中文）")
+    ev.add_argument("--model", default=None, metavar="jev-…", help="换一个 Jev 版本（默认取 config.toml 的）")
+    ev.add_argument("--repeat", type=int, default=5, help="稳定性：同一请求重复几次")
+    ev.add_argument("--out", default=None, metavar="目录", help="结果写到哪里（默认 evals/results）")
     return p
 
 
@@ -249,19 +252,13 @@ def cmd_baseline(args: argparse.Namespace) -> int:
 
 
 def cmd_eval(args: argparse.Namespace) -> int:
-    """评测跑手还没写（留给后来的模块）：这里只说明现状，列出现成的数据集。"""
-    settings = _settings(args)
-    data = settings.root.joinpath(*EVAL_SUITES_DIR)
-    files = sorted(p.name for p in data.glob("*.yaml")) if data.is_dir() else []
-    suite = args.suite or "（未指定）"
-    print(f"eval {suite}: not implemented yet（评测跑手尚未实现）。")
-    if files:
-        print(f"现成的数据集（{data}，格式见 evals/README.md）：")
-        for name in files:
-            print(f"  {name.removesuffix('.yaml')}　{name}")
-    else:
-        print(f"没有找到数据集目录：{data}")
-    return 2
+    """评测（方案 11.5、11.6、11.7）：实现在 tianlong.evalrun，这里只转交参数。套件名不对时列出可用的，返回 2。"""
+    from tianlong import evalrun
+
+    return evalrun.main(
+        _settings(args), args.suite, mock=args.mock, limit=args.limit, lang=args.lang, model=args.model,
+        out=args.out, repeat=args.repeat,
+    )
 
 
 # ---------------------------------------------------------------- 入口

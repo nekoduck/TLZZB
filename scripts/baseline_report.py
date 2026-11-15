@@ -12,7 +12,7 @@
     .venv/bin/python scripts/baseline_report.py --seeds 5 --days 3   # 真骰子种子 0..4，各 3 日
     .venv/bin/python scripts/baseline_report.py --only lucky -v      # 只跑走运，并打印完整摘要
 
-退出码：走运的参照点没有全部按时，或任何一遍有不变量失败、停摆、异常，为 1；否则为 0。
+退出码：走运的参照点没有全部按时（跑的日子不够、by 还没到的不算），或任何一遍有不变量失败、停摆、异常，为 1；否则为 0。
 """
 
 from __future__ import annotations
@@ -54,10 +54,18 @@ def day_of(tick: int | None) -> str:
     return "—" if tick is None else f"{tick}（第{tick // TICKS_PER_DAY + 1}日）"
 
 
+def due(rep: RunReport) -> list:
+    """这一遍跑到的时刻之前该见分晓的参照点（by 还没到的不算未达成）。"""
+    return [m for m in rep.marks.values() if m.by is None or m.by <= rep.end_tick or m.reached is not None]
+
+
 def lucky_table(rep: RunReport) -> list[str]:
     lines = ["| 参照点 | by | 成立于 | 结果 | 说明 |", "| --- | ---: | --- | --- | --- |"]
+    pending = {m.id for m in rep.marks.values()} - {m.id for m in due(rep)}
     for m in rep.marks.values():
         how = "按时" if m.on_time else ("迟到" if m.reached is not None else "未达成")
+        if m.id in pending:
+            how = "还没到期"
         lines.append(f"| {m.id} | {m.by} | {day_of(m.reached)} | {how} | {m.text} |")
     return lines
 
@@ -66,7 +74,7 @@ def real_table(reps: dict[int, RunReport]) -> list[str]:
     n = len(reps)
     first = next(iter(reps.values()))
     lines = [
-        f"| 参照点 | by | 按时 | 迟到 | 未达成 | 按时比例 | 成立时刻的中位数 | 说明 |",
+        "| 参照点 | by | 按时 | 迟到 | 未达成 | 按时比例 | 成立时刻的中位数 | 说明 |",
         "| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
     ]
     for mid, m0 in first.marks.items():
@@ -118,7 +126,7 @@ async def main(argv: list[str] | None = None) -> int:
 
     if args.only != "real":
         rep = await run_one(content, settings, seed=args.first_seed, days=args.days, lucky=True, live=args.live)
-        print(f"\n## 走运（判定一律取成功）\n")
+        print("\n## 走运（判定一律取成功）\n")
         print("\n".join(lucky_table(rep)))
         print(
             f"\n按时 {len(rep.on_time)} / {len(rep.marks)}；迟到 {len(rep.late)}；未达成 {len(rep.missed)}。"
@@ -129,7 +137,7 @@ async def main(argv: list[str] | None = None) -> int:
             print(line)
         if args.verbose:
             print("\n```text\n" + rep.summary() + "\n```")
-        ok = ok and clean(rep) and len(rep.on_time) == len(rep.marks)
+        ok = ok and clean(rep) and all(m.on_time for m in due(rep))
 
     if args.only != "lucky" and args.seeds > 0:
         reps: dict[int, RunReport] = {}

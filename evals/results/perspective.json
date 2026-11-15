@@ -1,0 +1,142 @@
+{
+ "suite": "perspective",
+ "meta": {
+  "generated": "2026-11-15T11:38:45+00:00",
+  "mock": false,
+  "jev_model": "jev-1.14.0",
+  "lang": "zh",
+  "limit": null,
+  "n": 200,
+  "thresholds": {
+   "choice_confidence": 0.55,
+   "choice_margin": 0.15,
+   "needs_thought": 0.6,
+   "noul_yes": 0.6,
+   "sample_floor": 0.15,
+   "narration_flag": 0.7
+  },
+  "claude_key": false,
+  "jev_key": true
+ },
+ "summary": {
+  "turns": 200,
+  "games": 5,
+  "sentences": 673,
+  "options": 615,
+  "violations": 0,
+  "by_kind": {
+   "name": 0,
+   "banned": 0,
+   "digit": 0,
+   "latin": 0,
+   "markup": 0
+  },
+  "turn_kinds": {
+   "turn": 175,
+   "reply": 23,
+   "warn": 2
+  },
+  "ended": {}
+ },
+ "gates": [
+  {
+   "name": "视角（字符串检查）",
+   "passed": true,
+   "detail": "200 回合、673 句叙述、615 个选项里违规 0 处；要求为零。",
+   "fallback": ""
+  }
+ ],
+ "skipped": [
+  "J5 与人工各查一遍：要真模型（C3）写的叙述，没有 ANTHROPIC_API_KEY 时叙述全是模板句。有钥匙后用真模型试玩并抽查（11.7），J5 的准头见核对集。"
+ ],
+ "notes": [
+  "这个套件不论带不带 --mock 都用 Mock 模型开局（叙述与选项是模板句）；随机种子固定，结果可重现。"
+ ],
+ "tables": [
+  {
+   "title": "玩了多少、查了多少",
+   "headers": [
+    "项目",
+    "数"
+   ],
+   "rows": [
+    [
+     "回合（输入）",
+     "200"
+    ],
+    [
+     "其中选选项",
+     "119"
+    ],
+    [
+     "其中自由输入",
+     "81"
+    ],
+    [
+     "开的局数",
+     "5"
+    ],
+    [
+     "耗时的回合（turn）",
+     "175"
+    ],
+    [
+     "不耗时的回话（reply）",
+     "23"
+    ],
+    [
+     "其他（警示、确认、动弹不得等）",
+     "2"
+    ],
+    [
+     "查过的叙述句",
+     "673"
+    ],
+    [
+     "查过的选项",
+     "615"
+    ]
+   ],
+   "note": ""
+  },
+  {
+   "title": "字符串检查的违规",
+   "headers": [
+    "种类",
+    "条数"
+   ],
+   "rows": [
+    [
+     "玩家未知的专名（name）",
+     "0"
+    ],
+    [
+     "禁用词（banned）",
+     "0"
+    ],
+    [
+     "阿拉伯数字（digit）",
+     "0"
+    ],
+    [
+     "拉丁字母（latin）",
+     "0"
+    ],
+    [
+     "提示词标记（markup）",
+     "0"
+    ],
+    [
+     "其他",
+     "0"
+    ],
+    [
+     "合计",
+     "0"
+    ]
+   ],
+   "note": ""
+  }
+ ],
+ "items": []
+}

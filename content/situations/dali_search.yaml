@@ -1,5 +1,8 @@
 id: dali_search
 origin: canon
+title: '{guard}寻到了{heir}，请他回府'
+chronicle_open: '{guard}寻到了{heir}，请他回府'
+chronicle_close: '{guard}请{heir}回府的事有了结果'
 when:
   all:
     - {onstage: dali_guard_chief}
@@ -16,6 +19,7 @@ actions:
   urge:
     role: guard
     lean: true
+    pre: {not: {flag: .urged}}
     desc: '{guard}上前行礼，请{heir}回府'
     effects:
       - {set_flag: [.urged, true]}

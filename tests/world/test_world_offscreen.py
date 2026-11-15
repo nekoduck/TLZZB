@@ -22,7 +22,7 @@ async def test_offmap_arrivals_happen_at_their_start(llm, world):
             if state.chars[cid].onstage and cid not in seen:
                 seen[cid] = state.tick
     assert seen["rui_popo"] == 168
-    assert seen["ping_popo"] == 168
+    assert seen["ping_popo"] == 176  # 比瑞婆婆晚一个时辰入场：她先到，这一位才找得到人跟
     assert seen["envoy_lingjiu"] == 224
     for cid in ("nanhai_eshen", "dali_guard_chief"):
         assert not state.chars[cid].onstage  # 还没到他们的 start

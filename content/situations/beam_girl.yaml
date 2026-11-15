@@ -1,5 +1,8 @@
 id: beam_girl
 origin: canon
+title: '{beam}在梁上出声，替{victim}出头'
+chronicle_open: '{beam}在梁上出声，取笑{bully}，替{victim}出头'
+chronicle_close: '梁上那一声笑引出的事过去了'
 when:
   all:
     - {flag: slapped}
@@ -18,6 +21,7 @@ actions:
     role: beam
     lean: true
     loud: true
+    pre: {not: {flag: .jeered}}
     desc: '{beam}在梁上出声，取笑{bully}欺负不会武功的人'
     effects:
       - {remove_status: [$beam, hidden]}
@@ -42,7 +46,7 @@ actions:
   threaten_beam:
     role: bully
     lean: true
-    pre: {flag: .jeered}
+    pre: {all: [{flag: .jeered}, {not: {flag: .threatened}}]}
     desc: '{bully}仰头喝骂，要梁上的人下来'
     effects:
       - {set_flag: [.threatened, true]}
@@ -62,9 +66,10 @@ actions:
   thank:
     role: victim
     lean: true
-    pre: {flag: .jeered}
+    pre: {all: [{flag: .jeered}, {not: {flag: .thanked}}]}
     desc: '{victim}朝梁上作揖道谢'
     effects:
+      - {set_flag: [.thanked, true]}
       - {rel: [$victim, $beam, affinity, 10]}
       - {emit: {actor: $victim, verb: thank, text: '{victim}朝梁上的{beam}作了个揖'}}
 exit_when: {any: [{flag: .befriended}, {not: {same_loc: [$beam, $victim]}}]}

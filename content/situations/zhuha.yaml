@@ -1,6 +1,9 @@
 # 莽牯朱蛤出没。出没的地点、条件与经过都待原文核对；这里取：高崖下冷水潭，一日至多露面一次。
 id: zhuha
 origin: canon
+title: '{finder}在潭边听见了古怪的叫声'
+chronicle_open: '{finder}在⟦crag_foot⟧的潭边听见了古怪的叫声'
+chronicle_close: '潭边的那阵叫声过去了'
 when:
   all:
     - {item_at: [mangu_zhuha, crag_foot]}
@@ -13,6 +16,7 @@ actions:
   watch:
     role: finder
     lean: true
+    pre: {not: {flag: .seen}}
     desc: '{finder}循着咕咕声往潭边看'
     effects:
       - {set_flag: [.seen, true]}

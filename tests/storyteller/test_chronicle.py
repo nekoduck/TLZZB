@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from tianlong.kernel import actions, resolve, timeflow
-from tianlong.storyteller import chronicle
+from tianlong.storyteller import chronicle, common
 
 SLAP = [
     {"injure": ["duan_yu", 1, "gong_guangjie"]},
@@ -117,18 +117,24 @@ def test_divergences_shown_from_state_only(w):
     _diverge(w, "m_slap")  # 追不到起因：玩家不知道
     chronicle.record(w.s, w.defs, [])
     texts = [e.text for e in w.s.chronicle]
-    assert sum("钟灵在梁上出声替段誉出头" in t for t in texts) == 1
-    assert sum("龚光杰当众掴了段誉一记耳光" in t for t in texts) == 1
-    known = {e.text: e.known_to_player for e in w.s.chronicle}
-    assert [v for t, v in known.items() if "出头" in t] == [True]
-    assert [v for t, v in known.items() if "耳光" in t] == [False]
-    # 重复调用不重复记
+    # 条目里的专名写成 ⟦id⟧：显示时才按玩家所知换成叫法或真名
+    assert sum("⟦zhong_ling⟧在梁上出声替⟦duan_yu⟧出头" in t for t in texts) == 1
+    assert sum("⟦gong_guangjie⟧当众掴了⟦duan_yu⟧一记耳光" in t for t in texts) == 1
+    known = {e.text: (e.known_to_player, e.event) for e in w.s.chronicle}
+    assert [v for t, v in known.items() if "出头" in t] == [(True, cause.id)]
+    assert [v for t, v in known.items() if "耳光" in t] == [(False, None)]
+    # 重复调用不重复记，也不往 state.divergences 里添东西
     chronicle.record(w.s, w.defs, [])
     assert [e.text for e in w.s.chronicle] == texts
+    assert [d.mark for d in w.s.divergences] == ["m_beam_girl", "m_slap"]
+    # 游戏中：只列玩家知道的那条，用他眼里的叫法，不露真名
     shown = chronicle.render(w.s, w.defs)
-    assert "钟灵在梁上出声替段誉出头" in shown
-    assert "龚光杰当众掴了段誉一记耳光" not in shown and "起因" not in shown
+    assert "梁上那少女在梁上出声替段公子出头" in shown
+    assert "钟灵" not in shown and "段誉" not in shown and "龚光杰" not in shown
+    assert "一记耳光" not in shown and "起因" not in shown
+    # 收场后：全部列出，用真名，附起因
     final = chronicle.render(w.s, w.defs, final=True)
+    assert "钟灵在梁上出声替段誉出头" in final
     assert "龚光杰当众掴了段誉一记耳光" in final and "起因：你挡在段誉面前" in final
     assert [d.mark for d in chronicle.divergences(w.s)] == ["m_beam_girl"]
     assert {d.mark for d in chronicle.divergences(w.s, final=True)} == {"m_beam_girl", "m_slap"}
@@ -156,11 +162,13 @@ def test_divergence_becomes_known_when_cause_is_heard_of(w):
     assert f"E{cause.id}" in w.s.facts and w.s.player not in cause.witnesses
     _diverge(w, "m_diao_bite", cause=cause.id, known=False)
     chronicle.record(w.s, w.defs, [])
-    assert "闪电貂咬伤司空玄" not in chronicle.render(w.s, w.defs)
+    assert "咬伤" not in chronicle.render(w.s, w.defs)
     assert len(chronicle.columns(w.s)["unknown"]) == 1
     w.fx([{"learn": ["player", f"E{cause.id}", 0.8, "told:sn_guard_2"]}])
     assert chronicle.divergence_known(w.s, w.s.divergences[0])
-    assert "闪电貂咬伤司空玄" in chronicle.render(w.s, w.defs)
+    shown = chronicle.render(w.s, w.defs)
+    assert "一只灰白色的小兽咬伤" in shown and "闪电貂" not in shown  # 那只小兽的名字他还不知道
+    assert "闪电貂咬伤司空玄" in chronicle.render(w.s, w.defs, final=True)
     assert len(chronicle.columns(w.s)["heard"]) == 1 and not chronicle.columns(w.s)["unknown"]
 
 
@@ -176,6 +184,18 @@ def test_divergence_cause_survives_event_tail(w):
     assert len(lines) == 2
     assert "起因：龚光杰一掌掴在段誉脸上" in lines[0]
     assert "起因" not in lines[1]
+
+
+def test_mark_text_is_linked_before_display(w):
+    """参照点那句话照原著写着真名：先换成 ⟦id⟧，游戏中才不会把玩家不知道的名字露出来。"""
+    assert common.linked(w.defs, "龚光杰当众掴了段誉一记耳光") == "⟦gong_guangjie⟧当众掴了⟦duan_yu⟧一记耳光"
+    assert common.linked(w.defs, "⟦duan_yu⟧见到了钟灵") == "⟦duan_yu⟧见到了⟦zhong_ling⟧"  # 已经是 ⟦id⟧ 的不动
+    assert common.linked(w.defs, "") == "" and chronicle.mark_text(w.defs, "no_such_mark") == "no_such_mark"
+    unknown = common.unknown_names(w.s, w.defs)
+    for m in w.defs.baseline:
+        shown = common.pv(w.s, w.defs, chronicle.mark_text(w.defs, m.id))
+        assert "⟦" not in shown and not any(n in shown for n in unknown), shown
+        assert common.omni(w.s, w.defs, chronicle.mark_text(w.defs, m.id)) == m.text
 
 
 def test_divergences_listed_in_order(w):

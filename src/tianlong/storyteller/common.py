@@ -72,6 +72,31 @@ def safe_text(state: WorldState, defs: Defs, text: str) -> str:
     return refs.REF_RE.sub(sub, text or "")
 
 
+_REF_SPLIT = re.compile(r"(⟦[^⟧]*⟧)")
+LINK_MIN = 2  # 至少两个字的专名才换
+
+
+def linked(defs: Defs, text: str) -> str:
+    """把一句白话里的专名换成 ⟦id⟧（参照点那句话是照原著写的白话，直接写着真名）。
+
+    换过之后才能按玩家所知来渲染：不知其名的人显示成他眼里的叫法，收场后再用真名。长的名字先换。纯函数。
+    """
+    table = {**defs.lexicon.names, **defs.lexicon.terms}
+    pairs = sorted(
+        ((term.name, eid) for eid, term in table.items() if term.name and len(term.name) >= LINK_MIN),
+        key=lambda x: -len(x[0]),
+    )
+    parts = _REF_SPLIT.split(text or "")
+    for i, part in enumerate(parts):
+        if part.startswith("⟦"):
+            continue
+        for name, eid in pairs:
+            if name in part:
+                part = part.replace(name, refs.ref(eid))
+        parts[i] = part
+    return "".join(parts)
+
+
 def clock(tick: int) -> str:
     return timeflow.clock_text(tick)
 

@@ -2,6 +2,9 @@
 # delay 取 0：消息当场传开，同一个时辰里动身下山的人也听得到）。
 id: siege
 origin: canon
+title: '{besieger}带人到了山门外，{defender}守着山门'
+chronicle_open: '{besieger}带人到了山门外，传话围山'
+chronicle_close: '围山的话传到了，山门内外从此对峙'
 when:
   all:
     - {not: {flag: siege_began}}
@@ -17,6 +20,7 @@ actions:
     role: besieger
     lean: true
     loud: true
+    pre: {not: {flag: .declared}}
     desc: '{besieger}在山门外高声传话，说神农帮已把山围了'
     effects: &declare
       - {set_flag: [siege_on, true]}

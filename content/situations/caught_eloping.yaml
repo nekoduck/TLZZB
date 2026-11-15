@@ -3,6 +3,9 @@
 # 逃不掉就被追上，取命之前掷一次侥幸。两人被撞见一次之后就加倍小心（lovers_witnessed），不再开场。
 id: caught_eloping
 origin: canon
+title: '{eloper}与{partner}私逃，被{witness}撞见'
+chronicle_open: '{witness}撞见了{eloper}与{partner}私逃'
+chronicle_close: '{eloper}与{partner}私逃被撞见的事有了结果'
 when:
   all:
     - {not: {flag: lovers_witnessed}}
@@ -27,6 +30,7 @@ actions:
     role: eloper
     lean: true
     loud: true
+    pre: {not: {flag: .exposed}}
     desc: '{eloper}拔剑逼向{witness}，要杀人灭口'
     effects:
       - {set_flag: [.exposed, true]}
@@ -36,9 +40,10 @@ actions:
   urge_leave:
     role: partner
     lean: true
-    pre: {flag: .exposed}
+    pre: {all: [{flag: .exposed}, {not: {flag: .urged}}]}
     desc: '{partner}拉着{eloper}催他快走'
     effects:
+      - {set_flag: [.urged, true]}
       - {emit: {actor: $partner, verb: urge, text: '{partner}拉着{eloper}的袖子，催他别耽搁'}}
   plead_silence:
     role: witness

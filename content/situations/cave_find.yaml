@@ -1,6 +1,9 @@
 # 帛卷还在洞里、有人在洞里，才会开场。卷轴被人拿走，这件事就不再发生。
 id: cave_find
 origin: canon
+title: '{finder}在石洞里对着一尊玉像'
+chronicle_open: '{finder}进了⟦valley_cave⟧，见到一尊玉像'
+chronicle_close: '{finder}在石洞里的那番际遇过去了'
 when:
   all:
     - {item_at: [silk_scroll, valley_cave]}
@@ -12,7 +15,7 @@ actions:
   read_wall:
     role: finder
     lean: true
-    pre: {stat: [$finder, literacy, '>=', 2]}
+    pre: {all: [{stat: [$finder, literacy, '>=', 2]}, {not: {flag: .read}}]}
     desc: '{finder}细看石壁上的刻字'
     effects:
       - {set_flag: [.read, true]}
@@ -21,7 +24,7 @@ actions:
   kowtow:
     role: finder
     lean: true
-    pre: {flag: .read}
+    pre: {all: [{flag: .read}, {not: {flag: .found}}]}
     cost: 8
     desc: '{finder}对着玉像一个接一个地磕头'
     effects: &kowtow

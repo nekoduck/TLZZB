@@ -1,5 +1,8 @@
 id: envoy_arrival
 origin: canon
+title: '{envoy}到了，要{head_a}与{head_b}听令'
+chronicle_open: '{envoy}到了⟦wuliang_mount⟧，亮出记号传令'
+chronicle_close: '{envoy}的号令传下去了'
 when:
   all:
     - {not: {flag: envoy_received}}
@@ -17,6 +20,7 @@ actions:
     role: envoy
     lean: true
     loud: true
+    pre: {not: {flag: .shown}}
     desc: '{envoy}亮出记号，传令两派罢手'
     effects: &show
       - {set_flag: [envoy_received, true]}
@@ -29,16 +33,18 @@ actions:
   bow_a:
     role: head_a
     lean: true
-    pre: {flag: .shown}
+    pre: {all: [{flag: .shown}, {not: {flag: .bowed_a}}]}
     desc: '{head_a}躬身领命'
     effects:
+      - {set_flag: [.bowed_a, true]}
       - {emit: {actor: $head_a, verb: bow, text: '{head_a}躬身领命，不敢多说一句'}}
   bow_b:
     role: head_b
     lean: true
-    pre: {flag: .shown}
+    pre: {all: [{flag: .shown}, {not: {flag: .bowed_b}}]}
     desc: '{head_b}俯首请罪'
     effects:
+      - {set_flag: [.bowed_b, true]}
       - {emit: {actor: $head_b, verb: bow, text: '{head_b}俯首请罪，把拖延的缘故推到旁人身上'}}
   question:
     role: envoy

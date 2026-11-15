@@ -423,18 +423,20 @@ goals:
           - {id: away, text: 往⟦$safe⟧避一避, at: $safe, do: {verb: wait}, takes: 16}
 
   # ------------------------------------------------------------ get_stronger：手里有秘籍，或身边有肯教的人
+  # 好奇的人手里有一卷没读过的书，也会翻开来读（不只是想变强的人）。
+  # 秘籍写明是哪一件：pick_item 的 where 认不出「这是一本秘籍」（没有按 tags 的谓词），按 id 挑第一件
+  # 手里的东西多半挑不中它。再有别的秘籍，照样添一条。
   - id: study_manual
-    drive: get_stronger
-    text: 研读⟦$manual⟧
-    when: {not: {status: [self, captive]}}
+    drive: [get_stronger, curiosity]
+    text: 研读⟦silk_scroll⟧
+    when: {all: [{has: [self, silk_scroll]}, {not: {status: [self, captive]}}]}
     bind:
-      manual: {pick_item: {where: {has: [self, $it]}}}
-      art: {teaches_of: $manual}
+      art: {teaches_of: silk_scroll}
     urgency: 2
     templates:
       - id: read
         steps:
-          - {id: read, text: 照着⟦$manual⟧研读⟦$art⟧, do: {verb: study, item: $manual, art: $art}, pre: {has: [self, $manual]}, takes: 32}
+          - {id: read, text: 照着⟦silk_scroll⟧研读⟦$art⟧, do: {verb: study, item: silk_scroll, art: $art}, pre: {has: [self, silk_scroll]}, takes: 32}
 
   - id: seek_teacher
     drive: get_stronger

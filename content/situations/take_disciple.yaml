@@ -1,6 +1,9 @@
 # 南海鳄神遇见根骨合意的人（取悟性最高一档、还没被他扣下的）。
 id: take_disciple
 origin: canon
+title: '{eshen}要收{chosen}做徒弟'
+chronicle_open: '{eshen}看中了{chosen}，要收他做徒弟'
+chronicle_close: '{eshen}要收{chosen}做徒弟的事有了结果'
 when:
   all:
     - {onstage: nanhai_eshen}
@@ -23,6 +26,7 @@ actions:
     role: eshen
     lean: true
     loud: true
+    pre: {not: {flag: .claimed}}
     desc: '{eshen}认定{chosen}根骨像他，要收作徒弟'
     effects: &claim
       - {set_flag: [.claimed, true]}
@@ -42,7 +46,7 @@ actions:
   refuse:
     role: chosen
     lean: true
-    pre: {flag: .claimed}
+    pre: {all: [{flag: .claimed}, {not: {flag: .refused}}]}
     desc: '{chosen}说什么也不肯拜师'
     effects:
       - {set_flag: [.refused, true]}
@@ -50,9 +54,10 @@ actions:
   threaten:
     role: eshen
     lean: true
-    pre: {flag: .refused}
+    pre: {all: [{flag: .refused}, {not: {flag: .threatened}}]}
     desc: '{eshen}暴跳如雷，扬言不拜师就拧断他的脖子'
     effects:
+      - {set_flag: [.threatened, true]}
       - {emit: {actor: $eshen, verb: threaten, text: '{eshen}暴跳如雷，扬言不拜师就拧断{chosen}的脖子', loud: true, kinds: [{k: threaten, who: $chosen, by: $eshen}]}}
 exit_when: {any: [{flag: .accepted}, {not: {same_loc: [$eshen, $chosen]}}, {not: {alive: $chosen}}]}
 max_turns: 8

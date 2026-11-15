@@ -1,7 +1,8 @@
 # 通用：外人进了有主的地方，被主人家的人拦下盘问。开场条件写在角色位的 pick 里（when 恒真），
 # 世界层在有人的地点逐个尝试绑定。盘问过的人带状态 vetted：放行的一日之内不再问，赶开的两个时辰之内不再问。
 # 拿人要有缘由：离场结算里只有对来人怀着敌意的主人家才动手；神农帮营地另有 camp_capture。
-# 万劫谷的规矩：先在谷口敲树（状态 knocked，见 items.yaml 的 gate_hammer；不在眼前的人只看他知不知道这条规矩）。
+# 万劫谷的规矩：先在谷口敲树。眼前的人：细看大树知道规矩，取下小锤「用」它，两个时辰之内带状态 knocked
+# （见 items.yaml 的 gate_hammer），盘问的人认这个状态（admit）；没敲过的，仆役照例赶人。不在眼前的人只看他知不知道这条规矩。
 id: challenge
 origin: generic
 title: '{keeper}拦住{intruder}盘问来历'
@@ -76,7 +77,7 @@ actions:
     effects:
       - {add_status: [$intruder, vetted, {ticks: 96}]}
       - {set_flag: [.passed, true]}
-      - {emit: {actor: $keeper, verb: let_pass, text: '{keeper}见{intruder}是照规矩敲过树、等在谷口的，点点头，引他往里走'}}
+      - {emit: {actor: $keeper, verb: let_pass, text: '{keeper}听见过谷口的敲树声，知道{intruder}是照规矩来的，点点头，让他进去了'}}
   let_pass:
     role: keeper
     pre: {flag: .asked}

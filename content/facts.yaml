@@ -54,7 +54,7 @@ F_envoy_due:
   tags: [lingjiu, shennong]
   known_by: [sikong_xuan, sn_chief_a, envoy_lingjiu]
 F_duanchang_antidote_sikong:
-  text: ⟦duanchang_san⟧的解药在⟦sikong_xuan⟧身上。
+  text: ⟦duanchang_antidote⟧在⟦sikong_xuan⟧身上，要解⟦duanchang_san⟧的毒只有找他。
   tags: [shennong, poison]
   known_by: [sikong_xuan, sn_chief_a, sn_chief_b]
 F_diao_venom:

@@ -1,6 +1,9 @@
 # 通用：有人受伤或中毒，身边有对他有好感的人。照料、找药。
 id: tending
 origin: generic
+title: '{carer}在照料{patient}'
+chronicle_open: '{carer}照料起{patient}来'
+chronicle_close: '{carer}这一回照料{patient}的事完了'
 when: true
 roles:
   patient:

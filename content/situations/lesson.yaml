@@ -2,6 +2,9 @@
 # 这里只给场面：讲一段、问一句。
 id: lesson
 origin: generic
+title: '{teacher}在指点{student}'
+chronicle_open: '{teacher}指点起{student}来'
+chronicle_close: '{teacher}对{student}的这番指点完了'
 when: true
 roles:
   teacher:
@@ -36,8 +39,10 @@ actions:
   ask_question:
     role: student
     lean: true
+    pre: {not: {flag: .asked}}
     desc: '{student}向{teacher}请教'
     effects:
+      - {set_flag: [.asked, true]}
       - {emit: {actor: $student, verb: ask, text: '{student}向{teacher}请教不明白的地方'}}
 exit_when: {any: [{flag: .taught}, {not: {same_loc: [$teacher, $student]}}]}
 max_turns: 4

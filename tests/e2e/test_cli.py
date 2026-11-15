@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import subprocess
@@ -97,10 +98,29 @@ def test_piped_play_session_and_replay(tmp_path: Path) -> None:
     assert r4.returncode != 0 and "Traceback" not in r4.stderr
 
 
-def test_eval_stub_lists_datasets() -> None:
-    r = _run(["eval", "classify"], cwd=REPO)
-    assert r.returncode == 2
-    assert "not implemented yet" in r.stdout and "classify.yaml" in r.stdout and "anticheat" in r.stdout
+def test_eval_lists_suites_and_runs_one(tmp_path: Path) -> None:
+    # 不给套件名（或给错）：列出可用的套件，返回 2
+    r = _run(["eval"], cwd=REPO)
+    assert r.returncode == 2 and "Traceback" not in r.stderr
+    for name in ("classify", "decisions", "checks", "zh_en", "anticheat", "refusals", "knowledge", "perspective",
+                 "latency_cost", "all"):
+        assert name in r.stdout, name
+    r = _run(["eval", "no_such_suite"], cwd=REPO)
+    assert r.returncode == 2 and "no_such_suite" in r.stdout
+    # 跑一个套件：Mock、前 5 条，打印表并把结果写进指定的目录（不动仓库里的 evals/results）
+    out = tmp_path / "results"
+    r = _run(["eval", "checks", "--mock", "--limit", "5", "--out", str(out)], cwd=REPO)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "== eval checks" in r.stdout and "| --- |" in r.stdout and "narration_flag" in r.stdout
+    res = json.loads((out / "checks.json").read_text(encoding="utf-8"))
+    assert res["suite"] == "checks" and res["meta"]["mock"] is True and res["meta"]["n"] == 5
+    assert [g["name"] for g in res["gates"]] == ["J5 核对（7.12）"]
+    # 配置放在别处（数据集目录不在 config.toml 旁边）也能跑；report 按已有的结果重出报告
+    cfg = _config(tmp_path)
+    r = _run(["--config", str(cfg), "eval", "report", "--mock", "--out", str(out)], cwd=tmp_path)
+    assert r.returncode == 0, r.stdout + r.stderr
+    text = (out / "report.md").read_text(encoding="utf-8")
+    assert "## 结论：7.12 的路由与门槛" in text and "## 核对集" in text
 
 
 def test_no_command_prints_help() -> None:
@@ -108,7 +128,7 @@ def test_no_command_prints_help() -> None:
     assert r.returncode == 2 and "play" in r.stdout and "baseline" in r.stdout
 
 
-@pytest.mark.parametrize("argv", [["pipeline", "--help"], ["play", "--help"], ["baseline", "--help"]])
+@pytest.mark.parametrize("argv", [["pipeline", "--help"], ["play", "--help"], ["baseline", "--help"], ["eval", "--help"]])
 def test_subcommand_help(argv: list[str]) -> None:
     r = _run(argv, cwd=REPO)
     assert r.returncode == 0 and "--mock" in r.stdout

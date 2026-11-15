@@ -2,6 +2,9 @@
 # 不姓段时夫人谢过来人，自己拿主意（重新打算）。
 id: wanjie_news
 origin: canon
+title: '{messenger}到钟家正厅报信'
+chronicle_open: '{messenger}到了⟦zhong_hall⟧，带来小姐被扣的消息'
+chronicle_close: '{messenger}报信的事有了结果'
 when:
   all:
     - {not: {flag: zhong_news_delivered}}
@@ -24,6 +27,7 @@ actions:
   tell_news:
     role: messenger
     lean: true
+    pre: {not: {flag: .told}}
     desc: '{messenger}把小姐被扣的消息说了'
     effects:
       - {set_flag: [.told, true]}
@@ -41,7 +45,7 @@ actions:
   ask_name:
     role: mistress
     lean: true
-    pre: {flag: .told}
+    pre: {all: [{flag: .told}, {not: {flag: .asked}}]}
     desc: '{mistress}细问{messenger}的姓名来历'
     effects:
       - {set_flag: [.asked, true]}
@@ -50,7 +54,7 @@ actions:
     role: master
     lean: true
     loud: true
-    pre: {all: [{flag: .asked}, {role: [$messenger, 'surname:段']}, {same_loc: [$master, $messenger]}]}
+    pre: {all: [{flag: .asked}, {not: {flag: .raged}}, {role: [$messenger, 'surname:段']}, {same_loc: [$master, $messenger]}]}
     desc: '{master}听说来人姓段，当场发作'
     effects:
       - {set_flag: [.raged, true]}

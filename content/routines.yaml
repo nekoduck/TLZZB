@@ -28,8 +28,8 @@ wuliang_disciple:                    # 无量剑的弟子
     once_per: 96
   - do: {verb: wait}
 
-wanjie_servant:                      # 万劫谷的仆役，不大开口
-  - do: {verb: setpiece, names: [question, drive_off, feed, tend]}
+wanjie_servant:                      # 万劫谷的仆役，不大开口；来人照规矩敲过树（admit 的前提）就放行，否则赶走
+  - do: {verb: setpiece, names: [question, admit, drive_off, feed, tend]}
   - do: {verb: setpiece}
   - do: {verb: help, target: injured_ally}
     once_per: 8
