@@ -1,0 +1,75 @@
+export const meta = {
+  name: 'tianlong-wave5',
+  description: 'Wave 5 (subset via args): finish acceptance, fix the four xfail divergence scenarios, eval/test leftovers',
+  phases: [{ title: 'Build', detail: 'acceptance wave' }],
+}
+
+const COMMON = `
+You are a coding agent working in the git repo /home/user/TLZZB: a Python 3.12 terminal text sandbox game set at the opening of Jin Yong's novel 天龙八部. The whole game exists and is tested (about 940 tests): kernel, content loader/validator, llm layer (Jev + Claude clients, mock, record/replay), parser, minds, world, storyteller, narrator, store, ui, pipeline, game loop (src/tianlong/game.py), CLI (src/tianlong/__main__.py), seed content, eval datasets (evals/data, formats in evals/README.md). Other agents work in parallel on other paths.
+
+Orientation (be economical — a hard usage budget applies and you may be cut off at any moment):
+- Do NOT read docs/PLAN.md in full (140 KB, Chinese, the authoritative spec). List headings with: grep -n '^##' docs/PLAN.md — and read only the line ranges you need (sections named in your task).
+- docs/ARCHITECTURE.md (contracts; short, read it), docs/API_NOTES.md (index), DECISIONS.md (grep keywords, do not read whole), docs/ISSUES_wave3.md (issue list incl. 'Wave 4 follow-ups' T1–T8), docs/wip/*.md (other agents' progress logs incl. API changes of wave 3: read docs/wip/kernel-fix.md and docs/wip/game.md headers if you call those APIs).
+- Each package's __init__.py re-exports its public API. Read the code you call.
+- Keep a progress log at docs/wip/<your label>.md: after EACH completed item append one line (what is done, what is next, any decision as a Chinese one-liner for DECISIONS.md). If the file already exists, a previous run of you was interrupted: read it first, inspect git status/diff for your paths, and resume — do not redo finished work.
+
+Hard rules:
+- Only modify the paths you OWN (listed below) plus docs/wip/<your label>.md. No git commands that change state.
+- Layering: kernel imports nothing of ours; llm doesn't import kernel; upper modules don't import each other; game wires them.
+- All world-state changes through kernel effects / resolve.apply. Model calls only through the llm facade with PLAN 4.3 fallbacks. Mock mode deterministic and offline. No character/place names or plot in src/ (they live in content/, prompts/, evals/, tests/).
+- Player-facing text in Simplified Chinese; never reproduce novel text.
+- Default test run stays offline and reasonably fast (mark long tests with @pytest.mark.slow only if > 60 s; network tests with @pytest.mark.network — excluded by default). .venv/bin/python -m pytest -q; .venv/bin/ruff check src tests scripts clean for your paths.
+- Environment facts: there is NO Claude API key (ANTHROPIC_API_KEY unset) and NO novel corpus here. There IS a real Jev key (env JEV_KEY, read by settings automatically); the user has authorized real Jev calls (cost is negligible: $0.042 per million input tokens). Never print the key.
+
+Final answer (a return value, concise): (1) files changed; (2) API/CLI other agents must know; (3) test counts (your dirs + full suite); (4) decisions, one line each in Chinese; (5) measured results (numbers) if your task has them; (6) remaining issues, precise.
+`
+
+const ACCFIN = COMMON + `
+YOUR LABEL: acceptance  (you are RESUMING: read docs/wip/acceptance.md first — a previous run wrote all eight 11.4 scenarios (tests/acceptance: 11 passed, 4 xfailed), the fuzz harness scripts/fuzz.py, self-tests of the scanners, and was cut off before writing docs/acceptance.md).
+TASK: finish the acceptance work of PLAN 11.2 and 11.4.
+OWNED PATHS: tests/acceptance/**, scripts/fuzz.py, docs/acceptance.md, src/tianlong/testing/**.
+Do, in order:
+1. Fuzz results: the full PLAN run (20 seeds x 2,000 turns, 4 jobs) was left running in the background writing /tmp/claude-0/-home-user-TLZZB/d7b9f8e2-e70a-5fc4-8d97-f15f3ac7b99a/scratchpad/acc_fuzz_run2.jsonl and acc_fuzz_run2.md; it may have finished all 20 seeds (check with pgrep -af fuzz.py and the files). If it finished, use it; if it died, say how many seeds completed. Note the code changed while it ran (other agents' fixes), so ALSO run a fresh, shorter confirmation on the current code: python scripts/fuzz.py --seeds 6 --turns 2000 --jobs 4 (background, nohup; measure; stop at 30 minutes at the latest) and report both.
+2. Write docs/acceptance.md (Chinese; the scratchpad has acc_doc_template.md and acc_writedoc.py from the previous run): 11.2 results (seeds, turns, exceptions, invariant failures, rollbacks, stalls, quiet days, memory/save-size curve), 11.4 table (scenario → pass / xfail with the precise reason), how to re-run.
+3. Another agent ('scenario-fix') is fixing the product/content gaps behind the four xfails right now (告发私情, 替人送信's persuasion link, 提前救人, 拜入门派's faction enmity). Near the END of your work re-run tests/acceptance; for every xfail that now passes remove the xfail marker (strict assertions stay as the PLAN requires); for those still failing keep xfail with the up-to-date precise reason. Never weaken an assertion to make it pass.
+4. Full suite + ruff; final report with the numbers.
+`
+
+const SCENFIX = COMMON + `
+YOUR LABEL: scenario-fix.
+TASK: close the product/content gaps that make four of the PLAN 11.4 divergence scenarios xfail, plus a few leftovers. The acceptance tests are in tests/acceptance/test_divergence.py (read the four xfail reasons there and in docs/wip/acceptance.md); they are owned by the 'acceptance' agent who will remove the xfail markers when your fixes land — you may run them but not edit them.
+OWNED PATHS: content/**, src/tianlong/kernel/**, src/tianlong/world/**, src/tianlong/minds/**, src/tianlong/parser/candidates.py and parser/binding.py (gap 2 only), tests/kernel/**, tests/world/**, tests/minds/**, tests/content/**, tests/parser/** (regression tests for your changes), docs/content_notes.md, docs/CONTENT_FORMAT.md (document new data keys).
+Principles (PLAN 1.1, 3.4, 9.2): fix by giving characters real reasons and the world real mechanics — never by rails. No protected characters, nothing that pulls back to canon. Names and plot stay in content/; src stays generic and data-driven.
+Gaps:
+1. 告发私情 (PLAN 3.4 example 2, 11.4): when the player tells zuo_zimu the lovers' secret (F_lovers), he never acts on it, and caught_eloping still fires with duan_yu as the witness. A sect head who learns of such a scandal should react by his drives (clan_honor): a goals.yaml rule (drive × 'believes a fact tagged as a sect scandal about his own disciples' → seize/confine them, question them) so the lovers are seized, or — if they notice — flee early by another route/time; either way caught_eloping's precondition (they are eloping along that path at that time with a witness present) no longer holds for duan_yu. Replan must be triggered when someone learns a salient fact relevant to a drive (check world/replan triggers and kernel events queue_replan on learn; PLAN 8.3 trigger list: '出了与他的所求有关的大事').
+2. 替人送信 (3.4 example 3): the player's request to sikong_xuan to be the poisoned messenger instead of duan_yu is parsed as release+swap → verdict never, and nothing grants the role errand_volunteer that the poison_errand situation's messenger pick refers to. Make the offer a first-class thing: a request candidate 'let me go in his place / send me' (take_place_of) that the kernel adjudicates normally (it helps sikong's urgent need: +30 leverage; class costly/risky for the asker, not 'betray' for him), and when agreed, an effect marks the volunteer (role errand_volunteer or a situation-local binding) so poison_errand binds the player as messenger and duan_yu as hostage. Then wanjie_news gets the player as the messenger (not surnamed 段) so zhong_wanchou's anti-Duan branch does not fire.
+3. 提前救人: when zhong_ling agrees to follow the player out of the camp before the bite, the agreed 'follow' is completed instantly and she walks back in the same micro round (her agenda step pulls her back), and duan_yu still takes the duanchang poison through sikong's bargain condition. Fix: an agreed follow/come-along request should make the follower keep following (kernel 'follow' state persists until cancelled; her agenda step is deferred while she follows a friend she agreed to follow — a 'following' character does not pursue 'go' steps), and poison_errand must require what the PLAN says (sikong bitten AND a captive AND knowledge of where the antidote is) — check that the bargain-condition path cannot make someone take the duanchang poison without the situation's preconditions; the shennong side must replan after their captive is gone.
+4. 拜入门派: '神农帮把他当对头' — there is no faction enmity in content. Add a data-driven enmity table (e.g. world.yaml enmity: [[role_a, role_b, since_flag?]]) read by kernel danger.is_hostile / default relations (while the siege is on, shennong_member and wuliang_disciple are hostile to each other), so a player who becomes wuliang_disciple is challenged/attacked by shennong guards and treated accordingly by routines and situations (camp_capture, challenge), and loses that hostility if the role is removed or the siege ends.
+Leftovers (after the four gaps):
+5. kernel invariants: invariants.check / resolve._guarded take pending_before before the apply, so a step inserted during the same apply (agree + the agreed action in one resolve.apply) is treated as 'finished or void' and the whole apply is rolled back. Fix the root cause (steps created during the apply are legitimate sources of events in that apply) and simplify the two workarounds (minds.apply_decision, world.offscreen.reply) only if trivial.
+6. content: situations/camp_capture.yaml 'explain' sets .questioned making the chief's 'question' illegal in the same micro round (log noise); goals.yaml: the grudge goal (找X讨回面子) and survive_flee (躲开X) trigger each other hourly for two mutually hostile characters (zuo_zimu / xin_shuangqing) — survive_flee should require the foe to be stronger or actively hunting.
+7. NPC requests whose step has no ask use the step text as gist (「甲向乙开口相求：去请乙……」) — give those agenda steps a proper ask/gist in content or build the gist from do.
+Verify with: tests/acceptance (the four xfails should XPASS — report which), tests/content/test_baseline.py (lucky baseline must STILL hit 19/19 on time; real-dice 3 seeds clean), full suite, ruff. Report precisely what each scenario needed.
+`
+
+const EVALFIX = COMMON + `
+YOUR LABEL: evals-fix.
+TASK: leftovers around the eval runner and small product nits, then regenerate the report from real Jev runs.
+OWNED PATHS: src/tianlong/evalrun/**, tests/evalrun/**, evals/data/classify.yaml (item relabels only, see 3), evals/results/**, evals/report.md, src/tianlong/parser/rules.py and parser/lexical.py (item 5 only), src/tianlong/game.py (item 6 only), tests/parser/**, tests/game/**, README.md (milestone table cells only).
+Do:
+1. tests/evalrun/test_suites.py::test_raw_answers_and_the_repaired_mapping fails: it asserts the OLD parser behaviour (kind 'both' for kind=act@0.99 with has_speech 0.66). The parser now (correctly) yields 'act'. Update the test to the new behaviour; evalrun/classify.py repaired() is now redundant — remove it and its report column, or keep it only if it still tells something.
+2. evalrun/classify.py confidence_of hardcodes the target question and treats any mid-zone has_speech as unsure → use parser intake.gate_keys(answers, intent) so the 7.12 gate recomputation mirrors the parser exactly. Update src/tianlong/evalrun/en/j1_questions.md to the current wording/structure of prompts/jev/j1_questions.md (target = things, target2 = people, has_speech, claim, self, kind.meta) — translate faithfully. Fix the auto-generated report sentence that still says J1 answers are lost when landing (evalrun/report.py) so it reflects current numbers.
+3. evals/data/classify.yaml: six items (c018, c063, c093, c152, c173, c235) have gold 'steal' of an item the player cannot see (kernel perception.item_visible), so no route can ever produce a legal action. For each: if the scene's intent is clearly 'steal something visible', make the item visible in the scene setup (e.g. the player examined the holder — use setup effects) — otherwise relabel as impossible. Keep tests/evals green.
+4. Re-run for real (Jev key available): python -m tianlong eval classify ; eval zh_en ; eval decisions ; eval checks ; eval anticheat ; eval refusals ; eval latency_cost --limit 100 (PLAN 11.7 asks for 100 turns) ; eval report. Report the final numbers and the 7.12 verdicts (config currently: route.classify = claude_first, narration_flag = 0.80 — say whether the numbers still support that).
+5. Parser rules (mock/rules route): 「我向段公子打个招呼」 binds to an attack (the 打 keyword). Fix the lexical matcher generically (multi-character verb phrases beat single characters; 打招呼/打听/打量/打点 are not attacks — table lives in data, not names in src) with regression tests.
+6. game._interrupts (T4): speech among NPCs that is not addressed to the player and not loud should not interrupt quiet long actions (wait/rest/study/practice of an hour or more) — only things addressed to the player, loud events, arrivals/departures, danger changes and situation openings do. Tests.
+7. README.md milestone table: fill the cells marked 待填 from evals/report.md, docs/acceptance.md (if present; another agent is writing it now — if absent, leave those cells and say so) and docs/wip logs; re-check the M2 latency and M7 cost figures against the regenerated report.
+`
+
+phase('Build')
+const specs = [['acceptance', ACCFIN], ['scenario-fix', SCENFIX], ['evals-fix', EVALFIX]]
+const chosen = (args && args.length) ? specs.filter(([l]) => args.includes(l)) : specs
+const results = await parallel(chosen.map(([label, p]) => () => agent(p, { label, phase: 'Build' })))
+const out = {}
+chosen.forEach(([label], i) => { out[label] = results[i] })
+return out
