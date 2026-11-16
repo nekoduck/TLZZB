@@ -166,7 +166,6 @@ async def _kill_and_check(sc: Scene, victim: str) -> None:
 
 
 async def test_carry_the_message_in_his_place(real_settings: Settings) -> None:
-    gaps: list[str] = []
     async with scene(real_settings) as sc:
         drv, st = sc.drv, sc.state
         # 玩家先到营地；被当作闯营的人扣下也无妨，要紧的是貂咬人的时候他在场
@@ -179,14 +178,11 @@ async def test_carry_the_message_in_his_place(real_settings: Settings) -> None:
         await drv.send("我对司空玄说：让我替段公子去万劫谷取解药，我愿意服下那包药")
         asked = [r for rid, r in st.requests.items() if rid not in before and r.frm == PLAYER and r.to == "sikong_xuan"]
         assert asked, (drv.game.last_turn.notes if drv.game.last_turn else None, sc.story(PLAYER, limit=5))
-        if asked[-1].status != "agreed" or "errand_volunteer" not in drv.me.roles:
-            gaps.append(
-                "「说动司空玄」没有落点：这句话被解析成「放了段誉，由玩家顶替」的请求"
-                f"（{asked[-1].action.get('verb')}，裁决 {asked[-1].verdict}，结果 {asked[-1].status}），"
-                "而且即使对方答应，也没有任何规则把 errand_volunteer 身份给玩家"
-                "（parser/candidates.py 的 swap 字段无人消费；poison_errand 的 messenger 只认这个身份或 captive）"
-            )
-            await drv.debug("role errand_volunteer add")  # 顶上缺的那一环：当作他答应了
+        # 他答应了；答应即授「替人去」的身份（由请求的机制给，测试不代劳）。人质一个也没放
+        req = asked[-1]
+        assert req.status == "agreed", (req.action, req.verdict, req.status, drv.game.last_turn.notes, sc.story(PLAYER, limit=5))
+        assert not drv.cheat_ids, drv.cheat_ids
+        assert st.chars["duan_yu"].loc == "shennong_camp" and "captive" in {x.kind for x in st.chars["duan_yu"].statuses}
         assert "errand_volunteer" in drv.me.roles
         # 逼人取药的情境开场：服毒去送信的是玩家，人质是钟灵
         opened = await sc.wait_until(lambda: sc.situation("poison_errand") is not None, until_tick=200)
@@ -243,8 +239,6 @@ async def test_carry_the_message_in_his_place(real_settings: Settings) -> None:
         assert rel is None or rel.affinity > -40
         sc.assert_guarantees(after_id=sent)
         sc.assert_no_rollbacks()
-    if gaps:
-        pytest.xfail("；".join(gaps))
 
 
 def errand_tick(sc: Scene, sent: int) -> int:
@@ -257,7 +251,6 @@ LOVERS = (("gan_guanghao", "gh_slip_out"), ("ge_guangpei", "gp_slip_out"))
 
 
 async def test_inform_on_the_lovers(real_settings: Settings) -> None:
-    gaps: list[str] = []
     async with scene(real_settings) as sc:
         drv, st = sc.drv, sc.state
         # 场景的前提（布景）：玩家亲眼见过那两人的私情；左子穆信得过他。
@@ -288,25 +281,16 @@ async def test_inform_on_the_lovers(real_settings: Settings) -> None:
         fell = sc.ever("duan_yu", lambda s: s.loc in ("valley_floor", "valley_cave")) or any(
             e.verb == "fall" and "⟦duan_yu⟧" in e.fact_text for e in drv.events
         )
-        if caught or fell:
-            first = caught[0] if caught else None
-            gaps.append(
-                f"告发之后后山那场追杀照样发生：左子穆得知私情（置信 {b.confidence:.2f}）后没有任何动作"
-                "（goals.yaml 里没有「得知门人私情」的打算），那两人照旧在刻 72 溜到后山——gh_slip_out 的前提要等 "
-                "24 刻的 takes 走完才查（8.2 第 3、4 步），而 caught_eloping 的 when 只看「gh_slip_out 还没作废」，"
-                + (f"于是刻 {first.tick} 段誉路过时照样开场：{sc.said(first)}" if first else "段誉照样坠崖")
-            )
+        assert not caught, [f"t{e.tick} {sc.said(e)}" for e in caught[:3]]
+        assert not fell, sc.story("duan_yu", limit=20)
         sc.assert_guarantees(after_id=tell)
         sc.assert_no_rollbacks()
-    if gaps:
-        pytest.xfail("；".join(gaps))
 
 
 # ---------------------------------------------------------------- 提前救人
 
 
 async def test_lead_her_out_before_the_bite(real_settings: Settings) -> None:
-    gaps: list[str] = []
     async with scene(real_settings) as sc:
         drv, st = sc.drv, sc.state
         zl = st.chars["zhong_ling"]
@@ -324,16 +308,7 @@ async def test_lead_her_out_before_the_bite(real_settings: Settings) -> None:
         assert asked and asked[-1].action.get("verb") == "follow", (drv.game.last_turn.notes, sc.story(PLAYER, limit=5))
         assert asked[-1].status == "agreed" and zl.following == PLAYER, asked[-1]
         lead = sc.last_id()
-        sc.sample()
-        cur = sc.hist["zhong_ling"][-1].step
-        if cur == "zl_guard_duan":
-            gaps.append(
-                "「带人离开」留不住人：钟灵答应跟着走，req 那一步在她跟上的一瞬就记为 done，当前这一步又回到 "
-                "zl_guard_duan（at: shennong_camp）；玩家带她走出营地后，她在同一回合的微轮里自己走回营地"
-                "（following 仍指着玩家）。答应了的 follow 没有持续的时长，也不顶掉她原来那一步"
-            )
-            # 顶上缺的那一环：她既然答应跟玩家走，「陪段公子待在营里」那一步就此作罢
-            drv.fx([{"step_state": ["zhong_ling", "zl_guard_duan", "void"]}, {"replan": "zhong_ling"}])
+        # 答应了就跟得住：不靠布景作废她原来「待在营里」那一步，她自己跟着玩家走出营地、走到山门
         assert await sc.goto("mountain_path") and await sc.goto("jianhu_gate")
         assert zl.loc == "jianhu_gate" and not held(zl), (zl.loc, sc.story("zhong_ling", after=lead))
         assert any(e.verb == "follow_move" and e.actor == "zhong_ling" for e in sc.events(after=lead))
@@ -348,12 +323,8 @@ async def test_lead_her_out_before_the_bite(real_settings: Settings) -> None:
         # 没有人服断肠散
         assert not any(e.verb in ("swallow", "force", "demand") for e in drv.events)  # 情境里逼人服毒的那几拍
         took = [cid for cid in sc.hist if sc.ever(cid, lambda s: "poisoned_duanchang" in s.statuses)]
-        if took:
-            how = [e for e in drv.events if "duanchang_san" in e.fact_text or e.params.get("item") == "duanchang_san"]
-            gaps.append(
-                f"仍有人服了断肠散（{took}），不是经 poison_errand，而是经请求的还价："
-                + " / ".join(f"[{e.id} t{e.tick} {e.source}] {sc.said(e)}" for e in how[:4])
-            )
+        how = [e for e in drv.events if "duanchang_san" in e.fact_text or e.params.get("item") == "duanchang_san"]
+        assert not took, (took, [f"[{e.id} t{e.tick} {e.source}] {sc.said(e)}" for e in how[:4]])
         # 钟灵没有再落到神农帮手里
         assert not sc.ever("zhong_ling", lambda s: "captive" in s.statuses)
         # 神农帮重新打算：逼人取药、等人取药这两步都没有做成，帮主另有打算在走
@@ -364,8 +335,6 @@ async def test_lead_her_out_before_the_bite(real_settings: Settings) -> None:
         assert is_alive(sk)
         sc.assert_guarantees(after_id=lead)
         sc.assert_no_rollbacks()
-    if gaps:
-        pytest.xfail("；".join(gaps))
 
 
 # ---------------------------------------------------------------- 偷走解药
@@ -623,7 +592,6 @@ async def _join_the_sect(settings: Settings, *, disciple: bool) -> dict:
 async def test_join_the_sect(real_settings: Settings, tmp_path_factory: pytest.TempPathFactory) -> None:
     from tianlong.testing import make_settings
 
-    gaps: list[str] = []
     outsider = await _join_the_sect(make_settings(tmp_path_factory.mktemp("control")), disciple=False)
     member = await _join_the_sect(real_settings, disciple=True)
     # 可以求教剑法：外人学不得、掌门决不肯教（撞上他的底线）；弟子学得，掌门那里不再是「决不」
@@ -637,12 +605,5 @@ async def test_join_the_sect(real_settings: Settings, tmp_path_factory: pytest.T
     # 神农帮把他当对头：成了无量剑弟子之后，神农帮的人对他有敌意（对照里的外人没有）
     as_enemy = any(member["hostile"].values()) or "hostile" in member["band"].values()
     control_enemy = any(outsider["hostile"].values()) or "hostile" in outsider["band"].values()
-    if not as_enemy or control_enemy:
-        gaps.append(
-            "身份对神农帮怎样待他没有影响：成了无量剑弟子，神农帮的人对他仍无敌意"
-            f"（is_hostile {member['hostile']}，关系档 {member['band']}，好感 {member['affinity']}），与没有门派的外人一样"
-            f"（{outsider['band']}）；路卡的盘问、营地的 camp_capture 只看「是不是神农帮的人」。"
-            "内容里没有「门派之间的敌对」这一层（敌意只来自个人之间的好感，或眼下的打算）"
-        )
-    if gaps:
-        pytest.xfail("；".join(gaps))
+    assert as_enemy, (member["hostile"], member["band"], member["affinity"])
+    assert not control_enemy, (outsider["hostile"], outsider["band"], outsider["affinity"])
