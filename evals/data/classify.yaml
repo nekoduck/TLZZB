@@ -78,7 +78,8 @@ items:
   - id: c018
     scene: hall
     input: 趁乱把那个精瘦剑客腰上的钥匙摸过来。
-    gold: {kind: act, verb: steal, target: woodshed_key, target2: wu_guangsheng}
+    gold: {kind: impossible, intended: {verb: steal, target: woodshed_key, target2: wu_guangsheng}}
+    note: 别人怀里的东西，玩家没细看过此人、也没见过这件东西，内核不列这个偷（perception.item_visible）。
   - id: c019
     scene: hall
     input: 一把推开场中舞剑的那个青年。
@@ -283,7 +284,8 @@ items:
   - id: c063
     scene: hall_beam
     input: 偷偷伸手去掏那小姑娘袖子里的小貂。
-    gold: {kind: act, verb: steal, target: shandian_diao, target2: zhong_ling}
+    gold: {kind: impossible, intended: {verb: steal, target: shandian_diao, target2: zhong_ling}}
+    note: 藏在袖子里的东西，玩家没细看过她、也没见过它，内核不列这个偷（perception.item_visible）。
   - id: c064
     scene: hall_beam
     input: 我也想学摆弄小兽的本事，你教教我好不好？
@@ -417,7 +419,8 @@ items:
   - id: c093
     scene: back_siege
     input: 偷那个精瘦弟子身上的铁钥匙。
-    gold: {kind: act, verb: steal, target: woodshed_key, target2: wu_guangsheng}
+    gold: {kind: impossible, intended: {verb: steal, target: woodshed_key, target2: wu_guangsheng}}
+    note: 别人怀里的东西，玩家没细看过此人、也没见过这件东西，内核不列这个偷（perception.item_visible）。
   - id: c094
     scene: back_siege
     input: 跟那个劈柴的剑客打听打听后山的路。
@@ -686,7 +689,8 @@ items:
   - id: c152
     scene: camp_captive
     input: 偷司空玄身上那个小药瓶。
-    gold: {kind: act, verb: steal, target: duanchang_antidote, target2: sikong_xuan}
+    gold: {kind: impossible, intended: {verb: steal, target: duanchang_antidote, target2: sikong_xuan}}
+    note: 别人怀里的东西，玩家没细看过此人、也没见过这件东西，内核不列这个偷（perception.item_visible）。
   - id: c153
     scene: camp_captive
     input: 段公子别怕，咱们一定出得去。
@@ -781,8 +785,8 @@ items:
   - id: c173
     scene: camp_bitten
     input: 偷偷把帮主那包药粉掉包成一包干粮。
-    gold: {kind: act, verb: steal, target: duanchang_san, target2: sikong_xuan}
-    note: 内核没有掉包，最近的合法动作是偷。
+    gold: {kind: impossible, intended: {verb: steal, target: duanchang_san, target2: sikong_xuan}}
+    note: 内核没有掉包，最近的动作是偷；可那包药粉在别人怀里，玩家没细看过此人、也没见过它，内核不列这个偷（perception.item_visible）。
   # ---------------------------------------------------------------- 后山小径撞见两人
   - id: c174
     scene: trail_lovers
@@ -1062,7 +1066,8 @@ items:
   - id: c235
     scene: zhong_news
     input: 偷夫人身上那只小金盒。
-    gold: {kind: act, verb: steal, target: gold_box, target2: gan_baobao}
+    gold: {kind: impossible, intended: {verb: steal, target: gold_box, target2: gan_baobao}}
+    note: 别人怀里的东西，玩家没细看过此人、也没见过这件东西，内核不列这个偷（perception.item_visible）。
   - id: c236
     scene: zhong_news
     input: 把绣鞋亮给谷主看，问：「小姐的东西，您总认得吧？」

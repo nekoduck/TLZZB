@@ -11,9 +11,9 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from tianlong.kernel import actions, danger, growth, perception, refs, speech
+from tianlong.kernel import actions, danger, growth, perception, predicates, refs, speech
 from tianlong.kernel.defs import Defs
-from tianlong.kernel.state import Character, WorldState, has_status
+from tianlong.kernel.state import Character, Ctx, WorldState, has_status
 
 MAX_ASKS = 8
 MAX_CLAIMS = 20
@@ -323,6 +323,59 @@ def _guards(state: WorldState, t: Character, loc: str) -> bool:
     return bool(owner) and owner in t.roles
 
 
+VOLUNTEER_KEYS = ["让我去", "我去", "由我", "我来", "派我", "让我替", "我替", "让我代", "我代"]
+
+
+def _would_fill(state: WorldState, defs: Defs, d: Any, role: str, loc: str, exclude: str) -> str | None:
+    """没人自告奋勇的话，这场情境的这个角色位会落到谁头上（在场、合 pick 条件的第一个人；不算 exclude）。"""
+    spec = d.roles.get(role)
+    pick = spec.get("pick") if isinstance(spec, dict) else None
+    if not isinstance(pick, dict):
+        return None
+    fixed = {n: v for n, v in d.roles.items() if isinstance(v, str)}
+    for c in state.chars.values():
+        if c.loc != loc or c.id == exclude or c.id in fixed.values() or not perception.on_map(c):
+            continue
+        try:
+            if predicates.holds(state, defs, pick.get("where"), Ctx(None, {**fixed, "it": c.id}, None)):
+                return c.id
+        except predicates.KernelError:
+            continue
+    return None
+
+
+def _volunteer_candidates(state: WorldState, defs: Defs, me: Character, t: Character) -> list[AskCand]:
+    """由我来：对方主事的一场事眼下正要找人（情境定义里的 ``volunteer`` 一节），我自告奋勇顶那个角色位。
+
+    所求写成对方等一等，带 ``volunteer`` 说明（内核认它：照常裁决，对方答应了我就得到那个身份）。
+    本来会落到这个位上的人记在 ``target``（「替他去」的那个「他」）。
+    """
+    out: list[AskCand] = []
+    P = refs.ref(me.id)
+    for d in defs.situations.values():
+        spec = getattr(d, "volunteer", None)
+        if not isinstance(spec, dict) or not spec.get("role"):
+            continue
+        action = {"verb": "wait", "params": {"ticks": 1},
+                  "volunteer": {"situation": d.id, "role": str(spec["role"])}}
+        if speech.volunteer_spec(state, defs, t.id, action) is None:
+            continue
+        if spec.get("grant") and str(spec["grant"]) in me.roles:
+            continue  # 已经应下了
+        fixed = {n: v for n, v in d.roles.items() if isinstance(v, str)}
+        other = _would_fill(state, defs, d, str(spec["role"]), t.loc, me.id)
+        desc = refs.fill_roles(str(spec.get("desc") or ""), {**fixed, "volunteer": me.id}, None)
+        desc = desc or f"让{P}去办这件事"
+        if other is not None:
+            desc = f"{desc}，不必叫{refs.ref(other)}去"
+        keys = VOLUNTEER_KEYS + [str(k) for k in spec.get("keys") or []]
+        cand = _ask("take_place_of", t.id, "wait", {"ticks": 1}, desc, str(spec.get("cls") or "effort"), keys,
+                    [other] if other else [], slots={"target": other} if other else {},
+                    extra={"volunteer": action["volunteer"]})
+        out.append(cand)
+    return out
+
+
 def _all_request_candidates(state: WorldState, defs: Defs, frm: str, to: str) -> list[AskCand]:  # noqa: C901
     me = state.chars.get(frm)
     t = state.chars.get(to)
@@ -332,6 +385,9 @@ def _all_request_candidates(state: WorldState, defs: Defs, frm: str, to: str) ->
     out: list[AskCand] = []
     later: list[AskCand] = []
     here = [o for o in perception.present(state, t.loc, exclude=t.id) if o.id != frm]
+    # 由我来：对方正要找人去办的事，我自告奋勇
+    out += _volunteer_candidates(state, defs, me, t)
+    stood_in = {c.slots.get("target") for c in out}
     # 放人：放了我；放了某个被缚、被押的人；让我顶替他
     if _held(me):
         out.append(_ask("release", to, "release", {"target": frm}, f"放了{P}", "costly",
@@ -342,9 +398,10 @@ def _all_request_candidates(state: WorldState, defs: Defs, frm: str, to: str) ->
             H = refs.ref(h.id)
             out.append(_ask("release", to, "release", {"target": h.id}, f"放了{H}", cls,
                             ["放了", "放开", "松绑", "放人", "饶"], [h.id], slots={"target": h.id}))
-            out.append(_ask("take_place_of", to, "release", {"target": h.id}, f"放了{H}，由{P}顶替{H}", cls,
-                            ["换", "替", "顶替", "代替", "抵"], [h.id], slots={"target": h.id},
-                            extra={"swap": frm}))
+            if h.id not in stood_in:  # 「替他」已经有了着落（替他去办那件事）：不再另列「放了他、换我」
+                out.append(_ask("take_place_of", to, "release", {"target": h.id}, f"放了{H}，由{P}顶替{H}", cls,
+                                ["换", "替", "顶替", "代替", "抵"], [h.id], slots={"target": h.id},
+                                extra={"swap": frm}))
     # 让我跟某人同行：对方不拦着（「放行」写成对方等一等，带 permit 说明）。
     # 被他扣着的人、跟他同在一场情境里的人在前；他的手下排到最后
     together = {cid for s in state.situations.values() if to in s.roles.values() for cid in s.roles.values()}
@@ -463,6 +520,8 @@ def ask_score(state: WorldState, defs: Defs, c: AskCand, text: str, frm: str) ->
     if c.type == "tell_about" and c.slots.get("fact"):
         kw += 1  # 话里说的正是对方知道的一件事：算打听
     if others and not named:
+        if c.action.get("volunteer"):
+            return 2 * kw  # 「让我去」：没提本来要去的那个人也算
         return kw if c.type == "teach_art" and kw else 0  # 「教我两手」：没说是哪门本事也算
     return 2 * kw + 3 * named
 

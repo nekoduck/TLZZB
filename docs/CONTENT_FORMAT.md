@@ -27,10 +27,16 @@ labels:                         # 界面、牵挂、年谱里的说法
   role:jianhu_guest: 剑湖宫的来客      # role:<身份>：一个平白的名词短语（「成了……」「是……」都读得通），不写 ⟦id⟧
   poisoned_duanchang: ⟦duanchang_san⟧的毒   # <状态>：用在「身上的……到某时就要发作」里
 deadline_statuses: []           # 除 poisoned* 之外，还有哪些带期限的状态要进「期限」类的牵挂
+enmity:                         # 门派之间的敌对
+  - {between: [shennong_member, wuliang_disciple], while: siege_on}
+concerns:                       # 与所求有关的大事：所求的种类 → 事实标签
+  clan_honor: [sect_scandal]
 ```
 
 - `request.sect_roles` 不写时退回一条不认名字的规则：占着地盘的身份（某个地点的 `owner`）才算门派或人家；写成空表即任何共同身份都不算同门。来客、马帮、差使这类临时身份不要列进去。
 - `labels` 里与专名表同名的身份可以不写，界面会退回去查专名表。
+- `enmity`：每项 `{between: [身份甲, 身份乙], while: 旗标名?}`。`while` 的旗标为真期间（不写即一直），各带一边身份的两个人互为对头：内核的敌意判断（`danger.is_hostile`）、请求的关系档（算「敌对」）、谓词 `{enemies: [甲, 乙]}` 都认。同时带着两边身份的人不算哪一边；对那个人有私交（好感不低于 30）的不把他当对头。身份没了、旗标落了，敌对也就没了。内核的入口把这张表抄进 `state.flags['enmity']`（只拿得到状态的查询读它），内容里不要用这个旗标名。
+- `concerns`：有这种所求（`drives` 的种类）的人新近相信了一条带这些标签的事实，就是「出了与他的所求有关的大事」（方案 8.3），立即进重新打算的队列。配合 `goals.yaml` 里相应的规则用（例：`honor_purge`）。
 - 以 `poisoned` 开头的状态带了期限（`ticks`）就是「到期致死」：期限一到人就死；不足一日时玩家的危险等级至少 1，只剩两个时辰至少 2。
 
 ## locations.yaml
@@ -117,7 +123,7 @@ banned_game: [血量, 经验值, 等级, 技能点, 选项, NPC, …]
 
 ## agendas/<id>.yaml
 
-方案 5.7 的格式。一步的 `do` 里可写的键：`verb`，以及 `target`、`to`、`item`、`exit`、`feature`、`art`、`act`、`fact`。开口相求的一步（`{verb: say, act: request | plead | order, to: 人}`）另写 `ask: {verb, params}`（请求对方做的事，`params` 里可用 `self`）与 `cls`（事情的类别，不写由内核按规则归类）；在场、离场求的都是这件事，不写 `ask` 时只是一句泛泛的请求。指名说给某人（`to`）的话，他不在跟前就不说：离场时这一步作废。图外的人第一步入场的写法：
+方案 5.7 的格式。一步的 `do` 里可写的键：`verb`，以及 `target`、`to`、`item`、`exit`、`feature`、`art`、`act`、`fact`。开口相求的一步（`{verb: say, act: request | plead | order, to: 人}`）另写 `ask: {verb, params}`（请求对方做的事，`params` 里可用 `self`）与 `cls`（事情的类别，不写由内核按规则归类）；在场、离场求的都是这件事，不写 `ask` 时只是一句泛泛的请求。这句话的要旨（事件里「某人对某人请求：……」冒号后面的话）：写了 `ask` 的按所求之事拼；没写 `ask` 的在 `do` 里另写 `gist`（第三人称的一句，「对方」指听话的人，如 `gist: 劝对方罢手`），不写就只好借这一步的 `text`（那是打算的口气，读起来不像一句请求）。`do: {verb: follow, target: 人}` 的一步是持续的：到了那人身边先跟上，再跟满 `takes` 刻才算做完；跟的人离了图、死了，或自己被拿住，这一步作废。指名说给某人（`to`）的话，他不在跟前就不说：离场时这一步作废。图外的人第一步入场的写法：
 
 ```yaml
 - id: envoy_enter
@@ -133,6 +139,8 @@ banned_game: [血量, 经验值, 等级, 技能点, 选项, NPC, …]
 
 - `at`：情境发生在哪里。写地点 id，或写 `$角色位`（取那个人所在的地点）；不写就取第一个角色位所在的地点。
 - 角色位写法：写死一个 id；或 `{pick: {where: 谓词}}`，在那个地点的活人里挑第一个使 `where` 成立的人，谓词里用 `$it` 指候选人，可以引用排在前面、已经绑定的角色位。
+  `pick` 里可另写 `prefer: 谓词`：合 `where` 的人里先取也合 `prefer` 的（例：自告奋勇的人），没有才取第一个。
+- `volunteer`（可选）：这场事里可以自告奋勇顶上的角色位（方案 3.4 例三的「由我来」）。`{role: 用 pick 挑人的角色位, to: 写死的角色位（向他开口）, grant: 身份?, cls: 类别?, urgent: true?, desc: 所求之事的说法, keys: [关键字…]}`。情境的 `when` 成立（那场事眼下就要发生）时，解析器给玩家列出这件可求的事（`desc` 里 `{volunteer}` 指请缨的人，其余 `{角色位}` 只能用写死的）；所求写成「对方等一等」带 `volunteer: {situation, role}` 说明，内核照常裁决（`cls` 是这件事对答应的人算哪一类，缺省 `effort`；`urgent` 即「正好帮到对方的急需」+30；`when` 不成立时裁决为 never）。对方答应了，请缨的人得到 `grant` 这个身份——角色位的 `pick`（`where` / `prefer`）要认它；用过之后在情境的效果里把这个身份去掉。
 - 旗标以 `.` 开头的是情境局部旗标（见 `ARCHITECTURE.md` 2.1）。
 - 情境动作 `actions.<name>` 的字段：`role`、`lean`、`pre`、`loud`、`lethal`、`cost`（默认 1）、`desc`（给模型看的一句话，可用 `{角色位}`）、`effects`。
   - `desc` 以做这一招的角色位开头（`'{guest}拱手赔个不是'`）：玩家自己的招写成选项时去掉主语（「拱手赔个不是」），劝别人出这一招时写成「低声劝某某拱手赔个不是」。不以角色位开头的写不成一句劝人的话，不会出现在「相劝」的选项里。
@@ -179,6 +187,8 @@ threads: []                            # 玩家开局的牵挂
 ## goals.yaml、routines.yaml、opportunities.yaml
 
 格式由实现它们的模块定，写在各文件开头的注释里：`goals.yaml` 由 `world/goals.py`（重新打算的候选：所求 × 处境 → 目标与步骤模板，绑定方法 `captor_of`、`cure_for`、`safe_place`、`away_from`、`pick` 等），`routines.yaml` 由 `minds/routines.py`，`opportunities.yaml` 由 `storyteller/opportunities.py`。方案 8.3、9.4、8.5 给了种子。
+
+`goals.yaml` 另有：绑定方法 `fact_subject: {tag, where}`（他相信的、带这个标签的事实里提到的人）、`threat_here: self`（身边怀敌意而且真有威胁的人：比他强，或眼下的打算正冲着他来）；规则键 `pressing: true`（等不得的事：这条规则成立时候选里不给「照旧」——规则与 Mock 模式下由事件触发的重新打算否则总是选「照旧」）、`cooldown: 刻数`（选中过之后隔这么久才再进候选）。
 
 `safe_place` / `away_from` 挑的是最近的、没有人对他怀敌意的别处，并避开对头正要去的地方；两个互相敌视的人同时要躲时不会挑中同一处。
 

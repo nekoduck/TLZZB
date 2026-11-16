@@ -25,7 +25,7 @@ from tianlong.llm import STAR_PREFIX, LLMError
 from tianlong.llm.route import sample_choice, should_escalate
 from tianlong.llm.schemas import ReplanOut
 from tianlong.world import goals as G
-from tianlong.world.common import LOG, REPLAN_FLAG, flag_dict, set_flag_dict
+from tianlong.world.common import GOAL_FLAG, LOG, REPLAN_FLAG, flag_dict, set_flag_dict
 
 MAX_MEMORIES = 6
 
@@ -357,7 +357,12 @@ def _land(state: WorldState, defs: Defs, job: Job) -> list[Event]:
         return []
     ag = G.instantiate(state, defs, c.id, job.choice, job.steps)
     LOG.info("replan %s -> %s [%s] via %s", job.cid, job.choice.rule, job.choice.template, job.via)
-    return resolve.run_effects(state, defs, [{"agenda": [c.id, ag]}], Ctx(self_id=c.id), source="rule")
+    out = resolve.run_effects(state, defs, [{"agenda": [c.id, ag]}], Ctx(self_id=c.id), source="rule")
+    if any(r.get("id") == job.choice.rule and r.get("cooldown") is not None for r in G.rules(defs)):
+        book = flag_dict(state, GOAL_FLAG)  # 记下何时选中了这条带 cooldown 的规则（记账，与 REPLAN_FLAG 同）
+        book.setdefault(c.id, {})[job.choice.rule] = state.tick
+        set_flag_dict(state, defs, GOAL_FLAG, book)
+    return out
 
 
 def queue(state: WorldState, defs: Defs, cids: list[str]) -> None:

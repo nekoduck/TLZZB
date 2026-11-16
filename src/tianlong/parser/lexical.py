@@ -15,7 +15,7 @@ from tianlong.kernel.state import WorldState
 
 # ---------------------------------------------------------------- verbs
 
-# (词, 动词)。按词长从长到短匹配。
+# (词, 动词)。按词长从长到短匹配：多字词先占住位置，里面的单字不再另认（「打量」不是「打」）。
 _VERB_WORDS: list[tuple[str, str]] = [
     # 走动
     ("前往", "go"), ("赶往", "go"), ("走向", "go"), ("奔向", "go"), ("离开", "go"), ("下山", "go"),
@@ -33,6 +33,7 @@ _VERB_WORDS: list[tuple[str, str]] = [
     ("看看", "look"), ("观察", "look"),
     ("侧耳", "listen"), ("偷听", "listen"), ("细听", "listen"), ("听听", "listen"), ("倾听", "listen"),
     ("细看", "examine"), ("查看", "examine"), ("端详", "examine"), ("打量", "examine"), ("瞧瞧", "examine"),
+    ("偷看", "examine"), ("偷瞧", "examine"), ("偷眼", "examine"),
     ("看一看", "examine"), ("检查", "examine"), ("看", "examine"),
     ("翻找", "search"), ("搜查", "search"), ("搜一搜", "search"), ("翻一翻", "search"), ("找找", "search"),
     ("摸索", "search"), ("摸一摸", "search"), ("翻", "search"), ("搜", "search"), ("找", "search"),
@@ -48,7 +49,7 @@ _VERB_WORDS: list[tuple[str, str]] = [
     ("服下", "use"), ("吞下", "use"), ("吃下", "use"), ("喝下", "use"), ("点燃", "use"), ("点火", "use"),
     ("骑上", "use"), ("吃", "use"), ("喝", "use"), ("啃", "use"), ("嚼", "use"), ("服", "use"), ("用", "use"),
     ("顺手牵羊", "steal"), ("偷偷拿", "steal"), ("摸走", "steal"), ("摸过来", "steal"), ("摸回来", "steal"),
-    ("牵走", "steal"), ("顺走", "steal"), ("偷", "steal"), ("窃", "steal"),
+    ("牵走", "steal"), ("顺走", "steal"), ("掉包", "steal"), ("调包", "steal"), ("偷", "steal"), ("窃", "steal"),
     # 对人
     ("包扎", "help"), ("搀扶", "help"), ("扶起", "help"), ("照料", "help"), ("照顾", "help"),
     ("救治", "help"), ("敷", "help"), ("揉", "help"), ("喂", "help"), ("扶", "help"), ("搀", "help"),
@@ -68,12 +69,46 @@ _VERB_WORDS: list[tuple[str, str]] = [
     # 时间
     ("等待", "wait"), ("静观", "wait"), ("候着", "wait"), ("等", "wait"),
     ("歇息", "rest"), ("休息", "rest"), ("打坐", "rest"), ("睡觉", "rest"), ("躺下", "rest"), ("养伤", "rest"),
-    ("睡", "rest"), ("歇", "rest"),
+    ("打个盹", "rest"), ("打盹", "rest"), ("打瞌睡", "rest"), ("睡", "rest"), ("歇", "rest"),
     ("挣脱", "struggle"), ("挣扎", "struggle"), ("挣开", "struggle"),
 ]
-VERB_WORDS: list[tuple[re.Pattern[str], str]] = [
-    (re.compile(w), v) for w, v in sorted(_VERB_WORDS, key=lambda wv: -len(wv[0]))
+# 含着单字动作词、却不是那个动作的多字词（「打招呼」不是打人，「佩服」不是服药）。它们和动作词一起按词长
+# 排队，先占住位置，里面的单字就不再当动作认。第二栏：这个词若是「用叙述口吻写的说话」（打个招呼、
+# 打听打听），写它是哪一种言语行为；不是说话的写 None。这里只有通用的汉语词。
+_COUNT = "(?:了|过)?(?:一?[个声下])?"
+_PHRASE_WORDS: list[tuple[str, str | None]] = [
+    # 打
+    (f"打{_COUNT}招呼", "greet"), ("打听", "ask"), ("打探", "ask"),
+    ("打点", None), ("打算", None), ("打发", None), ("打扰", None), ("打搅", None), ("打赌", None), ("打扮", None),
+    ("打岔", None), ("打趣", None), ("打圆场", None), ("打哈哈", None), ("打交道", None), ("打主意", None),
+    ("打开", None), ("打扫", None), ("打水", None), ("打柴", None), ("打包", None), ("打结", None), ("打滚", None),
+    ("打颤", None), ("打哆嗦", None), ("打喷嚏", None), ("打哈欠", None), ("打手势", None), ("打火", None),
+    ("打猎", None), ("打杂", None), ("打下手", None), ("打哪", None), ("打从", None), ("打躬", "greet"),
+    # 问候、请教
+    (f"问{_COUNT}好", "greet"), ("问候", "greet"), ("问安", "greet"), ("请安", "greet"), ("见礼", "greet"),
+    ("寒暄", "greet"), ("请教", "ask"), ("讨教", "ask"), ("喝问", "ask"), ("探问", "ask"),
+    # 别的单字
+    ("领教", None), ("指教", None), ("教训", None), ("管教", None),
+    ("喝道", None), ("喝彩", None), ("吆喝", None), ("喝令", None), ("喝止", None),
+    ("佩服", None), ("服气", None), ("衣服", None), ("说服", None), ("服从", None), ("服侍", None), ("服软", None),
+    ("吃惊", None), ("吃亏", None), ("吃力", None), ("吃苦", None), ("吃了一惊", None),
+    ("推辞", None), ("推说", None), ("推托", None), ("推测", None), ("撞见", None), ("翻脸", None),
+    ("找茬", None), ("找麻烦", None), ("拿主意", None), ("拿手", None), ("拿不准", None),
+    ("不用", None), ("没用", None), ("有用", None), ("用不着", None), ("用心", None), ("用力", None), ("用功", None),
+    ("讽刺", None), ("刺探", None), ("刺耳", None), ("杀价", None), ("砍价", None), ("敷衍", None),
+    ("学问", None), ("等闲", None), ("往事", None), ("往常", None), ("以往", None), ("失去", None),
+    ("看来", None), ("看样子", None), ("好看", None), ("难看", None), ("偷偷", None), ("偷懒", None),
 ]
+_NARRATED: dict[str, str] = {w: act for w, act in _PHRASE_WORDS if act is not None}
+# (正则, 动词 | None)：None 的只占位置，不算动作
+VERB_WORDS: list[tuple[re.Pattern[str], str | None]] = [
+    (re.compile(w), v)
+    for w, v in sorted([*_VERB_WORDS, *((w, None) for w, _ in _PHRASE_WORDS)], key=lambda wv: -len(wv[0]))
+]
+NARRATED_SPEECH: list[tuple[re.Pattern[str], str]] = [
+    (re.compile(w), act) for w, act in sorted(_NARRATED.items(), key=lambda wa: -len(wa[0]))
+]
+_CLAUSE_END = re.compile(r"[，,。；;！!？?]")
 # 凑近一类的词不算动作（不是「走」到别处去）
 APPROACH = re.compile(
     r"走过去|走上前|走上去|冲上去|冲过去|扑上去|扑过去|上前|凑过去|凑上前|凑近|靠近|走近|走过来|找个|找了个|"
@@ -148,7 +183,14 @@ MASTER_TITLES = re.compile(r"东家|掌柜|老板|主人|师父|师傅|老爷")
 FEMALE_WORDS = re.compile(r"姑娘|妹妹|小姐|女侠|夫人|婆婆|大娘|大婶|娘子|姑奶奶|小妹|师姐|师妹|嫂")
 FEMALE_MARK = re.compile(r"女|娘|妇|婆|姑|妹|姐|妻|嫂")
 VOCATIVE_RE = re.compile(r"^([^，,：:！!？?。]{1,10})[，,：:！!]")
-SPEECH_OBJ_RE = re.compile(r"(?:对|向|朝|冲|问|告诉|求|叮嘱|劝|跟)(.{1,10}?)(?:说|道|喝|问|讲|打听|扯谎|撒谎|[：:，,]|$)")
+SPEECH_OBJ_RE = re.compile(
+    r"(?:对|向|朝|冲|问|告诉|求|叮嘱|劝|跟)(.{1,10}?)"
+    r"(?:说|道|喝|问|讲|打听|打探|打(?:了|过)?(?:一?[个声下])?招呼|请安|请教|讨教|见礼|寒暄|扯谎|撒谎|[：:，,]|$)"
+)
+# 「和某人打个招呼」「给某人请安」：只在后面跟着叙述口吻的说话时才认这几个字后面是说话的对象
+NARRATED_OBJ_RE = re.compile(
+    r"(?:和|同|与|给|找)(.{1,10}?)(?:打听|打探|打(?:了|过)?(?:一?[个声下])?招呼|问(?:了|过)?(?:一?[个声下])?好|请安|讨教|见礼|寒暄)"
+)
 # 叫的是「管事的人」：在场手下最多的那一位
 AUTHORITY_TITLES = re.compile(r"^(帮主|掌门|谷主|头领|大当家|当家的|老大|主人|庄主|堂主|首领|大人|老爷|师父)")
 _QUANT = re.compile(r"^(一|几|两|那|这)(个|只|包|卷|处|座|条|匹|段|支|把|件|钱|块|封|张|根|柄|位|名|间|扇|口|盏|片)?")
@@ -265,19 +307,53 @@ def first_mention(state: WorldState, defs: Defs, text: str, eid: str) -> int:
 
 
 def verbs_in(text: str) -> list[tuple[int, str, str]]:
-    """text 里出现的动作词：(位置, 动词, 词)，按位置排。凑近一类的词先去掉。"""
+    """text 里出现的动作词：(位置, 动词, 词)，按位置排。凑近一类的词先去掉。
+
+    所有词表里对得上的地方一起排队：长的先占位置，一样长的靠前的先占；占住的字不再另认。
+    所以多字词总是压过它里面的单字（「打招呼」里的「打」、「偷偷看」里的「偷」都不另算）。
+    """
     t = APPROACH.sub(lambda m: "　" * len(m.group(0)), text or "")
+    hits: list[tuple[int, int, int, str | None, str]] = []
+    for order, (pat, verb) in enumerate(VERB_WORDS):
+        hits.extend((m.start() - m.end(), m.start(), order, verb, m.group(0)) for m in pat.finditer(t) if m.group(0))
+    hits.sort(key=lambda h: h[:3])
     taken = [False] * len(t)
     out: list[tuple[int, str, str]] = []
-    for pat, verb in VERB_WORDS:
-        for m in pat.finditer(t):
-            if any(taken[m.start() : m.end()]):
-                continue
-            for k in range(m.start(), m.end()):
-                taken[k] = True
-            out.append((m.start(), verb, m.group(0)))
+    for neg_len, start, _order, verb, word in hits:
+        end = start - neg_len
+        if any(taken[start:end]):
+            continue
+        taken[start:end] = [True] * (end - start)
+        if verb is not None:
+            out.append((start, verb, word))
     out.sort()
     return out
+
+
+def narrated_speech(text: str) -> tuple[int, int, str] | None:
+    """用叙述口吻写的说话（「向他打个招呼」「跟他打听打听」）：最靠前的一处 (起, 止, 言语行为)；没有返回 None。
+
+    直接冲着人说的话（带「你」「您」，或开口先叫人）不算：「替我向你师父问好」是原话，说的是什么由话本身定。
+    """
+    t = text or ""
+    if SECOND_PERSON.search(t) or vocative(t):
+        return None
+    best: tuple[int, int, str] | None = None
+    for pat, act in NARRATED_SPEECH:
+        m = pat.search(t)
+        if m and (best is None or m.start() < best[0]):
+            best = (m.start(), m.end(), act)
+    return best
+
+
+def narrated_act(text: str) -> str | None:
+    hit = narrated_speech(text)
+    return hit[2] if hit else None
+
+
+def _clause_start(text: str, pos: int) -> int:
+    """pos 所在的那个分句从哪里起（上一个逗号、句号之后）。"""
+    return max((m.end() for m in _CLAUSE_END.finditer(text[:pos])), default=0)
 
 
 _CN_DIGITS = {"零": 0, "一": 1, "二": 2, "两": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9}
@@ -364,7 +440,8 @@ def speechy(text: str) -> bool:
     t = text or ""
     return bool(
         SECOND_PERSON.search(t) or vocative(t) or _QUESTION_END.search(t) or _REQUEST_START.match(t)
-        or GREET.match(t) or any(pat.search(t) for name, pat in ACT_PATTERNS if name not in ("insult", "lie"))
+        or GREET.match(t) or narrated_speech(t) is not None
+        or any(pat.search(t) for name, pat in ACT_PATTERNS if name not in ("insult", "lie"))
     )
 
 
@@ -382,6 +459,12 @@ def split_speech(text: str) -> tuple[str, str]:
         return (m.group(1) + m.group(2)).strip(), m.group(3).strip()
     if SPEECH_VERB_START.match(t) and not verbs_in(re.split(SPEECH_SPLIT, t, maxsplit=1)[0]):
         return "", t
+    said = narrated_speech(t)
+    if said is not None:
+        # 叙述口吻的说话：它所在的分句整个是说话（「去跟那个舞剑的打个招呼」里的「去」「舞」都不是动作）；
+        # 前面的分句里另有身体动作，就是又做又说
+        head = t[: _clause_start(t, said[0])]
+        return (head.strip(" ，,"), t) if verbs_in(head) else ("", t)
     talk = speechy(t)
     if t.startswith("我"):
         if SECOND_PERSON.search(t) or (talk and not verbs_in(t[:6])):

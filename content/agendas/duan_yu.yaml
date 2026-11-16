@@ -13,7 +13,7 @@ steps:
   - id: dy_plead_shennong
     text: 去山下劝神农帮罢手
     at: shennong_camp
-    do: {verb: say, act: request, to: sikong_xuan}
+    do: {verb: say, act: request, to: sikong_xuan, gist: 劝对方罢手，不要为难山上的人}
     pre:                                        # 他得先知道山下有这回事，帮主也还在（被拿住了也还能开口）
       all:
         - {knows: [self, F_shennong_siege]}
@@ -46,7 +46,7 @@ steps:
   - id: dy_borrow_horse
     text: 照钟夫人的指点，去向木姑娘借马
     at: mu_house
-    do: {verb: say, act: request, to: mu_wanqing}
+    do: {verb: say, act: request, to: mu_wanqing, gist: 想向对方借一匹马赶路}
     pre:
       all:
         - {has: [self, gold_box]}

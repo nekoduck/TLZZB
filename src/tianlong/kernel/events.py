@@ -47,6 +47,16 @@ def queue_replan(state: WorldState, cid: str | None) -> None:
         state.replan_queue.append(cid)
 
 
+def concerned(state: WorldState, defs: Defs, c: Any, fid: str) -> bool:
+    """这条事实是不是与此人的所求有关的大事（world.yaml 的 concerns：所求的种类 → 事实标签）。"""
+    f = state.facts.get(fid)
+    table = defs.world.concerns
+    if f is None or not table:
+        return False
+    tags = set(f.tags)
+    return any(tags & set(table.get(str(d).partition(":")[0], [])) for d in c.drives)
+
+
 def emit(
     state: WorldState,
     defs: Defs,

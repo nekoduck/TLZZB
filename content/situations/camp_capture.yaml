@@ -47,7 +47,7 @@ actions:
       - {emit: {actor: $chief, verb: seize, text: '{chief}一挥手，几个帮众扑上来拿住了{intruder}', loud: true}}
   let_go:
     role: chief
-    pre: {flag: .questioned}
+    pre: {any: [{flag: .questioned}, {flag: .explained}]}
     desc: '{chief}挥手放{intruder}走'
     effects:
       - {add_status: [$intruder, camp_pass, {ticks: 96}]}
@@ -59,8 +59,7 @@ actions:
     pre: {not: {flag: .explained}}
     desc: '{intruder}说明自己的来意'
     effects:
-      - {set_flag: [.explained, true]}
-      - {set_flag: [.questioned, true]}
+      - {set_flag: [.explained, true]}     # 不顺手记 .questioned：同一轮里帮主已经选了「盘问」，那一招要仍然做得出
       - {emit: {actor: $intruder, verb: explain, text: '{intruder}向{chief}说明来意'}}
 exit_when: {any: [{flag: .seized}, {flag: .released}, {not: {same_loc: [$chief, $intruder]}}]}
 max_turns: 6

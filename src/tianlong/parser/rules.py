@@ -159,8 +159,8 @@ def addressee_guess(state: WorldState, defs: Defs, clean: str, narr: str, spoken
         if who is not None:
             return [who], CALLED
     # 「对 X 说」「问 X」「告诉 X」
-    for text in (narr, clean):
-        m2 = lx.SPEECH_OBJ_RE.search(text or "")
+    for text, pat in ((narr, lx.SPEECH_OBJ_RE), (clean, lx.SPEECH_OBJ_RE), (clean, lx.NARRATED_OBJ_RE)):
+        m2 = pat.search(text or "")
         if m2:
             obj = m2.group(1)
             who = _best_named(state, defs, obj, hearers) or _by_title(state, defs, obj, hearers)
@@ -208,6 +208,9 @@ def speech_act(state: WorldState, spoken: str, acts: list[str]) -> str | None:
         return None
     me = state.chars[state.player]
     has_reqs = bool(speech.open_requests_to(state, me.id) or speech.countered_from(state, me.id))
+    told = lx.narrated_act(spoken)  # 叙述口吻的说话（「向他打个招呼」「跟他打听打听」）：词本身就说明了是哪种话
+    if told in acts:
+        return told
     for name, pat in lx.ACT_PATTERNS:
         if not pat.search(spoken):
             continue

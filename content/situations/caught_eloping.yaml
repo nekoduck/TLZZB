@@ -16,6 +16,10 @@ when:
     - {step: [gan_guanghao, gh_bout, done]}
     - {step: [gan_guanghao, gh_flee_out, pending]}
     - {not: {step: [gan_guanghao, gh_slip_out, void]}}
+    - {not: {status: [gan_guanghao, captive]}}        # 被拿下的人谈不上私逃
+    - {not: {status: [ge_guangpei, captive]}}
+    - {not: {knows: [zuo_zimu, F_lovers]}}            # 私情已经败露给掌门：没有「灭口」可言
+    - {not: {knows: [xin_shuangqing, F_lovers]}}
     - {not: {at: [gan_guanghao, jianhu_hall]}}
     - {not: {at: [gan_guanghao, jianhu_gate]}}
     - {not: {at: [gan_guanghao, jianhu_back]}}

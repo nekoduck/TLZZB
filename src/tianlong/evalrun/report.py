@@ -58,17 +58,23 @@ def verdicts(results: Mapping[str, Mapping[str, Any]], thresholds: Mapping[str, 
             route["classify"] = "claude_first"
             rows.append(["J1 归类", "未过", seen, "默认走 C1：classify = 'claude_first'"])
             why.append("归类没过闸：按 7.12 该项默认走 C1。没有 Claude 的钥匙时解析器仍会退回 J1（4.3 的退让），游戏照常能玩。")
-            routes = (cl or {})["summary"].get("routes", {})
+            summary = (cl or {})["summary"]
+            routes = summary.get("routes", {})
             ra = (routes.get("rules_only") or {}).get("core", {}).get("accuracy")
             ja = (routes.get("jev") or {}).get("core", {}).get("accuracy")
             if ra is not None and ja is not None and ra > ja:
                 why.append(f"只用规则的归类（六项全对 {pct(ra)}）比 J1（{pct(ja)}）还准：没有 Claude 的钥匙时，"
                            "把 classify 设成 'rules_only' 比退回 J1 好。")
-            fixed = (cl or {})["summary"].get("jev_repaired")
-            if fixed:
-                h, t = fixed["core"]
-                why.append(f"J1 的答案落成意图时丢了不少（kind、verb 都答对却没落成动作的 {fixed['lost_after_j1']} 条）："
-                           f"换一套落地规则，同一份答案的六项全对是 {pct(h / t if t else None)}，仍过不了 95% 的闸。")
+            elif ra is not None and ja is not None:
+                why.append(f"没有 Claude 的钥匙时退回 J1（六项全对 {pct(ja)}）比只用规则（{pct(ra)}）准："
+                           "classify 不必为此改成 'rules_only'。")
+            raw = summary.get("jev_raw") or {}
+            landing = summary.get("jev_landing") or summary.get("jev_repaired")  # 旧结果文件里叫 jev_repaired
+            if raw and landing is not None:
+                seen_raw = "、".join(f"{k} {pct((raw.get(k) or {}).get('accuracy'))}"
+                                    for k in ("kind", "verb", "target", "act", "to", "asks") if k in raw)
+                why.append(f"直接看 J1 各题的答案：{seen_raw}。kind、verb 两题都答对、整条解析链却没落成标注那类动作的 "
+                           f"{landing.get('lost_after_j1')} 条（共 {core.get('n', '—')} 条）。")
 
     de = results.get("decisions")
     g = _gate(de)

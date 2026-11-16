@@ -20,12 +20,16 @@
 #     safe_place: self     最近的、眼下没人对他怀敌意的别处（同属一方的地方优先）
 #     away_from: 人        同上，且那人不在那里
 #     hostile_here: self   此刻身边对他怀敌意的人
+#     threat_here: self    同上，而且真有威胁：比他强，或眼下的打算正冲着他来（捉拿、攻击）
 #     rumored_item: self   他相信的事实里提到的要紧东西（秘籍、宝物、活宝），不在他手里
 #     teaches_of: 物 / art_of: 人 / practice_art: self   秘籍里他还没学的本事；那人会而他不会、又教得了的本事；他能往上练的本事
 #     foe_at: 人           那人眼下要去的地方（当前这一步的 at），不知道就取他所在之处
 #     pick: {where: 谓词}  图内的活人里，按路程由近到远挑第一个使谓词成立的（$it 指候选人）
 #     pick_item: {where: 谓词}   在世的物件里按 id 挑第一个使谓词成立的
+#     fact_subject: {tag: 标签, where: 谓词}   他相信的、带这个标签的事实里提到的人（图内，由近到远，$it 指候选人）
 #   urgency：紧迫程度 1 到 3；risk：对手的变量
+#   cooldown: 刻数   选中过这条规则之后，隔这么久才再进候选（「讨个说法」这类事不必每个时辰做一回）
+#   pressing: true   等不得的事：这条规则成立时，「照旧做原来的打算」不进候选
 #   templates：一两个步骤模板。模板的 pre 此刻要成立；每一步写法同打算的一步（text / at / do / pre / takes /
 #     offscreen），$变量 在落地时换成 id；at 写人时取他此刻所在之处；第一步的 pre 此刻也要成立，第一步去得了。
 #     do 的 say 可写 ask: {verb, params}（请求对方做的事）与 cls（事情的类别）。
@@ -256,7 +260,7 @@ goals:
     text: 躲开⟦$foe⟧
     when: {all: [{not: {status: [self, captive]}}, {not: {status: [self, bound]}}]}
     bind:
-      foe: {hostile_here: self}
+      foe: {threat_here: self}        # 光是互相看不顺眼不用躲：对方比自己强，或正冲着自己来，才躲
       safe: {away_from: $foe}
     urgency: 3
     templates:
@@ -265,6 +269,35 @@ goals:
           - {id: run, text: 往⟦$safe⟧躲一躲, at: $safe, do: {verb: wait}, takes: 8}
 
   # ------------------------------------------------------------ clan_honor：门派受辱或被围
+  # 门里出了丑事（相信了一条带 sect_scandal 标签的事实，说的是本门弟子）：掌门坐不住，先把人拿下。
+  # pressing：这件事等不得，候选里不再有「照旧」。一次拿一个；拿下之后重新打算，还有同案的就接着拿。
+  - id: honor_purge
+    drive: clan_honor
+    pressing: true
+    text: 拿下⟦$culprit⟧，清理门户
+    when: {all: [{role: [self, wuliang_head]}, {not: {status: [self, captive]}}]}
+    bind:
+      culprit:
+        fact_subject:
+          tag: sect_scandal
+          where:
+            all:
+              - {alive: $it}
+              - {role: [$it, wuliang_disciple]}
+              - {not: {status: [$it, captive]}}
+              - {not: {status: [$it, bound]}}
+    urgency: 3
+    risk: $culprit
+    templates:
+      - id: seize
+        steps:
+          - id: seize
+            text: 赶到⟦$culprit⟧跟前，喝令把人拿下问罪
+            at: $culprit
+            do: {verb: restrain, target: $culprit}
+            pre: {all: [{alive: $culprit}, {not: {status: [$culprit, captive]}}]}
+            takes: 1
+
   - id: honor_hold_sect
     drive: clan_honor
     text: 守住剑湖宫的门户
@@ -287,6 +320,7 @@ goals:
 
   - id: honor_save_face
     drive: clan_honor
+    cooldown: 96                 # 话说过一回就够了：一日之内不再为这个找上门去
     text: 找⟦$foe⟧讨回面子
     when: {not: {status: [self, captive]}}
     bind:

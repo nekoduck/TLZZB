@@ -97,6 +97,9 @@ PROMISE_DAYS = 1
 EVIDENCE_WINDOW = 16  # 出示信物在多少刻之内算数
 DETAIL = "weak:detail:"  # 说得出当事人才知道的细节：一桩请求只算一次
 ALERT_TICKS = 2
+# 所求是放人、放行这一类事（release，或带 permit 说明的），对方才开得出「先服下我手里的毒」这个条件
+LEASH_ASKS = ("release",)
+FOLLOW_TICKS = TICKS_PER_DAY  # 答应「跟着走」之后跟多久（没有别的变故的话）
 
 
 class RequestView(BaseModel):
@@ -227,7 +230,7 @@ def allowed_replies(r: Request) -> list[str]:
 
 
 def counter_options(state: WorldState, defs: Defs, r: Request) -> list[dict]:
-    """还价的条件候选：要对方交出一件值钱的东西；或要对方服下自己手里的毒。"""
+    """还价的条件候选：要对方交出一件值钱的东西；所求是放人时，或要对方先服下自己手里（有解药）的毒。"""
     frm, to = state.chars.get(r.frm), state.chars.get(r.to)
     if frm is None or to is None:
         return []
@@ -239,11 +242,31 @@ def counter_options(state: WorldState, defs: Defs, r: Request) -> list[dict]:
 
     for iid in sorted(frm.inventory, key=lambda i: -worth(i))[:3]:
         out.append({"verb": "give", "params": {"item": iid, "target": to.id}})
-    for iid in to.inventory:
-        it = state.items[iid]
-        if "poison" in it.tags:
-            out.append({"verb": "use", "params": {"item": iid}})
+    if str(r.action.get("verb") or "") in LEASH_ASKS or r.action.get("permit"):
+        for iid in to.inventory:
+            if leash_poison(state, to, iid):
+                out.append({"verb": "use", "params": {"item": iid}})
     return out[:5]
+
+
+def leash_poison(state: WorldState, holder: Character, item_id: str) -> bool:
+    """这样东西是不是一根拴得住人的绳：是毒，发作有期限，而且解药就在开条件的人自己手里。
+
+    「先服下我的毒」当条件，是给要放走的人拴上绳子（回来才有解药）；手里没有解药的毒只是要人的命，
+    算不得条件。所以只在所求是放人这一类事（``LEASH_ASKS``）时才开得出这个条件。
+    """
+    it = state.items.get(item_id)
+    if it is None or "poison" not in it.tags:
+        return False
+    inf = it.props.get("inflicts")
+    status = inf.get("status") if isinstance(inf, dict) else None
+    if not status:
+        return False
+    for other in holder.inventory:
+        o = state.items.get(other)
+        if o is not None and status in (o.props.get("cures") or []):
+            return True
+    return False
 
 
 def speech_options(state: WorldState, defs: Defs, actor: str) -> SpeechOptions:
@@ -288,10 +311,36 @@ def speech_options(state: WorldState, defs: Defs, actor: str) -> SpeechOptions:
 # ---------------------------------------------------------------- requests
 
 
+def volunteer_spec(state: WorldState, defs: Defs, to: str, action: dict | None) -> tuple[Any, dict] | None:
+    """所求之事带 ``volunteer`` 说明（「由我来」：自告奋勇顶某场情境里的一个角色位）时，对上内容里的定义。
+
+    返回（情境定义，它的 ``volunteer`` 一节）。对不上的返回 None：没有这场情境、它不收人顶这个位、
+    开口的对象不是那场事里主事的人，或者那场事眼下无从谈起（情境的 ``when`` 不成立）。
+    """
+    note = (action or {}).get("volunteer")
+    if not isinstance(note, dict):
+        return None
+    d = defs.situations.get(str(note.get("situation") or ""))
+    spec = getattr(d, "volunteer", None) if d is not None else None
+    if not isinstance(spec, dict) or not spec.get("role") or spec.get("role") != note.get("role"):
+        return None
+    if d.roles.get(str(spec.get("to") or "")) != to:
+        return None
+    try:
+        if not predicates.holds(state, defs, d.when, Ctx()):
+            return None
+    except predicates.KernelError:
+        return None
+    return d, spec
+
+
 def classify_request(state: WorldState, defs: Defs, frm: str, to: str, action: dict) -> str:
     """所求之事的默认类别（解析器给了 cls 时以它为准）。"""
     verb = action.get("verb")
     params = action.get("params") or {}
+    if action.get("volunteer") is not None:
+        vol = volunteer_spec(state, defs, to, action)
+        return str(vol[1].get("cls") or "effort") if vol is not None else "effort"
     if verb == "teach":
         art = defs.arts.get(params.get("art", ""))
         if art is not None and art.secrecy == "sect":
@@ -322,6 +371,8 @@ def request_blocked(state: WorldState, defs: Defs, r: Request) -> bool:
         return True
     verb = str(r.action.get("verb") or "")
     params = dict(r.action.get("params") or {})
+    if r.action.get("volunteer") is not None and volunteer_spec(state, defs, r.to, r.action) is None:
+        return True  # 自告奋勇顶一件眼下无从谈起的事：谈不成
     if verb == "say":
         heard = params.get("to") or params.get("target") or r.frm
         listeners = [heard] if isinstance(heard, str) else [str(x) for x in heard]
@@ -448,7 +499,11 @@ def make_request(
     if cls not in defs.world.request.weights:
         cls = "effort"
     evidence = gather_evidence(state, defs, frm, to, sp)
-    lev = leverage_score(state, frm, to, sp.leverage)
+    stakes = dict(sp.leverage)
+    vol = volunteer_spec(state, defs, to.id, action)
+    if vol is not None and vol[1].get("urgent"):
+        stakes["urgent"] = True  # 有人自告奋勇去办他眼下最急的那件事：正好帮到急需（6.6）
+    lev = leverage_score(state, frm, to, stakes)
     old = _same_request(state, frm.id, to.id, kind, action)
     nag = False
     if old is not None and old.status != "agreed":
@@ -496,6 +551,17 @@ def accept(state: WorldState, defs: Defs, r: Request) -> None:
     do = _do_pattern(r)
     if r.kind == "question":
         return
+    if r.action.get("volunteer") is not None:
+        # 「由我来」：对方点了头，这件事就定了——开口的人得到那个身份（那场情境挑人时认它）。
+        # 没有另外要对方去做的事，所以不插步骤，也不记许诺。
+        vol = volunteer_spec(state, defs, r.to, r.action)
+        if vol is None:
+            r.status = "expired"
+        elif vol[1].get("grant"):
+            effects.apply_effects(
+                state, defs, [{"role": [r.frm, str(vol[1]["grant"]), "add"]}], Ctx(self_id=r.to), source="rule"
+            )
+        return
     if effects.setpiece_gone(state, r.action):
         # 所求是某场情境里的一招，而那场情境已经散了：嘴上答应了也无事可做——不插那一步
         # （否则它会卡在打算最前面直到期限），请求就此过期，也不算一桩许诺。
@@ -508,6 +574,11 @@ def accept(state: WorldState, defs: Defs, r: Request) -> None:
         origin="rule",
         deadline=state.tick + PROMISE_DAYS * TICKS_PER_DAY,
     )
+    if do.get("verb") == "follow":
+        # 答应「跟着走」不是一下子就做完的事：跟上之后要一直跟着，直到跟满这段时间，或者跟的人走了、
+        # 自己被拿住、另有变故（那时这一步作废，他重新打算）。跟着的这段时间里，他自己原先的打算先放下。
+        st.takes = FOLLOW_TICKS
+        st.deadline = state.tick + FOLLOW_TICKS + PROMISE_DAYS * TICKS_PER_DAY
     effects.insert_step(state, to, st)
     pid = next_id(state, "P")
     state.promises[pid] = Promise(

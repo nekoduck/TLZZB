@@ -7,6 +7,7 @@ from tianlong.kernel.defs import Defs
 from tianlong.kernel.state import TICKS_PER_DAY, TICKS_PER_HOUR, Character, Ctx, Step, WorldState, has_status
 
 HOSTILE_AFFINITY = -30
+FRIENDLY_AFFINITY = 30  # 有这样的私交，门派之间的敌对就落不到这个人头上
 HOSTILE_VERBS = ("attack", "restrain")
 LETHAL_CHANCE = 50  # 判定失败即坠落、成功率低于它的出口算致命
 LETHAL_POWER_GAP = 2
@@ -49,13 +50,19 @@ def intends_kill(state: WorldState, a: Character, b: str) -> bool:
 
 
 def is_hostile(state: WorldState, a: Character, b: str) -> bool:
-    """a 对 b 有敌意：好感低于 -30，或眼下的打算里有捉拿、攻击 b 这一类事。"""
+    """a 对 b 有敌意：好感低于 -30，或眼下的打算里有捉拿、攻击 b 这一类事，
+    或两人分属眼下互为对头的门派（world.yaml 的 enmity）而 a 与 b 又没有私交（好感不到 30）。"""
     if a.id == b:
         return False
     r = a.rel.get(b)
     if r is not None and r.affinity < HOSTILE_AFFINITY:
         return True
-    return intends(state, a, b)
+    if intends(state, a, b):
+        return True
+    o = state.chars.get(b)
+    if o is None or (r is not None and r.affinity >= FRIENDLY_AFFINITY):
+        return False
+    return predicates.at_odds(state, a, o)
 
 
 def hostiles_toward(state: WorldState, cid: str) -> list[Character]:

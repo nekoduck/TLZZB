@@ -23,7 +23,10 @@ def check(
     tick_before: int | None = None,
     pending_before: set[str] | None = None,
     able_before: set[str] | None = None,
+    steps_before: set[str] | None = None,
 ) -> list[str]:
+    """``pending_before``：这次结算之前还没做的步骤；``steps_before``：之前就有的全部步骤（不论状态）。
+    这次结算当中新插进来的步骤（答应了一桩请求、当场就做）不在 ``steps_before`` 里，它的事件是正当的。"""
     out: list[str] = []
     holders: dict[str, str] = {}
     for c in state.chars.values():
@@ -106,7 +109,12 @@ def check(
                 b = speaker.beliefs.get(fid)
                 if b is None or b.confidence < predicates.BELIEVE:
                     out.append(f"event {ev.id}: {ev.actor} says {fid} without believing it")
-        if pending_before is not None and ev.step is not None and ev.step not in pending_before:
+        if (
+            pending_before is not None
+            and ev.step is not None
+            and ev.step not in pending_before
+            and (steps_before is None or ev.step in steps_before)
+        ):
             out.append(f"event {ev.id} comes from finished or void step {ev.step}")
         if (
             able_before is not None

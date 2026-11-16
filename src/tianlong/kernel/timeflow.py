@@ -186,6 +186,7 @@ def _promises(state: WorldState) -> None:
 def advance_time(state: WorldState, defs: Defs, ticks: int) -> list[Event]:
     """推进 ticks 刻，返回这段时间里内核自己产生的事件。"""
     out: list[Event] = []
+    predicates.sync_enmity(state, defs)
     for _ in range(max(0, int(ticks))):
         state.tick += 1
         out += run_due_scheduled(state, defs)

@@ -114,6 +114,7 @@ def test_sample_choice_accepts_unit_float() -> None:
 
 
 def test_mode(settings: Settings) -> None:
+    settings.route.classify = 'jev_first'  # 不依赖 config.toml 里的默认路由（M3 评测后 classify 改成了 claude_first）
     assert mode(settings, 'classify') == 'jev_first'
     settings.route.decide_soul = 'claude_first'
     assert mode(settings, 'decide_soul') == 'claude_first'

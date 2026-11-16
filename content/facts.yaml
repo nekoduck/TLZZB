@@ -25,12 +25,12 @@ F_duan_runaway:
   known_by: [duan_yu, dali_guard_chief]
 F_lovers:
   text: ⟦gan_guanghao⟧与⟦ge_guangpei⟧有私情，瞒着师门。
-  tags: [secret, wuliang, lovers]
+  tags: [secret, wuliang, lovers, sect_scandal]
   gossip: false
   known_by: [gan_guanghao, ge_guangpei]
 F_elope_plan:
   text: ⟦gan_guanghao⟧与⟦ge_guangpei⟧打算趁乱从⟦back_trail⟧私逃下山。
-  tags: [secret, wuliang, lovers]
+  tags: [secret, wuliang, lovers, sect_scandal]
   known_by: [gan_guanghao, ge_guangpei]
 F_backhill_forbidden:
   text: 剑湖宫的后山是本门禁地，外人不得擅入。

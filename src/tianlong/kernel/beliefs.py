@@ -126,7 +126,7 @@ def hear(
     lab = label(conf)
     old = listener.beliefs.get(fid)
     if old is None or old.confidence < conf:
-        effects.learn(state, listener, fid, conf, f"told:{speaker}")
+        effects.learn(state, listener, fid, conf, f"told:{speaker}", defs)
     if lab == "disbelieve" and beneficial:
         mood.adj_rel(state, listener.id, speaker, "trust", -5)
     r = listener.rel.get(speaker)

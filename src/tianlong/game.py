@@ -62,6 +62,11 @@ NO_WORDS = frozenset({"否", "不", "不是", "不了", "不走", "算了", "留
 LONG_VERBS = ("wait", "rest", "study", "practice", "teach")  # 时间成段过去的动作（6.9、8.7）
 TRAVEL_VERBS = ("go", "flee")
 QUIET_VERBS = frozenset({"wait", "look", "listen", "examine", "rest", "study", "practice"})  # 算不上「动静」
+# 静下来做的长动作：做满一个时辰以上时，旁人之间的闲话与小动作不打断它（见 _breaks_quiet）
+QUIET_LONG_VERBS = ("wait", "rest", "study", "practice")
+MOVE_VERBS = frozenset({"go", "flee", "enter", "leave", "arrive", "follow_move"})  # 有人来了、走了
+GRAVE_KINDS = frozenset({"death", "harmed", "captured", "poisoned"})  # 眼前有人死伤、被擒、中毒
+POINTED_ACTS = frozenset({"warn", "threaten", "order"})  # 对众人说也算冲着在场每个人来的话
 TRAVEL_SUMMARY_MIN = 4  # 走了小半个时辰以上，用一句话带过路上的工夫
 REST_REFLECT = 16  # 歇息满 16 刻，做夜间反思（7.10）
 MAX_DANGER_CHECKPOINTS = 3  # 「大险之前」的检查点至多留几个（反复读档重来时，不让它们把每日之始的挤掉）
@@ -735,12 +740,14 @@ class Game:
         """推进 ``ticks`` 刻：逐个时辰边界走，每跨一个时辰做一次 ``world.tick``（6.9、8.1、8.7）。
 
         长动作（等、歇、读、练）期间，在场的人每个时辰照常抉择一轮；有动静传到玩家耳目、险情加重、
-        眼前有情境开场，就在那一刻打断。赶路只在后两种情形停下。返回（实际过去的刻数，是否被打断）。
+        眼前有情境开场，就在那一刻打断。赶路只在后两种情形停下。等、歇、读、练满一个时辰以上时，
+        旁人之间的闲话与小动作不算动静（``_breaks_quiet``）。返回（实际过去的刻数，是否被打断）。
         """
         st, df = self.state, self.defs
         elapsed = 0
         interrupted = False
         long = act.verb in LONG_VERBS
+        quiet = act.verb in QUIET_LONG_VERBS and ticks >= TICKS_PER_HOUR
         danger0 = self._danger()
         sits0 = self._situations_here()
         while elapsed < ticks and st.ended is None and not interrupted:
@@ -754,7 +761,8 @@ class Game:
                 if st.ended is not None or (stop_when_able and self._can_act()):
                     break
                 # 到点的事（scheduled、毒发的征兆）一出现就看要不要打断，不等到这个时辰走完
-                if new and interruptible and elapsed + done < ticks and self._interrupts(act, new, danger0, sits0):
+                if (new and interruptible and elapsed + done < ticks
+                        and self._interrupts(act, new, danger0, sits0, quiet=quiet)):
                     interrupted = True
                     break
             elapsed += done
@@ -771,7 +779,7 @@ class Game:
                     waits = self._wait_marks()
                     hour += await self._micro_rounds(evs + hour, 1)  # 玩家忙着，在场的人照常过他们的日子
                     self._add_credit(waits)
-                if interruptible and elapsed < ticks and self._interrupts(act, hour, danger0, sits0):
+                if interruptible and elapsed < ticks and self._interrupts(act, hour, danger0, sits0, quiet=quiet):
                     interrupted = True
             if stop_when_able and self._can_act():
                 break
@@ -791,7 +799,10 @@ class Game:
         loc = self.player.loc
         return {s.id for s in self.state.situations.values() if s.loc == loc}
 
-    def _interrupts(self, act: ActionInst, evs: list[Event], danger0: int, sits0: set[str]) -> bool:
+    def _interrupts(
+        self, act: ActionInst, evs: list[Event], danger0: int, sits0: set[str], *, quiet: bool = False
+    ) -> bool:
+        """这几件新出的事要不要打断正在做的长动作。``quiet``：静下来做满一个时辰以上的事（等、歇、读、练）。"""
         st = self.state
         pid = st.player
         me = self.player
@@ -817,8 +828,34 @@ class Game:
                 continue
             if ev.verb in QUIET_VERBS and ev.speech is None:
                 continue
+            if quiet and not self._breaks_quiet(ev):
+                continue
             return True
         return False
+
+    def _breaks_quiet(self, ev: Event) -> bool:
+        """玩家静下来等、歇、读、练（一个时辰以上）时，别人做的这件事算不算该停下来看的动静。
+
+        算：巨响；有人来了、走了；冲着玩家来的事（动作的对象是他、话是对他说的）；眼前有人死伤、被擒、中毒；
+        不是哪个人做的事（到点的事、身上的征兆）。不算：旁人之间的闲话、对满屋子人说的寻常话、旁人之间的小动作——
+        这些照样进这一段的叙述，只是不为它停下。险情加重、情境开场在 ``_interrupts`` 里先看过了。
+        """
+        pid = self.state.player
+        if ev.actor is None or ev.loud or ev.verb in MOVE_VERBS:
+            return True
+        if any(k.get("k") in GRAVE_KINDS for k in ev.kinds):
+            return True
+        sp = ev.speech
+        if sp is None:
+            return pid in (ev.params.get("target"), ev.params.get("target2")) or any(
+                pid in (k.get("who"), k.get("by")) for k in ev.kinds
+            )
+        if pid not in sp.to:
+            return False
+        if len(sp.to) == 1 or sp.act in POINTED_ACTS:
+            return True
+        req = self.state.requests.get(sp.request) if sp.request else None
+        return req is not None and pid in (req.frm, req.to)
 
     def _checkpoint_before_danger(self) -> None:
         """性命之忧之前的检查点（2.6、8.7）：取上一回合末的自动存档，也就是这一回合开始之前的世界。"""

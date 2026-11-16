@@ -22,8 +22,10 @@ MAX_STEPS = 8  # 一段时间里一个人至多连着等完几步（防内容写
 def waiting_step(state: WorldState, defs: Defs, c: Character) -> Step | None:
     """此人眼下这一步是不是「就在这里等」：是就返回这一步。前提不成立、没到时候、要去别处的都不算。"""
     st = danger.current_step(c)
-    if st is None or st.do.get("verb") not in WAIT_VERBS:
+    if st is None:
         return None
+    if st.do.get("verb") not in WAIT_VERBS and not actions.following_step(state, c, st):
+        return None  # 已经跟上了的「跟着某人」与「等」一样按过去的时间记
     if st.at is not None and st.at != c.loc:
         return None
     try:

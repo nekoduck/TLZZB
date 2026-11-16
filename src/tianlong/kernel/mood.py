@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from tianlong.kernel import growth
+from tianlong.kernel import growth, predicates
 from tianlong.kernel.defs import Defs
 from tianlong.kernel.state import TICKS_PER_HOUR, Character, Event, Relation, WorldState
 
@@ -224,7 +224,8 @@ def rel_text(c: Character, other: str) -> str:
 
 
 def band(defs: Defs, state: WorldState, a: str, b: str) -> str:
-    """a 对 b 的关系档（6.6）：按 trust 与 affinity 的平均值；同门、师徒、主仆至少「相熟」。"""
+    """a 对 b 的关系档（6.6）：按 trust 与 affinity 的平均值；同门、师徒、主仆至少「相熟」；
+    分属眼下互为对头的门派（world.yaml 的 enmity）而私交不到「相熟」的，算「敌对」。"""
     ca, cb = state.chars.get(a), state.chars.get(b)
     if ca is None or cb is None:
         return "stranger"
@@ -242,6 +243,8 @@ def band(defs: Defs, state: WorldState, a: str, b: str) -> str:
         b_ = "familiar"
     else:
         b_ = "trusted"
+    if b_ in ("hostile", "stranger") and predicates.at_odds(state, ca, cb, defs):
+        return "hostile"  # 分属眼下互为对头的门派，又没有私交：按对头待
     if b_ in ("hostile", "stranger") and close_roles(defs, ca, cb, state):
         b_ = "familiar"
     return b_

@@ -150,8 +150,11 @@ def test_report_is_rebuilt_from_result_files(cfg: EvalConfig) -> None:
 
     g = {"name": "g", "detail": "d", "fallback": "f"}
     results = {
-        "classify": res("classify", [{**g, "passed": False}], {"jev_gate": {
-            "core": {"coverage": 0.8, "accuracy": 0.9}, "recommended": None}}, ["C1 一栏"]),
+        "classify": res("classify", [{**g, "passed": False}], {
+            "jev_gate": {"core": {"coverage": 0.8, "accuracy": 0.9, "n": 10}, "recommended": None},
+            "routes": {"rules_only": {"core": {"accuracy": 0.6}}, "jev": {"core": {"accuracy": 0.78}}},
+            "jev_raw": {"kind": {"accuracy": 0.96}, "verb": {"accuracy": 0.84}},
+            "jev_landing": {"lost_after_j1": 3}}, ["C1 一栏"]),
         "decisions": res("decisions", [{**g, "passed": True}], {"jev": {"gate": {"coverage": 0.6, "accuracy": 0.8},
                                                                         "recommended": None}}),
         "checks": res("checks", [{**g, "passed": False}], {"at_threshold": {"detection": 1.0, "false_kill": 0.2},
@@ -162,6 +165,11 @@ def test_report_is_rebuilt_from_result_files(cfg: EvalConfig) -> None:
     assert v["route"] == {"classify": "claude_first", "decide_soul": "jev_first", "decide_named": "jev_first",
                           "check": "jev_first"}
     assert v["thresholds"]["narration_flag"] == 0.8 and v["thresholds"]["choice_confidence"] == th["choice_confidence"]
+    # 归类没过闸时的几句说明都从这次的数字里来：退回 J1 与只用规则谁准、J1 各题的准确率、落地时丢了几条
+    notes = "\n".join(v["notes"])
+    assert "退回 J1（六项全对 78.0%）比只用规则（60.0%）准" in notes and "rules_only' 比退回 J1 好" not in notes
+    assert "kind 96.0%、verb 84.0%" in notes and "没落成标注那类动作的 3 条（共 10 条）" in notes
+    assert "丢了不少" not in notes
     # 抉择没过、扫描里也没有过闸的门槛：有魂角色改 claude_first；核对没过又没有可用的门槛：只留字符串检查
     results["decisions"]["gates"][0]["passed"] = False
     results["checks"]["summary"]["recommended"] = None
@@ -185,15 +193,15 @@ def test_report_is_rebuilt_from_result_files(cfg: EvalConfig) -> None:
     assert "## 时延与成本" not in text and "latency_cost" in text  # 没有结果的套件在开头点名
 
 
-async def test_raw_answers_and_the_repaired_mapping(cfg: EvalConfig) -> None:
-    """J1 的答案换回实体 id（raw_of）；「修补后的映射」把同一份答案落成标注的动作（只作参考的那一栏）。"""
+async def test_raw_answers_and_the_gate_mirror_the_parser(cfg: EvalConfig) -> None:
+    """J1 的答案换回实体 id（raw_of）；7.12 的「过门槛」照解析器自己的升级条件重算（confidence_of）。"""
     from tianlong import parser
 
     th = cfg.settings.jev.thresholds
     items = {i["id"]: i for i in cfg.dataset("classify")["items"]}
     llm = cfg.open_llm(cfg.eval_settings(classify="rules_only"))
     try:
-        # 一件交接的事：两题都答成了那个人，物件只在概率里排第二
+        # 一件交接的事：物、人两题都答成了那个人，物件只在概率里排第二
         it = items["c015"]
         defs, st, _ = cfg.build(cfg.scene_setup(it["scene"]))
         base = await parser.classify(llm, st, defs, it["input"])
@@ -216,26 +224,41 @@ async def test_raw_answers_and_the_repaired_mapping(cfg: EvalConfig) -> None:
         assert raw["targets"] == [person.ref, person.ref] and raw["to"] == [] and raw["asks"] is None
         gold_item = classify.resolved_item(it, [], st.player)
         assert classify.scoring.score_raw_item(gold_item, raw)["target"] is False
-        # 解析器照自己的规则落地：又做又说、只有一个人 → 对不上合法动作
-        result = base.model_copy(update={"intent": intake.intent_from_jev(ans, menu, th, []), "via": "jev"})
-        assert result.intent.kind == "both" and result.intent.target == person.ref and result.intent.target2 is None
+        # 解析器照自己的规则落地：kind 很有把握地说只是动作，has_speech 刚过线不算另有一句话；
+        # 可物件没被选中，只有一个人 → 对不上合法动作
+        intent = intake.intent_from_jev(ans, menu, th, [])
+        result = base.model_copy(update={"intent": intent, "via": "jev"})
+        assert intent.kind == "act" and intent.act is None and (intent.target, intent.target2) == (person.ref, None)
         bound = parser.bind(st, defs, result)
         assert bound.kind != "action"
-        assert classify.scoring.score_classify(gold_item, classify.pred_of(st, result, bound))["kind"] is False
-        # 修补后：只是动作、物与人各取最可能的一个 → 落成标注的那个 give
-        fixed = classify.repaired(result, ans, th)
-        assert fixed is not result and fixed.intent.kind == "act" and fixed.intent.act is None
-        assert (fixed.intent.target, fixed.intent.target2) == (thing.ref, person.ref)
-        fields = classify.scoring.score_classify(gold_item, classify.pred_of(st, fixed, parser.bind(st, defs, fixed)))
-        assert classify.scoring.all_right(fields)
-        # 不带对象的动词：丢掉随手选的对象
-        look = result.model_copy(update={"intent": result.intent.model_copy(update={
-            "kind": "act", "verb": "look", "target": None, "target2": person.ref, "act": None})})
-        assert parser.bind(st, defs, look).kind != "action"
-        fixed = classify.repaired(look, ans, th)
-        assert fixed.intent.target2 is None and parser.bind(st, defs, fixed).action.verb == "look"
-        # 不是动作的意图不动
-        say = result.model_copy(update={"intent": result.intent.model_copy(update={"kind": "say", "verb": None})})
-        assert classify.repaired(say, ans, th) is say
+        fields = classify.scoring.score_classify(gold_item, classify.pred_of(st, result, bound))
+        assert fields["kind"] is False
+        # 闸：give 看 kind、verb 与「物」那道题；act 一题（0.70）没有话就不看
+        c = classify.confidence_of(ans, intent, th)
+        assert c["gate_keys"] == intake.gate_keys(ans, intent) == ["kind", "verb", "target"]
+        assert c["conf"] == 0.8 and round(c["margin"], 6) == 0.6 and c["noul_mid"] is False and c["unsure"] is False
+        assert set(c["confs"]) == {"kind", "verb", "target", "target2", "act", "to"}
+        assert classify._question_conf({**c}, "target") == 0.8 and classify._question_conf({**c}, "to") == 0.8
+        assert classify._question_conf({"confs": {"target": 0.3}, "gate_keys": ["kind", "verb"]}, "target") is None
+        # 不带对象的动词：对象两题答得再没把握也不算
+        low = {**ans, "verb": {"type": "choice", "choice": "look", "confidence": 0.95, "probabilities": {"look": 0.95}},
+               "target": {"type": "choice", "choice": "none", "confidence": 0.3, "probabilities": {"none": 0.3}}}
+        look = intake.intent_from_jev(low, menu, th, [])
+        c = classify.confidence_of(low, look, th)
+        assert look.verb == "look" and c["gate_keys"] == ["kind", "verb"] and c["conf"] == 0.95
+        assert parser.bind(st, defs, base.model_copy(update={"intent": look, "via": "jev"})).action.verb == "look"
+        # has_speech 落在中间：kind 很有把握时不看；kind 把握不到 0.9 时算没把握（与 jev_unsure 同）
+        mid = {**ans, "has_speech": {"type": "noul", "noul": 0.5}}
+        c = classify.confidence_of(mid, intake.intent_from_jev(mid, menu, th, []), th)
+        assert c["noul_mid"] is False and c["unsure"] is False
+        soft = {**mid, "kind": {"type": "choice", "choice": "act", "confidence": 0.8,
+                                "probabilities": {"act": 0.8, "both": 0.2}}}
+        c = classify.confidence_of(soft, intake.intent_from_jev(soft, menu, th, []), th)
+        assert c["noul_mid"] is True and c["unsure"] is True
+        # 在 config 的门槛上，scoring.passes 与解析器的 jev_unsure 是一回事
+        for a in (ans, low, mid, soft):
+            c = classify.confidence_of(a, intake.intent_from_jev(a, menu, th, []), th)
+            assert classify.scoring.passes(c, th.choice_confidence, th.choice_margin) is (not c["unsure"])
+        assert not hasattr(classify, "repaired")
     finally:
         await llm.aclose()

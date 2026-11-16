@@ -66,13 +66,12 @@ actions:
     pre: {not: {flag: .explained}}
     desc: '{intruder}报上来意'
     effects:
-      - {set_flag: [.explained, true]}
-      - {set_flag: [.asked, true]}
+      - {set_flag: [.explained, true]}     # 不顺手记 .asked：同一轮里守门的已经选了「喝问」，那一招要仍然做得出
       - {emit: {actor: $intruder, verb: explain, text: '{intruder}向{keeper}报上来意'}}
   admit:
     role: keeper
     lean: true
-    pre: {all: [{flag: .asked}, {status: [$intruder, knocked]}]}
+    pre: {all: [{any: [{flag: .asked}, {flag: .explained}]}, {status: [$intruder, knocked]}]}
     desc: '{keeper}见{intruder}照规矩敲过了树，放他进去'
     effects:
       - {add_status: [$intruder, vetted, {ticks: 96}]}
@@ -80,7 +79,7 @@ actions:
       - {emit: {actor: $keeper, verb: let_pass, text: '{keeper}听见过谷口的敲树声，知道{intruder}是照规矩来的，点点头，让他进去了'}}
   let_pass:
     role: keeper
-    pre: {flag: .asked}
+    pre: {any: [{flag: .asked}, {flag: .explained}]}
     desc: '{keeper}放{intruder}过去'
     effects:
       - {add_status: [$intruder, vetted, {ticks: 96}]}
@@ -88,7 +87,7 @@ actions:
       - {emit: {actor: $keeper, verb: let_pass, text: '{keeper}打量了{intruder}几眼，侧身让开了路'}}
   drive_off:
     role: keeper
-    pre: {flag: .asked}
+    pre: {any: [{flag: .asked}, {flag: .explained}]}
     desc: '{keeper}喝令{intruder}离开'
     effects:
       - {add_status: [$intruder, vetted, {ticks: 16}]}
@@ -97,7 +96,7 @@ actions:
       - {emit: {actor: $keeper, verb: drive_off, text: '{keeper}沉下脸，喝令{intruder}立刻离开'}}
   seize:
     role: keeper
-    pre: {flag: .asked}
+    pre: {any: [{flag: .asked}, {flag: .explained}]}
     desc: '{keeper}动手拿下{intruder}'
     effects:
       - {add_status: [$intruder, captive, {source: $keeper}]}
@@ -111,8 +110,10 @@ offscreen:
     effects:
       - {add_status: [$intruder, vetted, {ticks: 96}]}
       - {emit: {actor: $keeper, verb: let_pass, text: '{keeper}见{intruder}来头不小，没敢阻拦'}}
-  - when:                                   # 对来人怀着敌意：动手拿人，来人逃得掉就被赶开
-      rel: [$keeper, $intruder, affinity, '<=', -30]
+  - when:                                   # 对来人怀着敌意，或来人是对头门下：动手拿人，来人逃得掉就被赶开
+      any:
+        - {rel: [$keeper, $intruder, affinity, '<=', -30]}
+        - {enemies: [$keeper, $intruder]}
     effects:
       - {add_status: [$intruder, vetted, {ticks: 16}]}
       - check:

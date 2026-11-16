@@ -201,6 +201,13 @@ def step_ready(state: WorldState, defs: Defs, c: Character, st: Step) -> bool:
     return predicates.holds(state, defs, st.pre, Ctx(self_id=c.id))
 
 
+def following_step(state: WorldState, c: Character, st: Step) -> bool:
+    """这一步是「跟着某人」，而且他眼下正跟着那人：接下来只要跟着（等满 ``takes``），不必再「跟上」一次。"""
+    if st.do.get("verb") != "follow" or c.following is None:
+        return False
+    return predicates.resolve_id(st.do.get("target"), state, Ctx(self_id=c.id)) == c.following
+
+
 def matches_do(
     action: ActionInst,
     do: dict,
@@ -752,9 +759,15 @@ def legal_actions(state: WorldState, defs: Defs, actor: str, *, for_model: bool 
     # ★：当前这一步的 do；人不在 at 就标最短路上的那一步；情境里的 lean
     st, hop = _star_targets(state, defs, c)
     ctx = Ctx(self_id=actor)
+    tailing = st is not None and following_step(state, c, st)
     for a in acts:
         if st is not None:
-            if hop is not None:
+            if tailing:
+                # 已经跟上了：这一步接下来就是跟着（等），不是「不再跟着」
+                if a.verb == "wait":
+                    a.star = True
+                    a.tags.append("agenda")
+            elif hop is not None:
                 if a.verb == "go" and a.params.get("exit") == hop:
                     a.star = True
                     a.tags.append("agenda")

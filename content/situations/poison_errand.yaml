@@ -19,11 +19,22 @@ roles:
       where: {all: [{status: [$it, captive]}, {role: [$it, wanjie_family]}]}
   messenger:
     pick:
+      prefer: {role: [$it, errand_volunteer]}   # 有人自告奋勇（帮主点过头）就先用他
       where:
         all:
           - {not: {role: [$it, shennong_member]}}
           - {not: {role: [$it, wanjie_family]}}
           - {any: [{status: [$it, captive]}, {role: [$it, errand_volunteer]}]}
+# 「由我来」：帮主中了毒、正要找人去取药的时候，在场的外人可以开口请缨（6.6 的请求，照常裁决；
+# 这件事正好帮到他的急需）。他答应了，请缨的人得 errand_volunteer 身份，上面 messenger 的 pick 先挑他。
+volunteer:
+  role: messenger
+  to: chief
+  grant: errand_volunteer
+  cls: effort
+  urgent: true
+  desc: '让{volunteer}服下⟦duanchang_san⟧，替{chief}去⟦wanjie_valley⟧取解药'
+  keys: [取解药, 取药, 送信, 报信, 服毒, 服下, 服药]
 at: $chief
 scene: tense
 actions:
@@ -47,6 +58,7 @@ actions:
       - {add_status: [$messenger, poisoned_duanchang, {ticks: 672, source: $chief}]}
       - {remove_status: [$messenger, captive]}
       - {role: [$messenger, shennong_errand, add]}
+      - {role: [$messenger, errand_volunteer, remove]}
       - {set_flag: [.swallowed, true]}
       - {set_flag: [errand_sent, true]}
       - {emit: {actor: $messenger, verb: swallow, text: '{messenger}把那包药粉吞了下去'}}
@@ -66,6 +78,7 @@ actions:
       - {add_status: [$messenger, poisoned_duanchang, {ticks: 672, source: $chief}]}
       - {remove_status: [$messenger, captive]}
       - {role: [$messenger, shennong_errand, add]}
+      - {role: [$messenger, errand_volunteer, remove]}
       - {set_flag: [.swallowed, true]}
       - {set_flag: [errand_sent, true]}
       - {emit: {actor: $chief, verb: force, text: '帮众按住{messenger}，硬把药粉灌了下去'}}
@@ -100,6 +113,7 @@ offscreen:
       - {add_status: [$messenger, poisoned_duanchang, {ticks: 672, source: $chief}]}
       - {remove_status: [$messenger, captive]}
       - {role: [$messenger, shennong_errand, add]}
+      - {role: [$messenger, errand_volunteer, remove]}
       - {set_flag: [errand_sent, true]}
       - {emit: {actor: $chief, verb: demand, text: '{chief}逼{messenger}服下断肠散，限他七日内到万劫谷取回貂毒的解药，扣下{hostage}做人质'}}
       - {learn: [$messenger, F_route_wanjie, 1.0, told]}

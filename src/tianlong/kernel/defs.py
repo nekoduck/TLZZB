@@ -72,6 +72,12 @@ class WorldRules(_Open):
     request: RequestRules = RequestRules()
     salience: dict[str, int] = DEFAULT_SALIENCE
     labels: dict[str, str] = {}
+    # 所求的种类 → 事实标签：有这种所求的人新近相信了带这种标签的事，就是「出了与他的所求有关的大事」，
+    # 立即重新打算（8.3）。例：clan_honor: [sect_scandal]。
+    concerns: dict[str, list[str]] = {}
+    # 门派之间的敌对：每项 {between: [身份甲, 身份乙], when: 谓词?}。when 成立（不写即恒成立）期间，
+    # 带这两种身份的人互为对头（danger.is_hostile、关系档都认）；同时带着两边身份的人不算。
+    enmity: list[dict[str, Any]] = []
 
 
 class ArtStage(_Open):
@@ -171,6 +177,10 @@ class SituationDef(_Open):
     max_turns: int | None = None
     offscreen: list[OffscreenRule] = []
     paragraphs: list[Any] = []
+    # 可以自告奋勇顶上的角色位（6.6 的请求「由我来」）：{role, to, grant?, cls?, urgent?, desc?, keys?}。
+    # role：顶哪个用 pick 挑人的角色位；to：向哪个写死的角色位上的人开口；grant：对方答应后开口的人得到的身份
+    # （角色位的 pick 认这个身份）；cls：这件事对答应的人算哪一类；urgent：正好帮到对方的急需。
+    volunteer: dict[str, Any] | None = None
 
 
 class BaselineMark(_Open):

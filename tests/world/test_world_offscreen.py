@@ -189,6 +189,8 @@ async def test_reply_that_agrees_and_acts_is_not_rolled_back(llm, world):
     assert not [v for v in state.violations[n:] if "rollback" in v], state.violations[n:]
     assert state.chars["sn_guard_3"].following == "sn_chief_b"
     assert all(e.offscreen for e in events if e.actor == "sn_guard_3")
-    # 答应的那一步当场做完了
+    # 答应「跟着走」是持续的一步：当场跟上了，这一步还在（跟满了才算完；跟的人走了、自己被拿住就作废）
     ag = state.chars["sn_guard_3"].agenda
-    assert ag is None or not [s for s in ag.steps if s.id == f"req_{r.id}" and s.state == "pending"]
+    cur = ag.steps[ag.cursor]
+    assert cur.id == f"req_{r.id}" and cur.state == "pending" and ag.progress >= 1
+    assert actions.following_step(state, state.chars["sn_guard_3"], cur)

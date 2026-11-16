@@ -303,11 +303,13 @@ def _speech_for(state: WorldState, c: Character, st: Step) -> Speech:
         sp.ask_action = {"verb": ask.get("verb", "wait"), "params": params}
         if do.get("cls"):
             sp.action_class = str(do["cls"])
-        sp.gist = st.text
+        # 要旨：内容写了 gist 就用它；写明了所求之事（ask）的留空，由内核按所求之事拼（「想让对方……」）；
+        # 两样都没写才借这一步的说明（那是打算的口气，「去请某人……」，读起来不像一句请求）。
+        sp.gist = str(do.get("gist") or "") or ("" if do.get("ask") else st.text)
     elif act_ == "ask":
         about = _rid(state, c.id, do.get("about") or do.get("fact"))
         sp.about = about if isinstance(about, str) else None
-        sp.gist = st.text
+        sp.gist = str(do.get("gist") or "") or st.text
     return sp
 
 
@@ -350,8 +352,9 @@ async def reply(state: WorldState, defs: Defs, rid: str, decide: Decide | None =
             sp_d = getattr(d, "speech", None)
             if sp_d is None or a.verb == "wait":
                 return resolve.apply(state, defs, a, sp_d, source="mind", offscreen=True)
-            # 一句话加一件事：分两次进内核，先话后事。话若是「答应」，内核会把答应的事插成他眼下这一步；
-            # 同一次结算里紧接着做那件事，不变量把它认作「已作废步骤」的事件，整体回滚，连那句答应也丢了。
+            # 一句话加一件事：分两次进内核，先话后事（话若是「答应」，内核把答应的事插成他眼下这一步，
+            # 那件事此刻是否还做得出要按插完之后的局面重查）。内核如今认得同一次结算里新插的步骤
+            # （invariants 的 steps_before），放进一次结算也不会回滚；分两次只是为了那一次重查。
             carrier = actions.build(state, defs, to.id, "wait", {"ticks": 1})
             said = resolve.apply(state, defs, carrier, sp_d, source="mind", offscreen=True) if carrier else []
             fresh = actions.is_legal(state, defs, a)

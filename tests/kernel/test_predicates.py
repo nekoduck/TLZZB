@@ -117,6 +117,21 @@ def test_time_step_situation_request(w: World) -> None:
     assert not H(w, {"request": ["R1", "agreed"]})
 
 
+def test_enemies(w: World) -> None:
+    """门派之间的敌对（world.yaml 的 enmity）：两人各带一边的身份、旗标为真时成立。"""
+    w.defs = w.defs.model_copy(deep=True)
+    assert not H(w, {"enemies": ["fighter", "girl"]})  # 表是空的
+    w.defs.world.enmity = [{"between": ["hall_sect", "valley_family"], "while": "feud_on"}]
+    assert not H(w, {"enemies": ["fighter", "girl"]})
+    w.s.flags["feud_on"] = True
+    assert H(w, {"enemies": ["fighter", "girl"]}) and H(w, {"enemies": ["girl", "fighter"]})
+    assert not H(w, {"enemies": ["fighter", "guest"]}) and not H(w, {"enemies": ["fighter", "fighter"]})
+    assert H(w, {"enemies": ["self", "$it"]}, self_id="girl", roles={"it": "fighter"})
+    w.defs.world.enmity = [{"between": ["hall_sect", "valley_family"]}]  # 不写 while：一直算
+    w.s.flags["feud_on"] = False
+    assert H(w, {"enemies": ["fighter", "girl"]})
+
+
 def test_every_predicate_key_is_tested() -> None:
     import inspect
 

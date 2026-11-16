@@ -18,6 +18,7 @@ LOG = logging.getLogger("tianlong.world")
 
 # 记账旗标（值都是可以存进 JSON 的字典，每次整份替换）
 REPLAN_FLAG = "__replan_at__"  # 人 → 上次重新打算的时刻（Character.last_replan 没有效果可写，见交付说明）
+GOAL_FLAG = "__goal_at__"  # 人 → {规则 id: 上次选中它的时刻}（goals.yaml 的 cooldown 用）
 BASELINE_FLAG = "__baseline__"  # 参照点的记账：reached / cause / scan
 
 Decide = Callable[[WorldState, Defs, str], Awaitable[Any]]

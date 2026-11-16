@@ -275,7 +275,8 @@ def apply_decision(state: WorldState, defs: Defs, d: MindDecision) -> list[Event
     kept = agreed_action(state, defs, d.actor, d.speech)
     if kept is not None and kept.verb != "wait":
         # 答应了就做：先结算那句话（内核把答应的事插成他眼下这一步），紧接着结算那件事。
-        # 分两次进内核：同一次结算里才插进来的一步，不变量会当成「已作废的步骤」而整体回滚。
+        # 分两次进内核：话没被答应（裁决改判成了拒绝）就不做那件事，做之前按插完那一步之后的局面重查。
+        # （内核如今认得同一次结算里新插的步骤，放进一次结算也不会回滚：invariants 的 steps_before。）
         w = actions.build(state, defs, d.actor, "wait", {"ticks": 1})
         said = resolve.apply(state, defs, w, d.speech, source="mind") if w is not None else []
         r = state.requests.get(said[0].speech.request or "") if said and said[0].speech is not None else None

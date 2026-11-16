@@ -103,6 +103,7 @@ class Snapshot:
         for sit in state.situations.values():
             objs.append((sit, sit.__dict__.copy()))
         pending: set[str] = set()
+        known: set[str] = set()
         able: set[str] = set()
         for c in state.chars.values():
             d = c.__dict__
@@ -121,6 +122,7 @@ class Snapshot:
                 lists.append((ag.steps, ag.steps[:]))
                 for step in ag.steps:
                     objs.append((step, step.__dict__.copy()))
+                    known.add(step.id)
                     if step.state == "pending":
                         pending.add(step.id)
             if perception.on_map(c):
@@ -141,6 +143,7 @@ class Snapshot:
         self.dicts = dicts
         self.tick = state.tick
         self.pending_steps = pending
+        self.known_steps = known
         self.able = able
 
     def restore(self, state: WorldState) -> None:
@@ -160,6 +163,7 @@ def snapshot(state: WorldState) -> Snapshot:
 
 
 def _guarded(state: WorldState, defs: Defs, label: str, fn: Any) -> list[Event]:
+    predicates.sync_enmity(state, defs)
     snap = Snapshot(state)
     problems: list[str]
     try:
@@ -170,6 +174,7 @@ def _guarded(state: WorldState, defs: Defs, label: str, fn: Any) -> list[Event]:
             new_events=evs,
             tick_before=snap.tick,
             pending_before=snap.pending_steps,
+            steps_before=snap.known_steps,
             able_before=snap.able,
         )
     except KernelError as e:
@@ -290,6 +295,8 @@ def _matching_step(
         return None
     if actions.matches_do(action, st.do, Ctx(self_id=actor), state=state, speech=speech):
         return st
+    if action.verb == "wait" and actions.following_step(state, c, st):
+        return st  # 已经跟上了的「跟着某人」：原地等着也是在做这一步
     return None
 
 
@@ -375,8 +382,8 @@ def _apply(
     # 收尾：这一步做完了；许诺；还价的条件；牵制与示警用掉；紧张场面的步数；情境散场
     ok = main is not None and main.outcome == "ok"
     if step is not None and ok and step.state == "pending":
-        if step.do.get("verb") == "wait" and c.agenda is not None:
-            # 「等」这一步要等够 takes 刻（紧张场面里每步算 1）
+        if step.do.get("verb") in ("wait", "follow") and c.agenda is not None:
+            # 「等」这一步要等够 takes 刻（紧张场面里每步算 1）；「跟着某人」也一样：跟上之后要跟满 takes 刻
             c.agenda.progress += max(1, act.cost)
             if c.agenda.progress >= step.takes:
                 effects.set_step_state(state, c, step.id, "done")

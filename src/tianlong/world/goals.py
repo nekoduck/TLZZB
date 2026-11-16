@@ -23,7 +23,7 @@ from typing import Any
 from tianlong.kernel import actions, danger, growth, perception, predicates, refs
 from tianlong.kernel.defs import Defs
 from tianlong.kernel.state import TICKS_PER_HOUR, Character, Ctx, WorldState, is_alive
-from tianlong.world.common import LOG, loc_of
+from tianlong.world.common import GOAL_FLAG, LOG, loc_of
 from tianlong.world.offscreen import effective_at
 
 MAX_CANDIDATES = 12
@@ -46,6 +46,7 @@ class Candidate:
     group: str  # 同一目标、同一批绑定的候选共一个 group（给 C5 看「一个目标带几条步骤模板」）
     bindings: dict[str, str] = field(default_factory=dict)
     keep: bool = False
+    pressing: bool = False  # 等不得的事：有它在，「照旧」不进候选
 
     @property
     def first_text(self) -> str:
@@ -241,6 +242,24 @@ def _pick(state: WorldState, defs: Defs, c: Character, where: Any, roles: dict[s
     return None
 
 
+def _fact_subject(state: WorldState, defs: Defs, c: Character, arg: Any, roles: dict[str, str]) -> str | None:
+    """他相信的、带某个标签的事实里提到的人：图内的活人里按路程由近到远挑第一个使 where 成立的。"""
+    arg = arg if isinstance(arg, dict) else {}
+    tag = str(arg.get("tag") or "")
+    named: set[str] = set()
+    for fid, b in c.beliefs.items():
+        f = state.facts.get(fid)
+        if f is None or b.confidence < predicates.BELIEVE or tag not in f.tags:
+            continue
+        named.update(x for x in refs.refs_in(f.text) if x in state.chars and x != c.id)
+    cands = [state.chars[x] for x in named if perception.on_map(state.chars[x])]
+    cands.sort(key=lambda o: (_dist(state, defs, c, o.loc), o.id))
+    for o in cands:
+        if predicates.holds(state, defs, arg.get("where"), Ctx(self_id=c.id, roles={**roles, "it": o.id})):
+            return o.id
+    return None
+
+
 def _pick_item(state: WorldState, defs: Defs, c: Character, where: Any, roles: dict[str, str]) -> str | None:
     for iid in sorted(state.items):
         it = state.items[iid]
@@ -352,6 +371,15 @@ def bind_one(state: WorldState, defs: Defs, c: Character, spec: Any, roles: dict
     if how == "hostile_here":
         hs = danger.hostiles_toward(state, c.id)
         return sorted(hs, key=lambda o: o.id)[0].id if hs else None
+    if how == "threat_here":
+        # 身边对他怀敌意、而且真有威胁的人：比他强，或眼下的打算正冲着他来（捉拿、攻击）
+        mine = growth.power(state, defs, c)
+        hs = [
+            o
+            for o in danger.hostiles_toward(state, c.id)
+            if growth.power(state, defs, o) > mine or danger.intends(state, o, c.id)
+        ]
+        return sorted(hs, key=lambda o: o.id)[0].id if hs else None
     if how == "rumored_item":
         return _rumored_item(state, c)
     if how == "teaches_of":
@@ -364,6 +392,8 @@ def bind_one(state: WorldState, defs: Defs, c: Character, spec: Any, roles: dict
         return _foe_at(state, a)
     if how == "pick":
         return _pick(state, defs, c, (arg or {}).get("where"), roles)
+    if how == "fact_subject":
+        return _fact_subject(state, defs, c, arg, roles)
     if how == "pick_item":
         return _pick_item(state, defs, c, (arg or {}).get("where"), roles)
     raise ValueError(f"unknown binder {how!r}")
@@ -539,6 +569,9 @@ def candidates(state: WorldState, defs: Defs, cid: str, *, allow_keep: bool = Fa
             continue
         seen.add(key)
         uniq.append(cd)
+    if any(cd.pressing for cd in uniq):
+        # 有等不得的事（规则写了 pressing）：「照旧做原来的打算」不再是候选
+        uniq = [cd for cd in uniq if not cd.keep]
     generic = [cd for cd in uniq if cd.rule in GENERIC_GOALS]
     others = [cd for cd in uniq if cd.rule not in GENERIC_GOALS]
     chosen = others[: MAX_CANDIDATES - len(generic)] + generic
@@ -569,6 +602,12 @@ def _expand(
     if target is not None:
         b["target"] = target
     rid = str(rule["id"])
+    cooldown = rule.get("cooldown")
+    if cooldown is not None:
+        # 这件事他刚做过（选中过这条规则）：隔够了 cooldown 刻才再进候选
+        last = ((state.flags.get(GOAL_FLAG) or {}).get(c.id) or {}).get(rid)
+        if last is not None and state.tick - int(last) < int(cooldown):
+            return []
     try:
         if not predicates.holds(state, defs, rule.get("when"), Ctx(self_id=c.id, roles=dict(b))):
             return []
@@ -624,6 +663,7 @@ def _expand(
                 score=score,
                 group=group,
                 bindings=dict(b),
+                pressing=bool(rule.get("pressing")),
             )
         )
     return out

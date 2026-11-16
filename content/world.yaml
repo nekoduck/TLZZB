@@ -16,6 +16,13 @@ request:
   # 哪些身份算「同门、同一家」（两人都有其中同一个才算）。来客、马帮、差使这类临时身份不在内。
   sect_roles: [wuliang_disciple, wuliang_east, wuliang_west, shennong_member, wanjie_family, wanjie_servant,
                four_evils, wang_household, dali_guard]
+# 门派之间的敌对：between 两种身份的人互为对头（内核的敌意判断、请求的关系档、谓词 enemies 都认）；
+# while 写一个旗标名，旗标为真的时候才算。身份没了、旗标落了，敌对也就没了。有私交（好感不低于 30）的不在此列。
+enmity:
+  - {between: [shennong_member, wuliang_disciple], while: siege_on}   # 围山期间，神农帮与无量剑是对头
+# 与所求有关的大事（8.3）：有这种所求的人新近相信了带这种标签的事实，就立即重新打算。
+concerns:
+  clan_honor: [sect_scandal]        # 门里出了丑事，看重门户的人坐不住
 salience: {death: 10, harmed: 9, rescue: 8, promise: 7, exposed: 7, insult: 6, learn_key: 6, gift: 5, talk: 3, pass: 1}
 # 身份与状态在界面、纪事里的说法。role:<身份> 是一个名词短语（「成了……」「是……」都读得通），
 # 只在说玩家自己的身份时用，所以写平白的字，不写 ⟦id⟧。状态的说法用在「身上的……到某时就要发作」里。

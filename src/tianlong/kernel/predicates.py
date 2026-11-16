@@ -40,6 +40,7 @@ PREDICATE_SHAPES: dict[str, Any] = {
     "status": ["char", "str"],
     "alive": "char",
     "role": ["char", "str"],
+    "enemies": ["char", "char"],
     "art": ["char", "art", "int"],
     "stat": ["char", "statfield", "op", "int"],
     "time_ge": "int",
@@ -278,6 +279,41 @@ def _p_alive(state: WorldState, defs: Defs, arg: Any, ctx: Ctx | None) -> bool:
     return c is not None and is_alive(c)
 
 
+ENMITY_FLAG = "enmity"  # world.yaml 的 enmity 表在状态里的副本：只拿得到 state 的查询（danger.is_hostile）读它
+
+
+def sync_enmity(state: WorldState, defs: Defs) -> None:
+    """把内容里的敌对表抄进状态（幂等）。内核的各个入口（resolve、timeflow）进门时调用。"""
+    rows = [{"between": list(r.get("between") or []), "while": r.get("while")} for r in defs.world.enmity]
+    if rows and state.flags.get(ENMITY_FLAG) != rows:
+        state.flags[ENMITY_FLAG] = rows
+
+
+def at_odds(state: WorldState, a: Character, b: Character, defs: Defs | None = None) -> bool:
+    """门派之间的敌对（world.yaml 的 ``enmity``）：两人各带一边的身份，这一项的 ``while`` 旗标（写了的话）
+    此刻为真。同时带着两边身份的人不算哪一边。身份没了、旗标落了，敌对也就没了。"""
+    rows = defs.world.enmity if defs is not None else (state.flags.get(ENMITY_FLAG) or [])
+    ra, rb = set(a.roles), set(b.roles)
+    for row in rows:
+        pair = row.get("between") or []
+        if len(pair) != 2:
+            continue
+        x, y = pair
+        flag = row.get("while")
+        if flag and not state.flags.get(str(flag)):
+            continue
+        if (x in ra and y in rb and y not in ra and x not in rb) or (
+            y in ra and x in rb and x not in ra and y not in rb
+        ):
+            return True
+    return False
+
+
+def _p_enemies(state: WorldState, defs: Defs, arg: Any, ctx: Ctx | None) -> bool:
+    a, b = (_char(state, ctx, x) for x in _args(arg, 2, "enemies"))
+    return a is not None and b is not None and a.id != b.id and at_odds(state, a, b, defs)
+
+
 def _p_role(state: WorldState, defs: Defs, arg: Any, ctx: Ctx | None) -> bool:
     a, role = _args(arg, 2, "role")
     c = _char(state, ctx, a)
@@ -344,6 +380,7 @@ _PREDICATES = {
     "status": _p_status,
     "alive": _p_alive,
     "role": _p_role,
+    "enemies": _p_enemies,
     "art": _p_art,
     "stat": _p_stat,
     "time_ge": _p_time_ge,

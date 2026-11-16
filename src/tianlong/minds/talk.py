@@ -96,7 +96,9 @@ def describe_do(do: dict, speaker: str | None = None) -> str:
         about = do.get("about")
         return f"说说⟦{about}⟧的事" if about else "说几句话"
     if verb == "wait" or verb is None:
-        return "罢手"
+        # 「等一等」只是个壳的请求（放行、由我来……）：用提请求时写下的说法；真是劝人住手的才说「罢手」
+        desc = str(do.get("desc") or "").strip().rstrip("。")
+        return desc if desc and do.get("noted") else "罢手"
     spec = VERBS.get(str(verb))
     label = spec.label if spec is not None else "照办"
     return f"{label}{tr}" if isinstance(t, str) and t else label
@@ -211,7 +213,8 @@ def star_text(state: WorldState, defs: Defs, c: Character) -> str | None:
     st = danger.current_step(c)
     if st is None or st.do.get("verb") != "say":
         return None
-    return st.text.strip().rstrip("。") or None
+    # 这一步写了 gist（这句话的要旨）就用它；没写才借这一步的说明
+    return str(st.do.get("gist") or st.text).strip().rstrip("。") or None
 
 
 # ---------------------------------------------------------------- gist
@@ -287,6 +290,8 @@ def flat(do: dict | None) -> dict:
     out.update(do.get("params") or {})
     if do.get("desc"):
         out["desc"] = do["desc"]
+    if any(do.get(k) for k in ("volunteer", "permit")):
+        out["noted"] = True  # 所求之事的要点在附注里，动词只是个壳
     return out
 
 

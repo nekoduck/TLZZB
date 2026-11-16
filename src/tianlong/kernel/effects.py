@@ -361,16 +361,19 @@ class Run:
         loc = c.loc
         self.implicit(actor=c.id, verb="leave", text=f"⟦{c.id}⟧离开了这一带", loc=loc)
         c.onstage = False
-        c.following = None
+        stop_following(self.state, c)
         for o in self.state.chars.values():
             if o.following == c.id:
-                o.following = None
+                stop_following(self.state, o)
         _drop_roles(self.state, self.defs, c.id)
 
     def e_follow(self, arg: Any) -> None:
         c = self.char(arg[0])
         target = self.rid(arg[1]) if len(arg) > 1 else None
-        c.following = target or None
+        if not target:
+            stop_following(self.state, c)
+            return
+        c.following = target
 
     def e_trace(self, arg: Any) -> None:
         loc = self.loc(arg[0])
@@ -555,7 +558,7 @@ class Run:
         fid = self.rid(arg[1])
         conf = float(arg[2]) if len(arg) > 2 and arg[2] is not None else 1.0
         src = str(arg[3]) if len(arg) > 3 and arg[3] else "inferred"
-        learn(self.state, c, fid, conf, src)
+        learn(self.state, c, fid, conf, src, self.defs)
 
     def e_train(self, arg: Any) -> None:
         c = self.char(arg[0])
@@ -1088,7 +1091,7 @@ def kill(run: Run, c: Character, *, by: str | None, cause: str | None = None) ->
     c.following = None
     for o in state.chars.values():
         if o.following == c.id:
-            o.following = None
+            stop_following(state, o)
         if o.id != c.id and (c.id in o.rel or o.superior == c.id or c.superior == o.id):
             events.queue_replan(state, o.id)
     if c.id in state.replan_queue:
@@ -1100,8 +1103,13 @@ def kill(run: Run, c: Character, *, by: str | None, cause: str | None = None) ->
         state.ended = "dead"
 
 
-def learn(state: WorldState, c: Character, fid: str, conf: float, source: str) -> bool:
-    """获知事实：置信度只升不降（除非显式改写）。返回是否新近相信（越过 0.6）。"""
+def learn(
+    state: WorldState, c: Character, fid: str, conf: float, source: str, defs: Defs | None = None
+) -> bool:
+    """获知事实：置信度只升不降（除非显式改写）。返回是否新近相信（越过 0.6）。
+
+    给了 ``defs`` 时：新近相信的这件事若与他的所求有关（``events.concerned``），他入重新打算的队列（8.3）。
+    """
     if fid not in state.facts:
         raise EffectError(f"learn: unknown fact {fid!r}")
     conf = max(0.0, min(1.0, conf))
@@ -1111,7 +1119,25 @@ def learn(state: WorldState, c: Character, fid: str, conf: float, source: str) -
     c.beliefs[fid] = Belief(confidence=conf, source=source, tick=state.tick)
     if c.id == state.player and conf >= predicates.BELIEVE:
         perception.learn_terms_from_text(state, state.facts[fid].text)
-    return conf >= predicates.BELIEVE and (old is None or old.confidence < predicates.BELIEVE)
+    fresh = conf >= predicates.BELIEVE and (old is None or old.confidence < predicates.BELIEVE)
+    if fresh and defs is not None and events.concerned(state, defs, c, fid):
+        events.queue_replan(state, c.id)
+    return fresh
+
+
+def stop_following(state: WorldState, c: Character) -> None:
+    """不再跟着谁。眼下这一步若正是「跟着那人」（打算里写的，或答应下来的），这一步就此作废，
+    他按当时的处境重新打算（8.3）：跟的人走了、死了，或自己被拿住、逃开了，都走这里。"""
+    t = c.following
+    c.following = None
+    ag = c.agenda
+    if t is None or ag is None or ag.status != "active" or ag.cursor >= len(ag.steps):
+        return
+    st = ag.steps[ag.cursor]
+    if st.state != "pending" or st.do.get("verb") != "follow":
+        return
+    if predicates.resolve_id(st.do.get("target"), state, Ctx(self_id=c.id)) == t:
+        set_step_state(state, c, st.id, "void")
 
 
 def insert_step(state: WorldState, c: Character, st: Step) -> None:
@@ -1210,14 +1236,18 @@ def bind_roles(
         return None
     for name, pick in picks:
         where = pick.get("where") if isinstance(pick, dict) else None
+        prefer = pick.get("prefer") if isinstance(pick, dict) else None
         chosen = None
         for c in state.chars.values():
             if c.loc != loc or not perception.on_map(c) or c.id in roles.values():
                 continue
             pctx = Ctx(ctx.self_id, {**ctx.roles, **roles, "it": c.id}, ctx.situation)
             if predicates.holds(state, defs, where, pctx):
-                chosen = c.id
-                break
+                if prefer is None or predicates.holds(state, defs, prefer, pctx):
+                    chosen = c.id  # 合条件的人里，先取合 prefer 的（例如自告奋勇的人）
+                    break
+                if chosen is None:
+                    chosen = c.id
         if chosen is None:
             return None
         roles[name] = chosen

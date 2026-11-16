@@ -1,7 +1,7 @@
 {
  "suite": "decisions",
  "meta": {
-  "generated": "2026-11-15T11:34:54+00:00",
+  "generated": "2026-11-16T15:34:16+00:00",
   "mock": false,
   "jev_model": "jev-1.14.0",
   "lang": "zh",
@@ -13,43 +13,43 @@
    "needs_thought": 0.6,
    "noul_yes": 0.6,
    "sample_floor": 0.15,
-   "narration_flag": 0.7
+   "narration_flag": 0.8
   },
   "claude_key": false,
   "jev_key": true
  },
  "summary": {
   "jev": {
-   "agree": 58,
+   "agree": 55,
    "n": 80,
    "gate": {
     "conf": 0.55,
     "margin": 0.15,
     "n": 80,
     "above": 42,
-    "hits": 36,
+    "hits": 35,
     "coverage": 0.525,
-    "accuracy": 0.8571428571428571
+    "accuracy": 0.8333333333333334
    },
    "gate_soul": {
     "conf": 0.55,
     "margin": 0.15,
     "n": 75,
-    "above": 40,
+    "above": 41,
     "hits": 34,
-    "coverage": 0.5333333333333333,
-    "accuracy": 0.85
+    "coverage": 0.5466666666666666,
+    "accuracy": 0.8292682926829268
    },
    "gate_named": {
     "conf": 0.55,
     "margin": 0.15,
     "n": 5,
-    "above": 2,
-    "hits": 2,
-    "coverage": 0.4,
+    "above": 1,
+    "hits": 1,
+    "coverage": 0.2,
     "accuracy": 1.0
    },
-   "expected_agreement_when_sampling": 0.552625,
+   "expected_agreement_when_sampling": 0.55775,
    "recommended": {
     "conf": 0.3,
     "margin": 0.15,
@@ -61,8 +61,8 @@
    },
    "failed": 0,
    "latency": {
-    "median_s": 0.10721311500014963,
-    "p95_s": 0.3601016736500014
+    "median_s": 0.11051329999992276,
+    "p95_s": 0.4790083344499294
    }
   },
   "claude": {}
@@ -71,7 +71,7 @@
   {
    "name": "J2 抉择（7.12）",
    "passed": true,
-   "detail": "门槛之上：覆盖率 52.5%（42/80），一致率 85.7%；要求一致不低于 70%、覆盖不少于 50%。全部样本的一致率 72.5% (58/80)，按概率取样的期望一致率 55.3%。 扫描里过闸且覆盖最高的门槛：choice_confidence 0.30（覆盖 82.5%，一致 77.3%）。",
+   "detail": "门槛之上：覆盖率 52.5%（42/80），一致率 83.3%；要求一致不低于 70%、覆盖不少于 50%。全部样本的一致率 68.8% (55/80)，按概率取样的期望一致率 55.8%。 扫描里过闸且覆盖最高的门槛：choice_confidence 0.30（覆盖 82.5%，一致 77.3%）。",
    "fallback": "有魂角色改为 claude_first：route.decide_soul = 'claude_first'；有名角色仍用 Jev"
   }
  ],
@@ -79,7 +79,7 @@
   "Haiku、Sonnet 两栏（没有 ANTHROPIC_API_KEY）。有钥匙后重跑：python -m tianlong eval decisions"
  ],
  "notes": [
-  "J2a 请求时延中位 107 ms、P95 360 ms；没答上来 0 条。",
+  "J2a 请求时延中位 111 ms、P95 479 ms；没答上来 0 条。",
   "选项只给各候选的一句描述，不加「（你本来要做的）」前缀；测的是模型像不像这个人，不是要游戏照原著走。"
  ],
  "tables": [
@@ -94,13 +94,13 @@
    "rows": [
     [
      "全部",
-     "72.5% (58/80)",
+     "68.8% (55/80)",
      "SKIPPED",
      "SKIPPED"
     ],
     [
      "confidence: high",
-     "72.7% (40/55)",
+     "67.3% (37/55)",
      "SKIPPED",
      "SKIPPED"
     ],
@@ -112,7 +112,7 @@
     ],
     [
      "有魂角色",
-     "72.0% (54/75)",
+     "68.0% (51/75)",
      "SKIPPED",
      "SKIPPED"
     ],
@@ -140,21 +140,21 @@
      "80",
      "42",
      "52.5%",
-     "85.7% (36/42)"
+     "83.3% (35/42)"
     ],
     [
      "有魂角色",
      "75",
-     "40",
-     "53.3%",
-     "85.0% (34/40)"
+     "41",
+     "54.7%",
+     "82.9% (34/41)"
     ],
     [
      "有名角色",
      "5",
-     "2",
-     "40.0%",
-     "100.0% (2/2)"
+     "1",
+     "20.0%",
+     "100.0% (1/1)"
     ]
    ],
    "note": ""
@@ -176,57 +176,57 @@
     ],
     [
      "0.35",
-     "65",
-     "81.2%",
-     "76.9% (50/65)"
+     "66",
+     "82.5%",
+     "77.3% (51/66)"
     ],
     [
      "0.40",
-     "61",
-     "76.2%",
-     "80.3% (49/61)"
+     "63",
+     "78.8%",
+     "79.4% (50/63)"
     ],
     [
      "0.45",
-     "56",
-     "70.0%",
-     "83.9% (47/56)"
+     "59",
+     "73.8%",
+     "83.1% (49/59)"
     ],
     [
      "0.50",
-     "49",
-     "61.3%",
-     "81.6% (40/49)"
+     "52",
+     "65.0%",
+     "82.7% (43/52)"
     ],
     [
      "0.55（现用）",
      "42",
      "52.5%",
-     "85.7% (36/42)"
+     "83.3% (35/42)"
     ],
     [
      "0.60",
-     "35",
-     "43.8%",
-     "85.7% (30/35)"
+     "37",
+     "46.2%",
+     "83.8% (31/37)"
     ],
     [
      "0.65",
-     "29",
-     "36.2%",
-     "82.8% (24/29)"
+     "33",
+     "41.2%",
+     "84.8% (28/33)"
     ],
     [
      "0.70",
-     "25",
-     "31.2%",
-     "84.0% (21/25)"
+     "26",
+     "32.5%",
+     "84.6% (22/26)"
     ],
     [
      "0.75",
-     "23",
-     "28.7%",
-     "87.0% (20/23)"
+     "24",
+     "30.0%",
+     "87.5% (21/24)"
     ],
     [
      "0.80",
@@ -248,17 +248,17 @@
     [
      "0.00–0.55",
      "38",
-     "57.9% (22/38)"
+     "52.6% (20/38)"
     ],
     [
      "0.55–0.70",
-     "17",
-     "88.2% (15/17)"
+     "16",
+     "81.2% (13/16)"
     ],
     [
      "0.70–0.85",
-     "13",
-     "69.2% (9/13)"
+     "14",
+     "71.4% (10/14)"
     ],
     [
      "0.85–1.00",
@@ -281,7 +281,7 @@
     ],
     [
      "zhong_ling",
-     "54.5% (6/11)"
+     "36.4% (4/11)"
     ],
     [
      "sikong_xuan",
@@ -313,7 +313,7 @@
     ],
     [
      "zhong_wanchou",
-     "100.0% (4/4)"
+     "75.0% (3/4)"
     ],
     [
      "gan_guanghao",
@@ -363,8 +363,8 @@
      "high",
      "a4",
      "a3",
-     "0.44",
-     "0.38",
+     "0.48",
+     "0.35",
      "否"
     ],
     [
@@ -373,8 +373,8 @@
      "low",
      "a3",
      "a4",
-     "0.58",
-     "0.02",
+     "0.62",
+     "0.01",
      "是"
     ],
     [
@@ -382,9 +382,9 @@
      "duan_yu",
      "high",
      "a5",
-     "a2",
-     "0.17",
-     "0.31",
+     "none",
+     "0.18",
+     "0.30",
      "否"
     ],
     [
@@ -394,8 +394,28 @@
      "a5",
      "a2",
      "0.80",
-     "0.12",
+     "0.13",
      "是"
+    ],
+    [
+     "d20",
+     "zhong_ling",
+     "high",
+     "a2",
+     "none",
+     "0.29",
+     "0.35",
+     "否"
+    ],
+    [
+     "d21",
+     "zhong_ling",
+     "high",
+     "a4",
+     "none",
+     "0.15",
+     "0.23",
+     "否"
     ],
     [
      "d22",
@@ -403,8 +423,8 @@
      "high",
      "a3",
      "a1",
-     "0.18",
-     "0.26",
+     "0.20",
+     "0.28",
      "否"
     ],
     [
@@ -414,7 +434,7 @@
      "a1",
      "a4",
      "0.68",
-     "0.05",
+     "0.06",
      "是"
     ],
     [
@@ -423,8 +443,8 @@
      "low",
      "a4",
      "a1",
-     "0.27",
-     "0.01",
+     "0.25",
+     "0.02",
      "否"
     ],
     [
@@ -434,7 +454,7 @@
      "a3",
      "a1",
      "0.41",
-     "0.36",
+     "0.35",
      "否"
     ],
     [
@@ -443,8 +463,8 @@
      "low",
      "a2",
      "a1",
-     "0.22",
-     "0.16",
+     "0.21",
+     "0.15",
      "否"
     ],
     [
@@ -454,7 +474,7 @@
      "a3",
      "a2",
      "0.18",
-     "0.21",
+     "0.24",
      "否"
     ],
     [
@@ -463,7 +483,7 @@
      "high",
      "a3",
      "a4",
-     "0.41",
+     "0.44",
      "0.25",
      "否"
     ],
@@ -473,8 +493,8 @@
      "high",
      "a2",
      "a1",
-     "0.36",
-     "0.09",
+     "0.37",
+     "0.06",
      "否"
     ],
     [
@@ -483,8 +503,8 @@
      "high",
      "a2",
      "a1",
-     "0.75",
-     "0.15",
+     "0.74",
+     "0.16",
      "是"
     ],
     [
@@ -493,8 +513,8 @@
      "high",
      "a1",
      "a2",
-     "0.51",
-     "0.18",
+     "0.54",
+     "0.16",
      "否"
     ],
     [
@@ -503,8 +523,8 @@
      "high",
      "a3",
      "none",
-     "0.71",
-     "0.21",
+     "0.77",
+     "0.17",
      "是"
     ],
     [
@@ -513,8 +533,8 @@
      "low",
      "a2",
      "none",
-     "0.27",
-     "0.21",
+     "0.25",
+     "0.23",
      "否"
     ],
     [
@@ -523,8 +543,18 @@
      "high",
      "a1",
      "a2",
-     "0.50",
+     "0.55",
      "0.02",
+     "是"
+    ],
+    [
+     "d59",
+     "zhong_wanchou",
+     "high",
+     "a2",
+     "a4",
+     "0.14",
+     "0.28",
      "否"
     ],
     [
@@ -534,7 +564,7 @@
      "a3",
      "a1",
      "0.37",
-     "0.31",
+     "0.32",
      "否"
     ],
     [
@@ -543,8 +573,8 @@
      "high",
      "a2",
      "a4",
-     "0.24",
-     "0.13",
+     "0.22",
+     "0.19",
      "否"
     ],
     [
@@ -553,7 +583,7 @@
      "low",
      "a1",
      "a4",
-     "0.52",
+     "0.51",
      "0.01",
      "否"
     ],
@@ -563,8 +593,8 @@
      "high",
      "a2",
      "a1",
-     "0.39",
-     "0.04",
+     "0.44",
+     "0.03",
      "否"
     ]
    ],
@@ -595,9 +625,9 @@
      "a5": 0.84,
      "none": 0.07
     },
-    "speak_p": 0.55,
+    "speak_p": 0.54,
     "unsure": false,
-    "seconds": 0.3844203390003713
+    "seconds": 0.3539562290000049
    },
    {
     "id": "d02",
@@ -608,22 +638,22 @@
     "pick": "a1",
     "agree": true,
     "failed": false,
-    "conf": 0.94,
-    "margin": 0.9199999999999999,
+    "conf": 0.92,
+    "margin": 0.88,
     "needs_thought": false,
-    "needs_thought_p": 0.14,
-    "p_canon": 0.95,
+    "needs_thought_p": 0.13,
+    "p_canon": 0.93,
     "probabilities": {
-     "a1": 0.95,
+     "a1": 0.93,
      "a2": 0.01,
      "a3": 0.0,
      "a4": 0.0,
-     "a5": 0.03,
+     "a5": 0.05,
      "none": 0.01
     },
-    "speak_p": 0.74,
+    "speak_p": 0.76,
     "unsure": false,
-    "seconds": 0.35973568800000066
+    "seconds": 0.3055139020000297
    },
    {
     "id": "d03",
@@ -634,22 +664,22 @@
     "pick": "a3",
     "agree": true,
     "failed": false,
-    "conf": 0.74,
-    "margin": 0.64,
+    "conf": 0.78,
+    "margin": 0.7,
     "needs_thought": false,
-    "needs_thought_p": 0.21,
-    "p_canon": 0.78,
+    "needs_thought_p": 0.2,
+    "p_canon": 0.82,
     "probabilities": {
      "a1": 0.0,
-     "a2": 0.14,
-     "a3": 0.78,
+     "a2": 0.12,
+     "a3": 0.82,
      "a4": 0.02,
-     "a5": 0.03,
-     "none": 0.03
+     "a5": 0.02,
+     "none": 0.02
     },
-    "speak_p": 0.57,
+    "speak_p": 0.56,
     "unsure": false,
-    "seconds": 0.2685875809997924
+    "seconds": 0.60813504500004
    },
    {
     "id": "d04",
@@ -661,21 +691,21 @@
     "agree": true,
     "failed": false,
     "conf": 0.58,
-    "margin": 0.44000000000000006,
+    "margin": 0.41000000000000003,
     "needs_thought": false,
     "needs_thought_p": 0.23,
     "p_canon": 0.65,
     "probabilities": {
-     "a1": 0.02,
+     "a1": 0.01,
      "a2": 0.01,
-     "a3": 0.03,
-     "a4": 0.21,
+     "a3": 0.02,
+     "a4": 0.24,
      "a5": 0.65,
-     "none": 0.08
+     "none": 0.07
     },
-    "speak_p": 0.42,
+    "speak_p": 0.43,
     "unsure": false,
-    "seconds": 0.37430877899987536
+    "seconds": 0.2932431210000459
    },
    {
     "id": "d05",
@@ -689,7 +719,7 @@
     "conf": 0.96,
     "margin": 0.95,
     "needs_thought": false,
-    "needs_thought_p": 0.2,
+    "needs_thought_p": 0.17,
     "p_canon": 0.97,
     "probabilities": {
      "a1": 0.0,
@@ -701,7 +731,7 @@
     },
     "speak_p": 0.73,
     "unsure": false,
-    "seconds": 0.35002481299989086
+    "seconds": 0.4947117290000733
    },
    {
     "id": "d06",
@@ -712,22 +742,22 @@
     "pick": "a3",
     "agree": false,
     "failed": false,
-    "conf": 0.44,
-    "margin": 0.15000000000000002,
+    "conf": 0.48,
+    "margin": 0.21999999999999997,
     "needs_thought": false,
-    "needs_thought_p": 0.43,
-    "p_canon": 0.38,
+    "needs_thought_p": 0.44,
+    "p_canon": 0.35,
     "probabilities": {
-     "a1": 0.03,
+     "a1": 0.02,
      "a2": 0.02,
-     "a3": 0.53,
-     "a4": 0.38,
+     "a3": 0.57,
+     "a4": 0.35,
      "a5": 0.0,
      "none": 0.04
     },
-    "speak_p": 0.59,
+    "speak_p": 0.61,
     "unsure": true,
-    "seconds": 0.38872114800005875
+    "seconds": 0.48961463299997376
    },
    {
     "id": "d07",
@@ -741,7 +771,7 @@
     "conf": 0.87,
     "margin": 0.81,
     "needs_thought": false,
-    "needs_thought_p": 0.3,
+    "needs_thought_p": 0.29,
     "p_canon": 0.89,
     "probabilities": {
      "a1": 0.89,
@@ -753,7 +783,7 @@
     },
     "speak_p": 0.61,
     "unsure": false,
-    "seconds": 0.3475926139999501
+    "seconds": 0.48431139499996334
    },
    {
     "id": "d08",
@@ -764,22 +794,22 @@
     "pick": "a4",
     "agree": false,
     "failed": false,
-    "conf": 0.58,
-    "margin": 0.5,
+    "conf": 0.62,
+    "margin": 0.54,
     "needs_thought": false,
-    "needs_thought_p": 0.26,
-    "p_canon": 0.02,
+    "needs_thought_p": 0.28,
+    "p_canon": 0.01,
     "probabilities": {
-     "a1": 0.15,
-     "a2": 0.02,
-     "a3": 0.02,
-     "a4": 0.65,
-     "a5": 0.13,
-     "none": 0.03
+     "a1": 0.14,
+     "a2": 0.01,
+     "a3": 0.01,
+     "a4": 0.68,
+     "a5": 0.12,
+     "none": 0.04
     },
-    "speak_p": 0.62,
+    "speak_p": 0.63,
     "unsure": false,
-    "seconds": 0.367055401000016
+    "seconds": 0.4787292259999276
    },
    {
     "id": "d09",
@@ -790,21 +820,21 @@
     "pick": "a4",
     "agree": true,
     "failed": false,
-    "conf": 0.84,
+    "conf": 0.82,
     "margin": 0.79,
     "needs_thought": false,
-    "needs_thought_p": 0.15,
-    "p_canon": 0.87,
+    "needs_thought_p": 0.16,
+    "p_canon": 0.86,
     "probabilities": {
      "a1": 0.02,
-     "a2": 0.02,
-     "a3": 0.08,
-     "a4": 0.87,
-     "none": 0.01
+     "a2": 0.03,
+     "a3": 0.07,
+     "a4": 0.86,
+     "none": 0.02
     },
-    "speak_p": 0.47,
+    "speak_p": 0.46,
     "unsure": false,
-    "seconds": 0.11128746900021724
+    "seconds": 0.21060143800002606
    },
    {
     "id": "d10",
@@ -816,21 +846,21 @@
     "agree": true,
     "failed": false,
     "conf": 0.45,
-    "margin": 0.36000000000000004,
+    "margin": 0.34,
     "needs_thought": false,
-    "needs_thought_p": 0.26,
+    "needs_thought_p": 0.25,
     "p_canon": 0.54,
     "probabilities": {
-     "a1": 0.18,
+     "a1": 0.2,
      "a2": 0.54,
-     "a3": 0.04,
-     "a4": 0.13,
+     "a3": 0.03,
+     "a4": 0.12,
      "a5": 0.02,
      "none": 0.09
     },
     "speak_p": 0.45,
     "unsure": true,
-    "seconds": 0.202613804000066
+    "seconds": 0.19936261599991667
    },
    {
     "id": "d11",
@@ -841,21 +871,21 @@
     "pick": "a2",
     "agree": true,
     "failed": false,
-    "conf": 0.47,
-    "margin": 0.29,
+    "conf": 0.5,
+    "margin": 0.32999999999999996,
     "needs_thought": false,
     "needs_thought_p": 0.4,
-    "p_canon": 0.58,
+    "p_canon": 0.6,
     "probabilities": {
-     "a1": 0.29,
-     "a2": 0.58,
-     "a3": 0.08,
+     "a1": 0.27,
+     "a2": 0.6,
+     "a3": 0.07,
      "a4": 0.04,
-     "none": 0.01
+     "none": 0.02
     },
-    "speak_p": 0.38,
+    "speak_p": 0.4,
     "unsure": true,
-    "seconds": 0.10862955299990062
+    "seconds": 0.07371932000000925
    },
    {
     "id": "d12",
@@ -866,21 +896,21 @@
     "pick": "a1",
     "agree": true,
     "failed": false,
-    "conf": 0.76,
-    "margin": 0.68,
+    "conf": 0.8,
+    "margin": 0.73,
     "needs_thought": false,
     "needs_thought_p": 0.16,
-    "p_canon": 0.81,
+    "p_canon": 0.84,
     "probabilities": {
-     "a1": 0.81,
+     "a1": 0.84,
      "a2": 0.01,
-     "a3": 0.13,
-     "a4": 0.04,
+     "a3": 0.11,
+     "a4": 0.03,
      "none": 0.01
     },
-    "speak_p": 0.64,
+    "speak_p": 0.65,
     "unsure": false,
-    "seconds": 0.09065510899972651
+    "seconds": 0.07521508399997856
    },
    {
     "id": "d13",
@@ -891,22 +921,22 @@
     "pick": "a3",
     "agree": true,
     "failed": false,
-    "conf": 0.63,
-    "margin": 0.5599999999999999,
+    "conf": 0.68,
+    "margin": 0.62,
     "needs_thought": false,
-    "needs_thought_p": 0.28,
-    "p_canon": 0.69,
+    "needs_thought_p": 0.29,
+    "p_canon": 0.73,
     "probabilities": {
-     "a1": 0.05,
+     "a1": 0.04,
      "a2": 0.06,
-     "a3": 0.69,
-     "a4": 0.03,
+     "a3": 0.73,
+     "a4": 0.02,
      "a5": 0.04,
-     "none": 0.13
+     "none": 0.11
     },
     "speak_p": 0.69,
     "unsure": false,
-    "seconds": 0.07236820300022373
+    "seconds": 0.11023960999989413
    },
    {
     "id": "d14",
@@ -914,25 +944,25 @@
     "tier": "soul",
     "confidence": "high",
     "canon": "a5",
-    "pick": "a2",
+    "pick": "none",
     "agree": false,
     "failed": false,
-    "conf": 0.17,
-    "margin": 0.0,
+    "conf": 0.18,
+    "margin": 0.020000000000000018,
     "needs_thought": false,
-    "needs_thought_p": 0.26,
-    "p_canon": 0.31,
+    "needs_thought_p": 0.25,
+    "p_canon": 0.3,
     "probabilities": {
-     "a1": 0.07,
-     "a2": 0.31,
+     "a1": 0.08,
+     "a2": 0.28,
      "a3": 0.01,
      "a4": 0.01,
-     "a5": 0.31,
-     "none": 0.29
+     "a5": 0.3,
+     "none": 0.32
     },
-    "speak_p": 0.5,
+    "speak_p": 0.52,
     "unsure": true,
-    "seconds": 0.1687358139997741
+    "seconds": 0.13220217000002776
    },
    {
     "id": "d15",
@@ -943,21 +973,21 @@
     "pick": "a2",
     "agree": true,
     "failed": false,
-    "conf": 0.62,
-    "margin": 0.39999999999999997,
+    "conf": 0.68,
+    "margin": 0.48,
     "needs_thought": false,
-    "needs_thought_p": 0.27,
-    "p_canon": 0.7,
+    "needs_thought_p": 0.28,
+    "p_canon": 0.74,
     "probabilities": {
-     "a1": 0.3,
-     "a2": 0.7,
+     "a1": 0.26,
+     "a2": 0.74,
      "a3": 0.0,
      "a4": 0.0,
      "none": 0.0
     },
-    "speak_p": 0.58,
+    "speak_p": 0.61,
     "unsure": false,
-    "seconds": 0.17914489000031608
+    "seconds": 0.1250603260000389
    },
    {
     "id": "d16",
@@ -968,21 +998,21 @@
     "pick": "a2",
     "agree": true,
     "failed": false,
-    "conf": 0.52,
+    "conf": 0.54,
     "margin": 0.29,
     "needs_thought": false,
     "needs_thought_p": 0.28,
-    "p_canon": 0.95,
+    "p_canon": 0.97,
     "probabilities": {
-     "a1": 0.33,
-     "a2": 0.62,
+     "a1": 0.34,
+     "a2": 0.63,
      "a3": 0.01,
-     "a4": 0.01,
-     "none": 0.03
+     "a4": 0.0,
+     "none": 0.02
     },
-    "speak_p": 0.67,
+    "speak_p": 0.65,
     "unsure": true,
-    "seconds": 0.169105615999797
+    "seconds": 0.1079164559999981
    },
    {
     "id": "d17",
@@ -994,21 +1024,21 @@
     "agree": true,
     "failed": false,
     "conf": 0.29,
-    "margin": 0.06999999999999995,
+    "margin": 0.019999999999999962,
     "needs_thought": false,
-    "needs_thought_p": 0.23,
+    "needs_thought_p": 0.24,
     "p_canon": 0.41,
     "probabilities": {
      "a1": 0.41,
-     "a2": 0.34,
-     "a3": 0.1,
-     "a4": 0.12,
+     "a2": 0.39,
+     "a3": 0.07,
+     "a4": 0.1,
      "a5": 0.01,
      "none": 0.02
     },
-    "speak_p": 0.29,
+    "speak_p": 0.27,
     "unsure": true,
-    "seconds": 0.16078783100010696
+    "seconds": 0.11697377199993753
    },
    {
     "id": "d18",
@@ -1019,22 +1049,22 @@
     "pick": "a3",
     "agree": true,
     "failed": false,
-    "conf": 0.23,
-    "margin": 0.07999999999999996,
+    "conf": 0.2,
+    "margin": 0.030000000000000027,
     "needs_thought": false,
-    "needs_thought_p": 0.15,
+    "needs_thought_p": 0.14,
     "p_canon": 0.63,
     "probabilities": {
-     "a1": 0.27,
-     "a2": 0.01,
-     "a3": 0.36,
-     "a4": 0.28,
-     "a5": 0.04,
+     "a1": 0.3,
+     "a2": 0.02,
+     "a3": 0.33,
+     "a4": 0.26,
+     "a5": 0.05,
      "none": 0.04
     },
-    "speak_p": 0.45,
+    "speak_p": 0.43,
     "unsure": true,
-    "seconds": 0.13832381800011717
+    "seconds": 0.14088915199999974
    },
    {
     "id": "d19",
@@ -1046,21 +1076,21 @@
     "agree": false,
     "failed": false,
     "conf": 0.8,
-    "margin": 0.71,
+    "margin": 0.7,
     "needs_thought": false,
-    "needs_thought_p": 0.09,
-    "p_canon": 0.12,
+    "needs_thought_p": 0.08,
+    "p_canon": 0.13,
     "probabilities": {
      "a1": 0.0,
      "a2": 0.83,
      "a3": 0.01,
-     "a4": 0.02,
-     "a5": 0.12,
+     "a4": 0.01,
+     "a5": 0.13,
      "none": 0.02
     },
-    "speak_p": 0.28,
+    "speak_p": 0.27,
     "unsure": false,
-    "seconds": 0.1295668470002056
+    "seconds": 0.1138891320000539
    },
    {
     "id": "d20",
@@ -1068,25 +1098,25 @@
     "tier": "soul",
     "confidence": "high",
     "canon": "a2",
-    "pick": "a2",
-    "agree": true,
+    "pick": "none",
+    "agree": false,
     "failed": false,
-    "conf": 0.27,
-    "margin": 0.020000000000000018,
+    "conf": 0.29,
+    "margin": 0.06,
     "needs_thought": false,
-    "needs_thought_p": 0.23,
-    "p_canon": 0.39,
+    "needs_thought_p": 0.21,
+    "p_canon": 0.35,
     "probabilities": {
-     "a1": 0.07,
-     "a2": 0.39,
+     "a1": 0.09,
+     "a2": 0.35,
      "a3": 0.01,
-     "a4": 0.11,
-     "a5": 0.05,
-     "none": 0.37
+     "a4": 0.1,
+     "a5": 0.04,
+     "none": 0.41
     },
-    "speak_p": 0.43,
+    "speak_p": 0.44,
     "unsure": true,
-    "seconds": 0.07921599300016169
+    "seconds": 0.08638159399993128
    },
    {
     "id": "d21",
@@ -1094,25 +1124,25 @@
     "tier": "soul",
     "confidence": "high",
     "canon": "a4",
-    "pick": "a4",
-    "agree": true,
+    "pick": "none",
+    "agree": false,
     "failed": false,
     "conf": 0.15,
-    "margin": 0.02999999999999997,
+    "margin": 0.05999999999999997,
     "needs_thought": false,
     "needs_thought_p": 0.21,
-    "p_canon": 0.29,
+    "p_canon": 0.23,
     "probabilities": {
-     "a1": 0.07,
-     "a2": 0.2,
-     "a3": 0.17,
-     "a4": 0.29,
+     "a1": 0.06,
+     "a2": 0.23,
+     "a3": 0.18,
+     "a4": 0.23,
      "a5": 0.01,
-     "none": 0.26
+     "none": 0.29
     },
-    "speak_p": 0.47,
+    "speak_p": 0.44,
     "unsure": true,
-    "seconds": 0.11465518800014252
+    "seconds": 0.09629783100001532
    },
    {
     "id": "d22",
@@ -1123,21 +1153,21 @@
     "pick": "a1",
     "agree": false,
     "failed": false,
-    "conf": 0.18,
-    "margin": 0.08000000000000002,
+    "conf": 0.2,
+    "margin": 0.07999999999999996,
     "needs_thought": false,
     "needs_thought_p": 0.21,
-    "p_canon": 0.26,
+    "p_canon": 0.28,
     "probabilities": {
-     "a1": 0.34,
-     "a2": 0.2,
-     "a3": 0.26,
-     "a4": 0.04,
-     "none": 0.16
+     "a1": 0.36,
+     "a2": 0.21,
+     "a3": 0.28,
+     "a4": 0.03,
+     "none": 0.12
     },
-    "speak_p": 0.4,
+    "speak_p": 0.39,
     "unsure": true,
-    "seconds": 0.12460198000007949
+    "seconds": 0.0714220639999894
    },
    {
     "id": "d23",
@@ -1148,21 +1178,21 @@
     "pick": "a2",
     "agree": true,
     "failed": false,
-    "conf": 0.32,
-    "margin": 0.23,
+    "conf": 0.36,
+    "margin": 0.28,
     "needs_thought": false,
     "needs_thought_p": 0.26,
-    "p_canon": 0.46,
+    "p_canon": 0.49,
     "probabilities": {
      "a1": 0.02,
-     "a2": 0.46,
-     "a3": 0.12,
-     "a4": 0.17,
-     "none": 0.23
+     "a2": 0.49,
+     "a3": 0.13,
+     "a4": 0.15,
+     "none": 0.21
     },
-    "speak_p": 0.4,
+    "speak_p": 0.41,
     "unsure": true,
-    "seconds": 0.15761396399966543
+    "seconds": 0.12676223399989794
    },
    {
     "id": "d24",
@@ -1176,18 +1206,18 @@
     "conf": 0.68,
     "margin": 0.61,
     "needs_thought": false,
-    "needs_thought_p": 0.13,
-    "p_canon": 0.05,
+    "needs_thought_p": 0.14,
+    "p_canon": 0.06,
     "probabilities": {
-     "a1": 0.05,
+     "a1": 0.06,
      "a2": 0.13,
      "a3": 0.01,
      "a4": 0.74,
-     "none": 0.07
+     "none": 0.06
     },
-    "speak_p": 0.42,
+    "speak_p": 0.43,
     "unsure": false,
-    "seconds": 0.09820084100010718
+    "seconds": 0.12395074500000192
    },
    {
     "id": "d25",
@@ -1198,21 +1228,21 @@
     "pick": "a1",
     "agree": false,
     "failed": false,
-    "conf": 0.27,
-    "margin": 0.07,
+    "conf": 0.25,
+    "margin": 0.050000000000000044,
     "needs_thought": false,
-    "needs_thought_p": 0.12,
-    "p_canon": 0.01,
+    "needs_thought_p": 0.13,
+    "p_canon": 0.02,
     "probabilities": {
-     "a1": 0.42,
+     "a1": 0.4,
      "a2": 0.03,
-     "a3": 0.19,
-     "a4": 0.01,
+     "a3": 0.2,
+     "a4": 0.02,
      "none": 0.35
     },
-    "speak_p": 0.4,
+    "speak_p": 0.39,
     "unsure": true,
-    "seconds": 0.11045159400009652
+    "seconds": 0.09987085800003115
    },
    {
     "id": "d26",
@@ -1224,20 +1254,20 @@
     "agree": false,
     "failed": false,
     "conf": 0.41,
-    "margin": 0.17000000000000004,
+    "margin": 0.18000000000000005,
     "needs_thought": false,
-    "needs_thought_p": 0.31,
-    "p_canon": 0.36,
+    "needs_thought_p": 0.27,
+    "p_canon": 0.35,
     "probabilities": {
      "a1": 0.53,
      "a2": 0.01,
-     "a3": 0.36,
-     "a4": 0.08,
-     "none": 0.02
+     "a3": 0.35,
+     "a4": 0.07,
+     "none": 0.04
     },
-    "speak_p": 0.43,
+    "speak_p": 0.44,
     "unsure": true,
-    "seconds": 0.11686843999996199
+    "seconds": 0.07830646900004012
    },
    {
     "id": "d27",
@@ -1248,21 +1278,21 @@
     "pick": "a2",
     "agree": true,
     "failed": false,
-    "conf": 0.22,
-    "margin": 0.030000000000000027,
+    "conf": 0.26,
+    "margin": 0.06999999999999995,
     "needs_thought": false,
-    "needs_thought_p": 0.08,
-    "p_canon": 0.38,
+    "needs_thought_p": 0.07,
+    "p_canon": 0.41,
     "probabilities": {
-     "a1": 0.08,
-     "a2": 0.38,
-     "a3": 0.11,
-     "a4": 0.08,
-     "none": 0.35
+     "a1": 0.09,
+     "a2": 0.41,
+     "a3": 0.09,
+     "a4": 0.07,
+     "none": 0.34
     },
     "speak_p": 0.27,
     "unsure": true,
-    "seconds": 0.09518907700021373
+    "seconds": 0.11036059799994291
    },
    {
     "id": "d28",
@@ -1273,21 +1303,21 @@
     "pick": "a1",
     "agree": true,
     "failed": false,
-    "conf": 0.54,
-    "margin": 0.42000000000000004,
+    "conf": 0.47,
+    "margin": 0.32999999999999996,
     "needs_thought": false,
-    "needs_thought_p": 0.21,
-    "p_canon": 0.63,
+    "needs_thought_p": 0.22,
+    "p_canon": 0.58,
     "probabilities": {
-     "a1": 0.63,
-     "a2": 0.05,
+     "a1": 0.58,
+     "a2": 0.06,
      "a3": 0.06,
-     "a4": 0.21,
+     "a4": 0.25,
      "none": 0.05
     },
-    "speak_p": 0.69,
+    "speak_p": 0.7,
     "unsure": true,
-    "seconds": 0.0884990839999773
+    "seconds": 0.08760120600004484
    },
    {
     "id": "d29",
@@ -1299,21 +1329,21 @@
     "agree": true,
     "failed": false,
     "conf": 0.59,
-    "margin": 0.49,
+    "margin": 0.48000000000000004,
     "needs_thought": false,
     "needs_thought_p": 0.31,
     "p_canon": 0.66,
     "probabilities": {
      "a1": 0.0,
-     "a2": 0.08,
+     "a2": 0.07,
      "a3": 0.03,
-     "a4": 0.17,
+     "a4": 0.18,
      "a5": 0.66,
      "none": 0.06
     },
-    "speak_p": 0.68,
+    "speak_p": 0.65,
     "unsure": false,
-    "seconds": 0.0851365190001161
+    "seconds": 0.13908199200000126
    },
    {
     "id": "d30",
@@ -1327,7 +1357,7 @@
     "conf": 0.96,
     "margin": 0.95,
     "needs_thought": false,
-    "needs_thought_p": 0.28,
+    "needs_thought_p": 0.24,
     "p_canon": 0.97,
     "probabilities": {
      "a1": 0.01,
@@ -1336,9 +1366,9 @@
      "a4": 0.0,
      "none": 0.02
     },
-    "speak_p": 0.7,
+    "speak_p": 0.67,
     "unsure": false,
-    "seconds": 0.10530367599994861
+    "seconds": 0.08499913299999662
    },
    {
     "id": "d31",
@@ -1349,21 +1379,21 @@
     "pick": "a1",
     "agree": false,
     "failed": false,
-    "conf": 0.22,
-    "margin": 0.04999999999999999,
+    "conf": 0.21,
+    "margin": 0.010000000000000009,
     "needs_thought": false,
-    "needs_thought_p": 0.36,
-    "p_canon": 0.16,
+    "needs_thought_p": 0.37,
+    "p_canon": 0.15,
     "probabilities": {
-     "a1": 0.38,
-     "a2": 0.16,
-     "a3": 0.33,
-     "a4": 0.06,
+     "a1": 0.37,
+     "a2": 0.15,
+     "a3": 0.36,
+     "a4": 0.05,
      "none": 0.07
     },
-    "speak_p": 0.6,
+    "speak_p": 0.61,
     "unsure": true,
-    "seconds": 0.08507107100012945
+    "seconds": 0.09505528900001536
    },
    {
     "id": "d32",
@@ -1374,21 +1404,21 @@
     "pick": "a1",
     "agree": true,
     "failed": false,
-    "conf": 0.75,
-    "margin": 0.7100000000000001,
+    "conf": 0.76,
+    "margin": 0.7200000000000001,
     "needs_thought": false,
     "needs_thought_p": 0.17,
-    "p_canon": 0.8,
+    "p_canon": 0.81,
     "probabilities": {
-     "a1": 0.8,
-     "a2": 0.02,
-     "a3": 0.01,
-     "a4": 0.08,
+     "a1": 0.81,
+     "a2": 0.01,
+     "a3": 0.02,
+     "a4": 0.07,
      "none": 0.09
     },
-    "speak_p": 0.46,
+    "speak_p": 0.47,
     "unsure": false,
-    "seconds": 0.09353862199986906
+    "seconds": 0.09320680399991943
    },
    {
     "id": "d33",
@@ -1399,21 +1429,21 @@
     "pick": "a4",
     "agree": true,
     "failed": false,
-    "conf": 0.59,
-    "margin": 0.44000000000000006,
+    "conf": 0.6,
+    "margin": 0.4600000000000001,
     "needs_thought": false,
-    "needs_thought_p": 0.27,
-    "p_canon": 0.67,
+    "needs_thought_p": 0.3,
+    "p_canon": 0.68,
     "probabilities": {
-     "a1": 0.23,
+     "a1": 0.22,
      "a2": 0.01,
      "a3": 0.03,
-     "a4": 0.67,
+     "a4": 0.68,
      "none": 0.06
     },
     "speak_p": 0.45,
     "unsure": false,
-    "seconds": 0.10247372300000279
+    "seconds": 0.09307571900001221
    },
    {
     "id": "d34",
@@ -1425,20 +1455,20 @@
     "agree": false,
     "failed": false,
     "conf": 0.18,
-    "margin": 0.06,
+    "margin": 0.08000000000000002,
     "needs_thought": false,
-    "needs_thought_p": 0.38,
-    "p_canon": 0.21,
+    "needs_thought_p": 0.35,
+    "p_canon": 0.24,
     "probabilities": {
-     "a1": 0.28,
+     "a1": 0.26,
      "a2": 0.34,
-     "a3": 0.21,
-     "a4": 0.11,
-     "none": 0.06
+     "a3": 0.24,
+     "a4": 0.09,
+     "none": 0.07
     },
-    "speak_p": 0.69,
+    "speak_p": 0.67,
     "unsure": true,
-    "seconds": 0.11797619100025258
+    "seconds": 0.08623767899996437
    },
    {
     "id": "d35",
@@ -1450,20 +1480,20 @@
     "agree": true,
     "failed": false,
     "conf": 0.45,
-    "margin": 0.3500000000000001,
+    "margin": 0.36000000000000004,
     "needs_thought": false,
     "needs_thought_p": 0.31,
     "p_canon": 0.56,
     "probabilities": {
-     "a1": 0.21,
+     "a1": 0.2,
      "a2": 0.56,
-     "a3": 0.11,
-     "a4": 0.03,
+     "a3": 0.1,
+     "a4": 0.05,
      "none": 0.09
     },
-    "speak_p": 0.66,
+    "speak_p": 0.65,
     "unsure": true,
-    "seconds": 0.15352147400017202
+    "seconds": 0.19314948900000672
    },
    {
     "id": "d36",
@@ -1474,21 +1504,21 @@
     "pick": "a1",
     "agree": true,
     "failed": false,
-    "conf": 0.68,
-    "margin": 0.53,
+    "conf": 0.69,
+    "margin": 0.55,
     "needs_thought": false,
     "needs_thought_p": 0.34,
-    "p_canon": 0.74,
+    "p_canon": 0.75,
     "probabilities": {
-     "a1": 0.74,
+     "a1": 0.75,
      "a2": 0.0,
-     "a3": 0.21,
+     "a3": 0.2,
      "a4": 0.03,
      "none": 0.02
     },
-    "speak_p": 0.49,
+    "speak_p": 0.5,
     "unsure": false,
-    "seconds": 0.09165310700018381
+    "seconds": 0.08638841899994532
    },
    {
     "id": "d37",
@@ -1499,21 +1529,21 @@
     "pick": "a4",
     "agree": true,
     "failed": false,
-    "conf": 0.6,
-    "margin": 0.36000000000000004,
+    "conf": 0.54,
+    "margin": 0.26,
     "needs_thought": false,
-    "needs_thought_p": 0.14,
-    "p_canon": 0.68,
+    "needs_thought_p": 0.13,
+    "p_canon": 0.63,
     "probabilities": {
      "a1": 0.0,
-     "a2": 0.32,
+     "a2": 0.37,
      "a3": 0.0,
-     "a4": 0.68,
+     "a4": 0.63,
      "none": 0.0
     },
-    "speak_p": 0.45,
-    "unsure": false,
-    "seconds": 0.09599699299997155
+    "speak_p": 0.43,
+    "unsure": true,
+    "seconds": 0.0824391179999111
    },
    {
     "id": "d38",
@@ -1524,21 +1554,21 @@
     "pick": "a4",
     "agree": false,
     "failed": false,
-    "conf": 0.41,
-    "margin": 0.28,
+    "conf": 0.44,
+    "margin": 0.30000000000000004,
     "needs_thought": false,
-    "needs_thought_p": 0.09,
+    "needs_thought_p": 0.08,
     "p_canon": 0.25,
     "probabilities": {
      "a1": 0.04,
-     "a2": 0.08,
+     "a2": 0.05,
      "a3": 0.25,
-     "a4": 0.53,
-     "none": 0.1
+     "a4": 0.55,
+     "none": 0.11
     },
-    "speak_p": 0.45,
+    "speak_p": 0.48,
     "unsure": true,
-    "seconds": 0.10583376600015981
+    "seconds": 0.13098232599998028
    },
    {
     "id": "d39",
@@ -1549,21 +1579,21 @@
     "pick": "a1",
     "agree": false,
     "failed": false,
-    "conf": 0.36,
-    "margin": 0.27,
+    "conf": 0.37,
+    "margin": 0.26,
     "needs_thought": false,
     "needs_thought_p": 0.1,
-    "p_canon": 0.09,
+    "p_canon": 0.06,
     "probabilities": {
-     "a1": 0.49,
-     "a2": 0.09,
-     "a3": 0.06,
-     "a4": 0.22,
-     "none": 0.14
+     "a1": 0.5,
+     "a2": 0.06,
+     "a3": 0.05,
+     "a4": 0.24,
+     "none": 0.15
     },
     "speak_p": 0.67,
     "unsure": true,
-    "seconds": 0.0778994390002481
+    "seconds": 0.1257366039999397
    },
    {
     "id": "d40",
@@ -1574,21 +1604,21 @@
     "pick": "a1",
     "agree": true,
     "failed": false,
-    "conf": 0.66,
-    "margin": 0.6,
+    "conf": 0.7,
+    "margin": 0.66,
     "needs_thought": false,
-    "needs_thought_p": 0.17,
-    "p_canon": 0.73,
+    "needs_thought_p": 0.19,
+    "p_canon": 0.76,
     "probabilities": {
-     "a1": 0.73,
+     "a1": 0.76,
      "a2": 0.07,
-     "a3": 0.13,
+     "a3": 0.1,
      "a4": 0.05,
      "none": 0.02
     },
-    "speak_p": 0.74,
+    "speak_p": 0.73,
     "unsure": false,
-    "seconds": 0.10381555100002515
+    "seconds": 0.11960646500006078
    },
    {
     "id": "d41",
@@ -1599,21 +1629,21 @@
     "pick": "a4",
     "agree": true,
     "failed": false,
-    "conf": 0.94,
-    "margin": 0.9299999999999999,
+    "conf": 0.91,
+    "margin": 0.9,
     "needs_thought": false,
-    "needs_thought_p": 0.17,
-    "p_canon": 0.95,
+    "needs_thought_p": 0.18,
+    "p_canon": 0.93,
     "probabilities": {
-     "a1": 0.02,
+     "a1": 0.03,
      "a2": 0.0,
-     "a3": 0.01,
-     "a4": 0.95,
+     "a3": 0.02,
+     "a4": 0.93,
      "none": 0.02
     },
-    "speak_p": 0.55,
+    "speak_p": 0.56,
     "unsure": false,
-    "seconds": 0.07330907499999739
+    "seconds": 0.10876366000002236
    },
    {
     "id": "d42",
@@ -1624,21 +1654,21 @@
     "pick": "a3",
     "agree": true,
     "failed": false,
-    "conf": 0.6,
-    "margin": 0.45000000000000007,
+    "conf": 0.62,
+    "margin": 0.49,
     "needs_thought": false,
     "needs_thought_p": 0.1,
-    "p_canon": 0.68,
+    "p_canon": 0.7,
     "probabilities": {
      "a1": 0.0,
      "a2": 0.0,
-     "a3": 0.68,
-     "a4": 0.23,
+     "a3": 0.7,
+     "a4": 0.21,
      "none": 0.09
     },
-    "speak_p": 0.49,
+    "speak_p": 0.5,
     "unsure": false,
-    "seconds": 0.09684148499991352
+    "seconds": 0.10634058900006949
    },
    {
     "id": "d43",
@@ -1649,21 +1679,21 @@
     "pick": "a1",
     "agree": false,
     "failed": false,
-    "conf": 0.75,
-    "margin": 0.65,
+    "conf": 0.74,
+    "margin": 0.63,
     "needs_thought": false,
-    "needs_thought_p": 0.31,
-    "p_canon": 0.15,
+    "needs_thought_p": 0.35,
+    "p_canon": 0.16,
     "probabilities": {
-     "a1": 0.8,
-     "a2": 0.15,
+     "a1": 0.79,
+     "a2": 0.16,
      "a3": 0.03,
      "a4": 0.01,
      "none": 0.01
     },
-    "speak_p": 0.6,
+    "speak_p": 0.59,
     "unsure": false,
-    "seconds": 0.07464615599974422
+    "seconds": 0.14360289399996873
    },
    {
     "id": "d44",
@@ -1674,21 +1704,21 @@
     "pick": "a2",
     "agree": false,
     "failed": false,
-    "conf": 0.51,
-    "margin": 0.43,
+    "conf": 0.54,
+    "margin": 0.47,
     "needs_thought": false,
     "needs_thought_p": 0.12,
-    "p_canon": 0.18,
+    "p_canon": 0.16,
     "probabilities": {
-     "a1": 0.18,
-     "a2": 0.61,
+     "a1": 0.16,
+     "a2": 0.63,
      "a3": 0.01,
-     "a4": 0.07,
-     "none": 0.13
+     "a4": 0.08,
+     "none": 0.12
     },
-    "speak_p": 0.58,
+    "speak_p": 0.57,
     "unsure": true,
-    "seconds": 0.08693028700008654
+    "seconds": 0.07544853799993234
    },
    {
     "id": "d45",
@@ -1699,21 +1729,21 @@
     "pick": "a4",
     "agree": true,
     "failed": false,
-    "conf": 0.75,
-    "margin": 0.7000000000000001,
+    "conf": 0.79,
+    "margin": 0.75,
     "needs_thought": false,
-    "needs_thought_p": 0.37,
-    "p_canon": 0.8,
+    "needs_thought_p": 0.35,
+    "p_canon": 0.83,
     "probabilities": {
      "a1": 0.01,
-     "a2": 0.04,
+     "a2": 0.03,
      "a3": 0.05,
-     "a4": 0.8,
-     "none": 0.1
+     "a4": 0.83,
+     "none": 0.08
     },
-    "speak_p": 0.7,
+    "speak_p": 0.71,
     "unsure": false,
-    "seconds": 0.20775453499982177
+    "seconds": 0.1121076089999633
    },
    {
     "id": "d46",
@@ -1725,20 +1755,20 @@
     "agree": true,
     "failed": false,
     "conf": 0.92,
-    "margin": 0.9099999999999999,
+    "margin": 0.8999999999999999,
     "needs_thought": false,
-    "needs_thought_p": 0.15,
+    "needs_thought_p": 0.14,
     "p_canon": 0.94,
     "probabilities": {
-     "a1": 0.02,
+     "a1": 0.01,
      "a2": 0.0,
      "a3": 0.94,
      "a4": 0.01,
-     "none": 0.03
+     "none": 0.04
     },
-    "speak_p": 0.55,
+    "speak_p": 0.58,
     "unsure": false,
-    "seconds": 0.20314573299992844
+    "seconds": 0.12195067000004656
    },
    {
     "id": "d47",
@@ -1749,21 +1779,21 @@
     "pick": "a2",
     "agree": true,
     "failed": false,
-    "conf": 0.82,
-    "margin": 0.75,
+    "conf": 0.85,
+    "margin": 0.79,
     "needs_thought": false,
-    "needs_thought_p": 0.28,
-    "p_canon": 0.86,
+    "needs_thought_p": 0.29,
+    "p_canon": 0.88,
     "probabilities": {
      "a1": 0.0,
-     "a2": 0.86,
+     "a2": 0.88,
      "a3": 0.02,
      "a4": 0.01,
-     "none": 0.11
+     "none": 0.09
     },
     "speak_p": 0.43,
     "unsure": false,
-    "seconds": 0.1895255670001461
+    "seconds": 0.1260260730000482
    },
    {
     "id": "d48",
@@ -1774,21 +1804,21 @@
     "pick": "a1",
     "agree": true,
     "failed": false,
-    "conf": 0.41,
-    "margin": 0.24000000000000005,
+    "conf": 0.45,
+    "margin": 0.29000000000000004,
     "needs_thought": false,
-    "needs_thought_p": 0.44,
-    "p_canon": 0.53,
+    "needs_thought_p": 0.46,
+    "p_canon": 0.56,
     "probabilities": {
-     "a1": 0.53,
-     "a2": 0.03,
+     "a1": 0.56,
+     "a2": 0.02,
      "a3": 0.01,
-     "a4": 0.29,
+     "a4": 0.27,
      "none": 0.14
     },
-    "speak_p": 0.69,
+    "speak_p": 0.67,
     "unsure": true,
-    "seconds": 0.18340254800023104
+    "seconds": 0.13718821099996603
    },
    {
     "id": "d49",
@@ -1802,7 +1832,7 @@
     "conf": 0.85,
     "margin": 0.8200000000000001,
     "needs_thought": false,
-    "needs_thought_p": 0.16,
+    "needs_thought_p": 0.17,
     "p_canon": 0.88,
     "probabilities": {
      "a1": 0.01,
@@ -1811,9 +1841,9 @@
      "a4": 0.88,
      "none": 0.05
     },
-    "speak_p": 0.39,
+    "speak_p": 0.38,
     "unsure": false,
-    "seconds": 0.17281366199995318
+    "seconds": 0.12462698900003488
    },
    {
     "id": "d50",
@@ -1824,21 +1854,21 @@
     "pick": "none",
     "agree": false,
     "failed": false,
-    "conf": 0.71,
-    "margin": 0.56,
+    "conf": 0.77,
+    "margin": 0.6499999999999999,
     "needs_thought": false,
-    "needs_thought_p": 0.13,
-    "p_canon": 0.21,
+    "needs_thought_p": 0.12,
+    "p_canon": 0.17,
     "probabilities": {
      "a1": 0.0,
-     "a2": 0.02,
-     "a3": 0.21,
+     "a2": 0.01,
+     "a3": 0.17,
      "a4": 0.0,
-     "none": 0.77
+     "none": 0.82
     },
-    "speak_p": 0.2,
+    "speak_p": 0.21,
     "unsure": false,
-    "seconds": 0.16210537000006298
+    "seconds": 0.09838215999991462
    },
    {
     "id": "d51",
@@ -1849,21 +1879,21 @@
     "pick": "none",
     "agree": false,
     "failed": false,
-    "conf": 0.27,
-    "margin": 0.16999999999999998,
+    "conf": 0.25,
+    "margin": 0.16000000000000003,
     "needs_thought": false,
-    "needs_thought_p": 0.11,
-    "p_canon": 0.21,
+    "needs_thought_p": 0.12,
+    "p_canon": 0.23,
     "probabilities": {
-     "a1": 0.1,
-     "a2": 0.21,
-     "a3": 0.25,
+     "a1": 0.11,
+     "a2": 0.23,
+     "a3": 0.24,
      "a4": 0.02,
-     "none": 0.42
+     "none": 0.4
     },
     "speak_p": 0.31,
     "unsure": true,
-    "seconds": 0.15146857999980057
+    "seconds": 0.12013582899999165
    },
    {
     "id": "d52",
@@ -1874,21 +1904,21 @@
     "pick": "a1",
     "agree": true,
     "failed": false,
-    "conf": 0.77,
-    "margin": 0.7,
+    "conf": 0.75,
+    "margin": 0.65,
     "needs_thought": false,
-    "needs_thought_p": 0.33,
-    "p_canon": 0.82,
+    "needs_thought_p": 0.31,
+    "p_canon": 0.8,
     "probabilities": {
-     "a1": 0.82,
-     "a2": 0.06,
+     "a1": 0.8,
+     "a2": 0.05,
      "a3": 0.0,
      "a4": 0.0,
-     "none": 0.12
+     "none": 0.15
     },
-    "speak_p": 0.26,
+    "speak_p": 0.24,
     "unsure": false,
-    "seconds": 0.07298308700001144
+    "seconds": 0.10734209599991118
    },
    {
     "id": "d53",
@@ -1900,20 +1930,20 @@
     "agree": true,
     "failed": false,
     "conf": 0.91,
-    "margin": 0.8700000000000001,
+    "margin": 0.8600000000000001,
     "needs_thought": false,
-    "needs_thought_p": 0.2,
+    "needs_thought_p": 0.19,
     "p_canon": 0.93,
     "probabilities": {
      "a1": 0.0,
-     "a2": 0.01,
+     "a2": 0.0,
      "a3": 0.0,
      "a4": 0.93,
-     "none": 0.06
+     "none": 0.07
     },
     "speak_p": 0.19,
     "unsure": false,
-    "seconds": 0.18394957700002124
+    "seconds": 0.07988289100001111
    },
    {
     "id": "d54",
@@ -1924,21 +1954,21 @@
     "pick": "a3",
     "agree": true,
     "failed": false,
-    "conf": 0.49,
-    "margin": 0.38999999999999996,
+    "conf": 0.51,
+    "margin": 0.43,
     "needs_thought": false,
     "needs_thought_p": 0.34,
-    "p_canon": 0.59,
+    "p_canon": 0.61,
     "probabilities": {
      "a1": 0.0,
-     "a2": 0.04,
-     "a3": 0.59,
-     "a4": 0.2,
-     "none": 0.17
+     "a2": 0.03,
+     "a3": 0.61,
+     "a4": 0.18,
+     "none": 0.18
     },
-    "speak_p": 0.45,
+    "speak_p": 0.48,
     "unsure": true,
-    "seconds": 0.1442862540002352
+    "seconds": 0.10616732500000126
    },
    {
     "id": "d55",
@@ -1949,21 +1979,21 @@
     "pick": "a2",
     "agree": true,
     "failed": false,
-    "conf": 0.85,
-    "margin": 0.81,
+    "conf": 0.84,
+    "margin": 0.79,
     "needs_thought": false,
-    "needs_thought_p": 0.26,
-    "p_canon": 0.88,
+    "needs_thought_p": 0.24,
+    "p_canon": 0.87,
     "probabilities": {
      "a1": 0.01,
-     "a2": 0.88,
+     "a2": 0.87,
      "a3": 0.01,
      "a4": 0.03,
-     "none": 0.07
+     "none": 0.08
     },
-    "speak_p": 0.53,
+    "speak_p": 0.52,
     "unsure": false,
-    "seconds": 0.1661111759999585
+    "seconds": 0.07963458099993659
    },
    {
     "id": "d56",
@@ -1974,21 +2004,21 @@
     "pick": "a2",
     "agree": false,
     "failed": false,
-    "conf": 0.5,
-    "margin": 0.25999999999999995,
+    "conf": 0.55,
+    "margin": 0.35000000000000003,
     "needs_thought": false,
     "needs_thought_p": 0.32,
     "p_canon": 0.02,
     "probabilities": {
      "a1": 0.02,
-     "a2": 0.6,
+     "a2": 0.64,
      "a3": 0.01,
-     "a4": 0.03,
-     "none": 0.34
+     "a4": 0.04,
+     "none": 0.29
     },
-    "speak_p": 0.48,
-    "unsure": true,
-    "seconds": 0.10236003999989407
+    "speak_p": 0.5,
+    "unsure": false,
+    "seconds": 0.08087541800000508
    },
    {
     "id": "d57",
@@ -1999,21 +2029,21 @@
     "pick": "a4",
     "agree": true,
     "failed": false,
-    "conf": 0.9,
-    "margin": 0.88,
+    "conf": 0.91,
+    "margin": 0.89,
     "needs_thought": false,
-    "needs_thought_p": 0.23,
-    "p_canon": 0.92,
+    "needs_thought_p": 0.25,
+    "p_canon": 0.93,
     "probabilities": {
      "a1": 0.04,
      "a2": 0.01,
      "a3": 0.0,
-     "a4": 0.92,
-     "none": 0.03
+     "a4": 0.93,
+     "none": 0.02
     },
-    "speak_p": 0.44,
+    "speak_p": 0.48,
     "unsure": false,
-    "seconds": 0.07740663000004133
+    "seconds": 0.11569749099999171
    },
    {
     "id": "d58",
@@ -2024,21 +2054,21 @@
     "pick": "a3",
     "agree": true,
     "failed": false,
-    "conf": 0.42,
-    "margin": 0.33000000000000007,
+    "conf": 0.46,
+    "margin": 0.38999999999999996,
     "needs_thought": false,
-    "needs_thought_p": 0.22,
-    "p_canon": 0.54,
+    "needs_thought_p": 0.21,
+    "p_canon": 0.57,
     "probabilities": {
      "a1": 0.17,
-     "a2": 0.21,
-     "a3": 0.54,
-     "a4": 0.04,
-     "none": 0.04
+     "a2": 0.18,
+     "a3": 0.57,
+     "a4": 0.05,
+     "none": 0.03
     },
-    "speak_p": 0.7,
+    "speak_p": 0.69,
     "unsure": true,
-    "seconds": 0.1274276510002892
+    "seconds": 0.14072763800004395
    },
    {
     "id": "d59",
@@ -2046,24 +2076,24 @@
     "tier": "soul",
     "confidence": "high",
     "canon": "a2",
-    "pick": "a2",
-    "agree": true,
+    "pick": "a4",
+    "agree": false,
     "failed": false,
-    "conf": 0.18,
-    "margin": 0.010000000000000009,
+    "conf": 0.14,
+    "margin": 0.02999999999999997,
     "needs_thought": false,
     "needs_thought_p": 0.19,
-    "p_canon": 0.34,
+    "p_canon": 0.28,
     "probabilities": {
-     "a1": 0.09,
-     "a2": 0.34,
-     "a3": 0.14,
-     "a4": 0.33,
-     "none": 0.1
+     "a1": 0.1,
+     "a2": 0.28,
+     "a3": 0.18,
+     "a4": 0.31,
+     "none": 0.13
     },
     "speak_p": 0.53,
     "unsure": true,
-    "seconds": 0.08487491500000033
+    "seconds": 0.11659116199996333
    },
    {
     "id": "d60",
@@ -2074,21 +2104,21 @@
     "pick": "a1",
     "agree": true,
     "failed": false,
-    "conf": 0.56,
-    "margin": 0.39,
+    "conf": 0.57,
+    "margin": 0.42000000000000004,
     "needs_thought": false,
-    "needs_thought_p": 0.19,
-    "p_canon": 0.65,
+    "needs_thought_p": 0.16,
+    "p_canon": 0.66,
     "probabilities": {
-     "a1": 0.65,
-     "a2": 0.26,
+     "a1": 0.66,
+     "a2": 0.24,
      "a3": 0.03,
-     "a4": 0.02,
+     "a4": 0.03,
      "none": 0.04
     },
-    "speak_p": 0.64,
+    "speak_p": 0.66,
     "unsure": false,
-    "seconds": 0.08116134199963199
+    "seconds": 0.07065534700006992
    },
    {
     "id": "d61",
@@ -2099,21 +2129,21 @@
     "pick": "a4",
     "agree": true,
     "failed": false,
-    "conf": 0.75,
-    "margin": 0.63,
+    "conf": 0.79,
+    "margin": 0.69,
     "needs_thought": false,
-    "needs_thought_p": 0.24,
-    "p_canon": 0.8,
+    "needs_thought_p": 0.27,
+    "p_canon": 0.83,
     "probabilities": {
      "a1": 0.02,
      "a2": 0.0,
-     "a3": 0.17,
-     "a4": 0.8,
+     "a3": 0.14,
+     "a4": 0.83,
      "none": 0.01
     },
-    "speak_p": 0.56,
+    "speak_p": 0.55,
     "unsure": false,
-    "seconds": 0.10735817300019335
+    "seconds": 0.08983500800002275
    },
    {
     "id": "d62",
@@ -2125,20 +2155,20 @@
     "agree": false,
     "failed": false,
     "conf": 0.37,
-    "margin": 0.19,
+    "margin": 0.18,
     "needs_thought": false,
     "needs_thought_p": 0.27,
-    "p_canon": 0.31,
+    "p_canon": 0.32,
     "probabilities": {
      "a1": 0.5,
      "a2": 0.01,
-     "a3": 0.31,
-     "a4": 0.16,
+     "a3": 0.32,
+     "a4": 0.15,
      "none": 0.02
     },
     "speak_p": 0.36,
     "unsure": true,
-    "seconds": 0.08122698200031664
+    "seconds": 0.08503100300004007
    },
    {
     "id": "d63",
@@ -2149,21 +2179,21 @@
     "pick": "a4",
     "agree": false,
     "failed": false,
-    "conf": 0.24,
-    "margin": 0.18000000000000002,
+    "conf": 0.22,
+    "margin": 0.19,
     "needs_thought": false,
-    "needs_thought_p": 0.23,
-    "p_canon": 0.13,
+    "needs_thought_p": 0.25,
+    "p_canon": 0.19,
     "probabilities": {
-     "a1": 0.21,
-     "a2": 0.13,
+     "a1": 0.17,
+     "a2": 0.19,
      "a3": 0.19,
-     "a4": 0.39,
-     "none": 0.08
+     "a4": 0.38,
+     "none": 0.07
     },
-    "speak_p": 0.45,
+    "speak_p": 0.47,
     "unsure": true,
-    "seconds": 0.09376945200028786
+    "seconds": 0.09482837800010202
    },
    {
     "id": "d64",
@@ -2174,21 +2204,21 @@
     "pick": "a4",
     "agree": false,
     "failed": false,
-    "conf": 0.52,
-    "margin": 0.43,
+    "conf": 0.51,
+    "margin": 0.39,
     "needs_thought": false,
     "needs_thought_p": 0.18,
     "p_canon": 0.01,
     "probabilities": {
      "a1": 0.01,
-     "a2": 0.11,
-     "a3": 0.07,
-     "a4": 0.62,
-     "none": 0.19
+     "a2": 0.08,
+     "a3": 0.08,
+     "a4": 0.61,
+     "none": 0.22
     },
-    "speak_p": 0.37,
+    "speak_p": 0.34,
     "unsure": true,
-    "seconds": 0.08625810200010164
+    "seconds": 0.08945264999999836
    },
    {
     "id": "d65",
@@ -2199,21 +2229,21 @@
     "pick": "a4",
     "agree": true,
     "failed": false,
-    "conf": 0.62,
-    "margin": 0.5499999999999999,
+    "conf": 0.65,
+    "margin": 0.58,
     "needs_thought": false,
-    "needs_thought_p": 0.26,
-    "p_canon": 0.7,
+    "needs_thought_p": 0.25,
+    "p_canon": 0.72,
     "probabilities": {
-     "a1": 0.05,
-     "a2": 0.05,
-     "a3": 0.05,
-     "a4": 0.7,
-     "none": 0.15
+     "a1": 0.04,
+     "a2": 0.06,
+     "a3": 0.04,
+     "a4": 0.72,
+     "none": 0.14
     },
     "speak_p": 0.43,
     "unsure": false,
-    "seconds": 0.07739899999978661
+    "seconds": 0.09690557600004013
    },
    {
     "id": "d66",
@@ -2224,21 +2254,21 @@
     "pick": "a3",
     "agree": true,
     "failed": false,
-    "conf": 0.19,
-    "margin": 0.09999999999999998,
+    "conf": 0.21,
+    "margin": 0.10999999999999999,
     "needs_thought": true,
-    "needs_thought_p": 0.63,
-    "p_canon": 0.35,
+    "needs_thought_p": 0.62,
+    "p_canon": 0.37,
     "probabilities": {
-     "a1": 0.12,
-     "a2": 0.25,
-     "a3": 0.35,
-     "a4": 0.12,
-     "none": 0.16
+     "a1": 0.11,
+     "a2": 0.26,
+     "a3": 0.37,
+     "a4": 0.11,
+     "none": 0.15
     },
-    "speak_p": 0.56,
+    "speak_p": 0.59,
     "unsure": true,
-    "seconds": 0.19314363800003775
+    "seconds": 0.06744480399993336
    },
    {
     "id": "d67",
@@ -2249,21 +2279,21 @@
     "pick": "a2",
     "agree": true,
     "failed": false,
-    "conf": 0.64,
-    "margin": 0.6,
+    "conf": 0.6,
+    "margin": 0.5700000000000001,
     "needs_thought": false,
-    "needs_thought_p": 0.16,
-    "p_canon": 0.71,
+    "needs_thought_p": 0.15,
+    "p_canon": 0.68,
     "probabilities": {
-     "a1": 0.06,
-     "a2": 0.71,
-     "a3": 0.07,
+     "a1": 0.11,
+     "a2": 0.68,
+     "a3": 0.06,
      "a4": 0.05,
-     "none": 0.11
+     "none": 0.1
     },
-    "speak_p": 0.41,
+    "speak_p": 0.42,
     "unsure": false,
-    "seconds": 0.1827965630000108
+    "seconds": 0.0746862629999896
    },
    {
     "id": "d68",
@@ -2274,21 +2304,21 @@
     "pick": "a1",
     "agree": true,
     "failed": false,
-    "conf": 0.65,
-    "margin": 0.49,
+    "conf": 0.69,
+    "margin": 0.53,
     "needs_thought": false,
-    "needs_thought_p": 0.23,
-    "p_canon": 0.72,
+    "needs_thought_p": 0.24,
+    "p_canon": 0.75,
     "probabilities": {
-     "a1": 0.72,
-     "a2": 0.01,
+     "a1": 0.75,
+     "a2": 0.0,
      "a3": 0.02,
-     "a4": 0.02,
-     "none": 0.23
+     "a4": 0.01,
+     "none": 0.22
     },
     "speak_p": 0.33,
     "unsure": false,
-    "seconds": 0.11242883300019457
+    "seconds": 0.17168592699999863
    },
    {
     "id": "d69",
@@ -2299,21 +2329,21 @@
     "pick": "a4",
     "agree": true,
     "failed": false,
-    "conf": 0.82,
-    "margin": 0.79,
+    "conf": 0.79,
+    "margin": 0.75,
     "needs_thought": false,
     "needs_thought_p": 0.18,
-    "p_canon": 0.86,
+    "p_canon": 0.83,
     "probabilities": {
      "a1": 0.0,
-     "a2": 0.07,
-     "a3": 0.01,
-     "a4": 0.86,
-     "none": 0.06
+     "a2": 0.08,
+     "a3": 0.02,
+     "a4": 0.83,
+     "none": 0.07
     },
-    "speak_p": 0.38,
+    "speak_p": 0.36,
     "unsure": false,
-    "seconds": 0.09531954299973222
+    "seconds": 0.19264681100003145
    },
    {
     "id": "d70",
@@ -2324,21 +2354,21 @@
     "pick": "a3",
     "agree": true,
     "failed": false,
-    "conf": 0.52,
-    "margin": 0.38,
+    "conf": 0.56,
+    "margin": 0.45,
     "needs_thought": false,
-    "needs_thought_p": 0.21,
-    "p_canon": 0.62,
+    "needs_thought_p": 0.22,
+    "p_canon": 0.65,
     "probabilities": {
-     "a1": 0.24,
+     "a1": 0.2,
      "a2": 0.02,
-     "a3": 0.62,
-     "a4": 0.11,
+     "a3": 0.65,
+     "a4": 0.12,
      "none": 0.01
     },
-    "speak_p": 0.62,
-    "unsure": true,
-    "seconds": 0.10706805700010591
+    "speak_p": 0.65,
+    "unsure": false,
+    "seconds": 0.07931662500004677
    },
    {
     "id": "d71",
@@ -2349,21 +2379,21 @@
     "pick": "a2",
     "agree": true,
     "failed": false,
-    "conf": 0.57,
-    "margin": 0.45000000000000007,
+    "conf": 0.65,
+    "margin": 0.5599999999999999,
     "needs_thought": false,
-    "needs_thought_p": 0.17,
-    "p_canon": 0.66,
+    "needs_thought_p": 0.18,
+    "p_canon": 0.72,
     "probabilities": {
      "a1": 0.07,
-     "a2": 0.66,
-     "a3": 0.04,
+     "a2": 0.72,
+     "a3": 0.03,
      "a4": 0.02,
-     "none": 0.21
+     "none": 0.16
     },
-    "speak_p": 0.45,
+    "speak_p": 0.47,
     "unsure": false,
-    "seconds": 0.11393671499990887
+    "seconds": 0.06810352200000125
    },
    {
     "id": "d72",
@@ -2374,21 +2404,21 @@
     "pick": "a1",
     "agree": true,
     "failed": false,
-    "conf": 0.46,
-    "margin": 0.36999999999999994,
+    "conf": 0.5,
+    "margin": 0.39999999999999997,
     "needs_thought": false,
-    "needs_thought_p": 0.13,
-    "p_canon": 0.57,
+    "needs_thought_p": 0.12,
+    "p_canon": 0.6,
     "probabilities": {
-     "a1": 0.57,
+     "a1": 0.6,
      "a2": 0.02,
      "a3": 0.2,
-     "a4": 0.17,
+     "a4": 0.14,
      "none": 0.04
     },
-    "speak_p": 0.69,
+    "speak_p": 0.68,
     "unsure": true,
-    "seconds": 0.07800972999984879
+    "seconds": 0.1328168039999582
    },
    {
     "id": "d73",
@@ -2399,21 +2429,21 @@
     "pick": "a2",
     "agree": true,
     "failed": false,
-    "conf": 0.49,
-    "margin": 0.29,
+    "conf": 0.5,
+    "margin": 0.3,
     "needs_thought": false,
-    "needs_thought_p": 0.19,
-    "p_canon": 0.8899999999999999,
+    "needs_thought_p": 0.18,
+    "p_canon": 0.8999999999999999,
     "probabilities": {
      "a1": 0.01,
-     "a2": 0.59,
+     "a2": 0.6,
      "a3": 0.08,
      "a4": 0.3,
-     "none": 0.02
+     "none": 0.01
     },
-    "speak_p": 0.42,
+    "speak_p": 0.39,
     "unsure": true,
-    "seconds": 0.08144231100004617
+    "seconds": 0.12100029199996243
    },
    {
     "id": "d74",
@@ -2424,21 +2454,21 @@
     "pick": "a3",
     "agree": true,
     "failed": false,
-    "conf": 0.37,
-    "margin": 0.35,
+    "conf": 0.41,
+    "margin": 0.39,
     "needs_thought": false,
-    "needs_thought_p": 0.17,
-    "p_canon": 0.5,
+    "needs_thought_p": 0.16,
+    "p_canon": 0.53,
     "probabilities": {
-     "a1": 0.15,
+     "a1": 0.14,
      "a2": 0.14,
-     "a3": 0.5,
-     "a4": 0.07,
-     "none": 0.14
+     "a3": 0.53,
+     "a4": 0.06,
+     "none": 0.13
     },
-    "speak_p": 0.48,
+    "speak_p": 0.46,
     "unsure": true,
-    "seconds": 0.07330778699997609
+    "seconds": 0.11478141700001743
    },
    {
     "id": "d75",
@@ -2449,21 +2479,21 @@
     "pick": "a1",
     "agree": false,
     "failed": false,
-    "conf": 0.39,
-    "margin": 0.30000000000000004,
+    "conf": 0.44,
+    "margin": 0.37000000000000005,
     "needs_thought": false,
-    "needs_thought_p": 0.37,
-    "p_canon": 0.04,
+    "needs_thought_p": 0.38,
+    "p_canon": 0.03,
     "probabilities": {
-     "a1": 0.51,
-     "a2": 0.04,
+     "a1": 0.55,
+     "a2": 0.03,
      "a3": 0.16,
-     "a4": 0.21,
+     "a4": 0.18,
      "none": 0.08
     },
-    "speak_p": 0.4,
+    "speak_p": 0.44,
     "unsure": true,
-    "seconds": 0.09629413199991177
+    "seconds": 0.11860132700007853
    },
    {
     "id": "d76",
@@ -2474,21 +2504,21 @@
     "pick": "a1",
     "agree": true,
     "failed": false,
-    "conf": 0.57,
-    "margin": 0.51,
+    "conf": 0.54,
+    "margin": 0.45999999999999996,
     "needs_thought": false,
-    "needs_thought_p": 0.41,
-    "p_canon": 0.66,
+    "needs_thought_p": 0.39,
+    "p_canon": 0.63,
     "probabilities": {
-     "a1": 0.66,
+     "a1": 0.63,
      "a2": 0.03,
-     "a3": 0.02,
-     "a4": 0.15,
-     "none": 0.14
+     "a3": 0.03,
+     "a4": 0.14,
+     "none": 0.17
     },
     "speak_p": 0.33,
-    "unsure": false,
-    "seconds": 0.0964747409998381
+    "unsure": true,
+    "seconds": 0.1095846690000144
    },
    {
     "id": "d77",
@@ -2499,21 +2529,21 @@
     "pick": "a4",
     "agree": true,
     "failed": false,
-    "conf": 0.89,
-    "margin": 0.8400000000000001,
+    "conf": 0.94,
+    "margin": 0.8999999999999999,
     "needs_thought": false,
-    "needs_thought_p": 0.24,
-    "p_canon": 0.91,
+    "needs_thought_p": 0.25,
+    "p_canon": 0.95,
     "probabilities": {
-     "a1": 0.01,
-     "a2": 0.01,
+     "a1": 0.0,
+     "a2": 0.0,
      "a3": 0.0,
-     "a4": 0.91,
-     "none": 0.07
+     "a4": 0.95,
+     "none": 0.05
     },
     "speak_p": 0.24,
     "unsure": false,
-    "seconds": 0.0761095180000666
+    "seconds": 0.10817579100000785
    },
    {
     "id": "d78",
@@ -2524,21 +2554,21 @@
     "pick": "a3",
     "agree": true,
     "failed": false,
-    "conf": 0.45,
-    "margin": 0.32000000000000006,
+    "conf": 0.49,
+    "margin": 0.36,
     "needs_thought": false,
-    "needs_thought_p": 0.17,
-    "p_canon": 0.56,
+    "needs_thought_p": 0.18,
+    "p_canon": 0.59,
     "probabilities": {
      "a1": 0.03,
-     "a2": 0.24,
-     "a3": 0.56,
-     "a4": 0.16,
+     "a2": 0.23,
+     "a3": 0.59,
+     "a4": 0.14,
      "none": 0.01
     },
-    "speak_p": 0.68,
+    "speak_p": 0.66,
     "unsure": true,
-    "seconds": 0.09934459399983098
+    "seconds": 0.11134597099999155
    },
    {
     "id": "d79",
@@ -2552,18 +2582,18 @@
     "conf": 0.5,
     "margin": 0.41,
     "needs_thought": false,
-    "needs_thought_p": 0.14,
+    "needs_thought_p": 0.13,
     "p_canon": 0.6,
     "probabilities": {
-     "a1": 0.07,
+     "a1": 0.05,
      "a2": 0.6,
-     "a3": 0.12,
+     "a3": 0.14,
      "a4": 0.19,
      "none": 0.02
     },
-    "speak_p": 0.45,
+    "speak_p": 0.47,
     "unsure": true,
-    "seconds": 0.07468206500016095
+    "seconds": 0.08235788000001776
    },
    {
     "id": "d80",
@@ -2574,21 +2604,21 @@
     "pick": "a1",
     "agree": true,
     "failed": false,
-    "conf": 0.89,
-    "margin": 0.86,
+    "conf": 0.91,
+    "margin": 0.89,
     "needs_thought": false,
-    "needs_thought_p": 0.2,
-    "p_canon": 0.91,
+    "needs_thought_p": 0.21,
+    "p_canon": 0.93,
     "probabilities": {
-     "a1": 0.91,
-     "a2": 0.04,
+     "a1": 0.93,
+     "a2": 0.03,
      "a3": 0.0,
      "a4": 0.0,
-     "none": 0.05
+     "none": 0.04
     },
-    "speak_p": 0.69,
+    "speak_p": 0.64,
     "unsure": false,
-    "seconds": 0.07515569499992125
+    "seconds": 0.11066600199990262
    }
   ]
  }
