@@ -37,8 +37,9 @@ def game_settings(cfg: EvalConfig, tmp: Path, *, real_j1: bool = False) -> Setti
     s.paths.saves = str(tmp / "saves")
     if cfg.model:
         s.jev.model = cfg.model
+    # 这几遍量的都是 J1 一路（Mock 的规则猜测、照标注作答、真 J1），不随 config 里的默认路由走。
+    s.route.classify = "jev_first"
     if real_j1:
-        s.route.classify = "jev_first"
         for k in RULE_ROUTES:
             setattr(s.route, k, "rules_only")
         s.jev.timeout_s = max(float(s.jev.timeout_s), REAL_J1_TIMEOUT_S)

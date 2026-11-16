@@ -149,3 +149,46 @@ async def test_offscreen_effects_of_a_step(llm, world):
     rp = state.chars["rui_popo"]
     assert rp.onstage and rp.loc == "highroad"
     assert next(s for s in rp.agenda.steps if s.id == "rp_enter").state == "done"
+
+
+async def test_say_to_someone_who_is_not_there_voids_the_step_quietly(llm, world):
+    """T2：指名说给某人的话，他不在跟前——这一步作废，不让内核记一条「speech dropped: … not here」。"""
+    defs, state = world
+    player_off(state, defs)
+    step = {"id": "t_taunt", "text": "讥讽几句", "at": "mountain_path", "do": {"verb": "say", "act": "taunt", "to": "zuo_zimu"}, "takes": 1}
+    fx(state, defs, [{"step": ["sn_chief_b", step]}])
+    assert state.chars["zuo_zimu"].loc != "mountain_path"
+    n = len(state.violations)
+    events = await offscreen.advance(state, defs, "sn_chief_b", 8)
+    assert not [e for e in events if e.verb == "say"]
+    st = next(s for s in state.chars["sn_chief_b"].agenda.steps if s.id == "t_taunt")
+    assert st.state == "void"
+    assert not [v for v in state.violations[n:] if "not here" in v], state.violations[n:]
+
+
+async def test_reply_that_agrees_and_acts_is_not_rolled_back(llm, world):
+    """对方的抉择若是「答应 + 当场照做」：先话后事分两次结算，不因同一次结算里新插的那一步而整体回滚。"""
+    defs, state = world
+    player_off(state, defs)
+
+    async def decide(st: Any, df: Any, actor: str) -> Any:
+        r = next(r for r in st.requests.values() if r.to == actor and r.status == "open")
+        r.verdict = "may"
+        do = actions.build(st, df, actor, "follow", {"target": r.frm})
+        assert do is not None
+        return SimpleNamespace(action=do, speech=Speech(act="agree", to=[r.frm], request=r.id))
+
+    step = {"id": "t_ask", "text": "叫帮众跟上", "at": "mountain_path",
+            "do": {"verb": "say", "act": "request", "to": "sn_guard_3", "ask": {"verb": "follow", "params": {"target": "self"}}},
+            "takes": 1}
+    fx(state, defs, [{"step": ["sn_chief_b", step]}])
+    n = len(state.violations)
+    events = await offscreen.advance(state, defs, "sn_chief_b", 8, decide=decide)
+    r = next(r for r in state.requests.values() if r.frm == "sn_chief_b" and r.to == "sn_guard_3")
+    assert r.status == "agreed"
+    assert not [v for v in state.violations[n:] if "rollback" in v], state.violations[n:]
+    assert state.chars["sn_guard_3"].following == "sn_chief_b"
+    assert all(e.offscreen for e in events if e.actor == "sn_guard_3")
+    # 答应的那一步当场做完了
+    ag = state.chars["sn_guard_3"].agenda
+    assert ag is None or not [s for s in ag.steps if s.id == f"req_{r.id}" and s.state == "pending"]

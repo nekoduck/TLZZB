@@ -29,7 +29,7 @@ from tianlong.kernel import speech as kspeech
 from tianlong.kernel.actions import ActionInst
 from tianlong.kernel.defs import Defs
 from tianlong.kernel.speech import SpeechOptions
-from tianlong.kernel.state import Character, Event, Speech, WorldState, log_violation
+from tianlong.kernel.state import Character, Ctx, Event, Speech, WorldState, log_violation
 from tianlong.llm import STAR_PREFIX, route
 from tianlong.llm.schemas import Decision, SpeechOut
 from tianlong.minds import render, talk
@@ -116,27 +116,179 @@ def pick_reactors(
     return [r[3] for r in rows[: max(0, limit)]]
 
 
+def addressed(state: WorldState, events: Sequence[Event], loc: str) -> set[str]:
+    """本轮事件里，话是冲着谁说的（被人当面相求、相问、相劝的人）。"""
+    out: set[str] = set()
+    for ev in events:
+        if ev.loc == loc and ev.speech is not None:
+            out.update(ev.speech.to)
+    return out
+
+
 def order(
     state: WorldState, decisions: Sequence[MindDecision], events: Sequence[Event] = ()
 ) -> list[MindDecision]:
-    """结算顺序（4.3）：先当事人后旁观者，同级按 initiative 从高到低；再同级保持原先后。"""
-    cache: dict[str, set[str]] = {}
+    """结算顺序（4.3）：话冲着他说的人最先（先答话，别人再出手），其余当事人次之，旁观者最后；
+    同级按 initiative 从高到低；再同级保持原先后。
 
-    def key(item: tuple[int, MindDecision]) -> tuple[int, int, int]:
+    会让情境散场的那一招（``closing``）整体排在不散场的招之后——否则它一落下，同场其他人这一拍
+    想好的事全都落空（「…no longer legal at resolution」）。两招都会散场时仍照上面的先后。
+    """
+    cache: dict[str, tuple[set[str], set[str]]] = {}
+
+    def key(item: tuple[int, MindDecision]) -> tuple[int, int, int, int]:
         i, d = item
         c = state.chars.get(d.actor)
         if c is None:
-            return (2, 0, i)
-        inv = cache.setdefault(c.loc, involved(state, events, c.loc))
-        return (0 if c.id in inv else 1, -c.initiative, i)
+            return (1, 3, 0, i)
+        if c.loc not in cache:
+            cache[c.loc] = (addressed(state, events, c.loc), involved(state, events, c.loc))
+        spoken_to, inv = cache[c.loc]
+        rank = 0 if c.id in spoken_to else 1 if c.id in inv else 2
+        return (1 if d.closing else 0, rank, -c.initiative, i)
 
     return [d for _, d in sorted(enumerate(decisions), key=key)]
 
 
+def speech_stands(state: WorldState, defs: Defs, d: MindDecision) -> bool:
+    """结算那一刻这句话还说得成：指名的听话人至少有一个还在跟前；答复的那桩请求还等着他答。"""
+    sp = d.speech
+    c = state.chars.get(d.actor)
+    if sp is None or c is None:
+        return False
+    if sp.to:
+        heard = {o.id for o in kspeech.audience(state, c)}
+        if not heard.intersection(sp.to):
+            return False
+    if sp.act in kspeech.REPLY_ACTS:
+        r = state.requests.get(sp.request or "")
+        if r is not None:
+            mine = (r.to == c.id and r.status in ("open", "countered")) or (r.frm == c.id and r.status == "countered")
+            if not mine:
+                return False
+        elif not (kspeech.open_requests_to(state, c.id) or kspeech.countered_from(state, c.id)):
+            return False
+    return True
+
+
+def _flags_set(effs: Any) -> set[str]:
+    out: set[str] = set()
+    for e in effs or []:
+        if not isinstance(e, dict):
+            continue
+        v = e.get("set_flag")
+        if isinstance(v, list) and v:
+            out.add(str(v[0]))
+        elif isinstance(v, str):
+            out.add(v)
+        chk = e.get("check")
+        if isinstance(chk, dict):
+            out |= _flags_set(list(chk.get("ok") or []) + list(chk.get("fail") or []))
+    return out
+
+
+def _flags_read(pred: Any) -> set[str]:
+    out: set[str] = set()
+    if isinstance(pred, dict):
+        for k, v in pred.items():
+            if k == "flag":
+                out.add(str(v[0] if isinstance(v, list) and v else v))
+            else:
+                out |= _flags_read(v)
+    elif isinstance(pred, list):
+        for v in pred:
+            out |= _flags_read(v)
+    return out
+
+
+def closes_situation(state: WorldState, defs: Defs, a: ActionInst) -> bool:
+    """这一招立的旗标正是它那场情境散场条件里看的：做了它，这场事就散了。"""
+    if a.verb != "setpiece":
+        return False
+    s = state.situations.get(str(a.params.get("situation", "")))
+    d = defs.situations.get(s.kind) if s is not None else None
+    sa = d.actions.get(str(a.params.get("name"))) if d is not None else None
+    if d is None or sa is None or d.exit_when is None:
+        return False
+    return bool(_flags_set(sa.effects) & _flags_read(d.exit_when))
+
+
+def agreed_action(state: WorldState, defs: Defs, actor: str, speech: Speech | None) -> ActionInst | None:
+    """一句「答应」连着做的那件事（5.7：有人劝过，他这一拍就照做，不必再等一轮）。
+
+    所求之事此刻在他的合法清单里，就是它；所求是「住手」「等一等」的，就是等。裁决不许答应、
+    所求是开口说话、或者那件事此刻做不出的，返回 None（动作照原先选的，答应的那一步留在打算里）。
+    """
+    if speech is None or speech.act != "agree":
+        return None
+    r = state.requests.get(speech.request or "")
+    if r is None:  # 没指明是哪一桩：与内核同样取冲他来的第一个
+        mine = kspeech.open_requests_to(state, actor)
+        r = mine[0] if mine else None
+    if r is None or r.to != actor or r.status != "open" or r.kind == "question":
+        return None
+    if "agree" not in kspeech.allowed_replies(r):
+        return None
+    verb = r.action.get("verb")
+    legal = actions.legal_actions(state, defs, actor)
+    if r.action.get("stop") or verb == "wait":
+        return wait_action(legal)
+    if not verb or verb == "say":
+        return None
+    do = {"verb": verb, **(r.action.get("params") or {})}
+    ctx = Ctx(self_id=actor)
+    for a in legal:
+        if actions.matches_do(a, do, ctx, state=state):
+            return a
+    return None
+
+
+def keep_word(state: WorldState, defs: Defs, d: MindDecision) -> MindDecision:
+    """抉择里的话是「答应」时，把动作换成答应的那件事（同一个抉择里说到做到）。"""
+    if d.actor == state.player:
+        return d
+    act = agreed_action(state, defs, d.actor, d.speech)
+    if act is None or act.signature == d.action.signature:
+        return d
+    return d.model_copy(update={"action": act, "notes": [*d.notes, f"agreed → {act.signature}"]})
+
+
+def _finalize(state: WorldState, defs: Defs, d: MindDecision, offscreen: bool = False) -> MindDecision:
+    # 离场的答复由 world.offscreen 一次结算，答应的那一步随后照离场的规矩推进：不在这里换动作
+    if not offscreen:
+        d = keep_word(state, defs, d)
+    if closes_situation(state, defs, d.action):
+        d = d.model_copy(update={"closing": True})
+    return d
+
+
 def apply_decision(state: WorldState, defs: Defs, d: MindDecision) -> list[Event]:
-    """逐个结算（给 game 用）：动作此刻已不合法的，降级为 ``wait`` 并记日志，不重新调用模型（4.3）。"""
+    """逐个结算（给 game 用）：动作此刻已不合法的，降级为 ``wait`` 并记日志，不重新调用模型（4.3）。
+
+    结算前再核一遍那句话（``speech_stands``）；话是「答应」而所求之事此刻做得出的，先话后事分两次结算。
+    """
     act = d.action
-    if actions.is_legal(state, defs, act) is None:
+    if d.speech is not None and not speech_stands(state, defs, d):
+        # 抉择之后、轮到他之前，听话的人走开了，或要答复的那桩请求已经不在了：这句话不说了。
+        # 这是同一微轮里别人先结算造成的，不是谁违了规，不进 violations。
+        d = d.model_copy(update={"speech": None, "notes": [*d.notes, "speech moot at resolution"]})
+    kept = agreed_action(state, defs, d.actor, d.speech)
+    if kept is not None and kept.verb != "wait":
+        # 答应了就做：先结算那句话（内核把答应的事插成他眼下这一步），紧接着结算那件事。
+        # 分两次进内核：同一次结算里才插进来的一步，不变量会当成「已作废的步骤」而整体回滚。
+        w = actions.build(state, defs, d.actor, "wait", {"ticks": 1})
+        said = resolve.apply(state, defs, w, d.speech, source="mind") if w is not None else []
+        r = state.requests.get(said[0].speech.request or "") if said and said[0].speech is not None else None
+        if r is None or r.status != "agreed":
+            return said
+        now = actions.is_legal(state, defs, kept)
+        if now is None:
+            log_violation(state, f"{d.actor}: agreed {kept.signature} but cannot do it now")
+            return said
+        return said + resolve.apply(state, defs, now, None, source="mind")
+    if kept is not None:
+        act = kept
+    elif actions.is_legal(state, defs, act) is None:
         log_violation(state, f"{d.actor}: {act.signature} no longer legal at resolution → wait")
         w = actions.build(state, defs, d.actor, "wait", {"ticks": 1})
         if w is None:
@@ -744,7 +896,7 @@ async def _run(
     for m in minds:
         if m.decision is None:  # 不该发生；保底
             m.decision = _rule_decision(state, defs, m, "no decision reached")
-        out.append(m.decision)
+        out.append(_finalize(state, defs, m.decision, offscreen))
     return out
 
 
@@ -779,5 +931,10 @@ __all__ = [
     "preferred_star",
     "rule_action",
     "involved",
+    "addressed",
+    "agreed_action",
+    "closes_situation",
+    "keep_word",
+    "speech_stands",
     "MAX_REACTORS",
 ]

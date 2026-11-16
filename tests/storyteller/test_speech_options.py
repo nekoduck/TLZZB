@@ -116,7 +116,7 @@ async def test_persuasion_opens_the_apology_end_to_end(llm, w):
     """方案 5.7：赔礼那一招没有 lean，「有人劝过，他才可能选它」。
 
     笑声一出，三个选项里就有一句「低声劝……赔个不是」（介入）；选了它，经 resolve.apply 成了一桩请求；
-    客人答应之后，赔礼那一招成了他眼下这一步打算（★），他下一拍就选它；耳光不再落下。
+    客人答应，同一个抉择里就赔了不是（答应即照做）；耳光不再落下。
     """
     _to_the_laugh(w)
     sid = _bout(w)
@@ -145,20 +145,17 @@ async def test_persuasion_opens_the_apology_end_to_end(llm, w):
     assert req.action["params"] == {"situation": sid, "name": "apologize"}
     assert evs[0].speech is not None and evs[0].speech.act == "request"
 
-    # 客人掂量之后答应（Mock 的抉择照内核的裁决）
+    # 客人掂量之后答应（Mock 的抉择照内核的裁决）；答应了就做：同一个抉择里赔了不是（P1）
     d = await minds.decide_one(llm, w.s, w.defs, GUEST, events=evs)
     assert d.speech is not None and d.speech.act == "agree" and d.speech.request == req.id
+    assert d.action.verb == "setpiece" and d.action.params == {"situation": sid, "name": "apologize"}
     evs2 = minds.apply_decision(w.s, w.defs, d)
+    assert [e.verb for e in evs2] == ["say", "apologize"]
     assert req.status == "agreed"
-    step = w.s.chars[GUEST].agenda.steps[w.s.chars[GUEST].agenda.cursor]
-    assert step.do == {"verb": "setpiece", "situation": sid, "name": "apologize"}
-    assert apology() is not None and apology().star  # 有人劝过：成了 ★
-
-    # 下一拍他就赔了不是；这场事了结，耳光没有落下
-    d2 = await minds.decide_one(llm, w.s, w.defs, GUEST, events=evs2)
-    assert d2.action.verb == "setpiece" and d2.action.params == {"situation": sid, "name": "apologize"}
-    minds.apply_decision(w.s, w.defs, d2)
+    # 答应的那一步当场做完，不留在打算里；这场事了结，耳光没有落下
+    assert not [st for st in w.s.chars[GUEST].agenda.steps if st.id == f"req_{req.id}" and st.state == "pending"]
     assert w.s.flags.get("apologized") and not w.s.flags.get("slapped")
+    assert not [v for v in w.s.violations if "rollback" in v]
     world_situations.end_of_turn(w.s, w.defs)
     assert sid not in w.s.situations
     assert not [s for s in w.s.chars[GUEST].statuses if s.kind == "injured"]

@@ -12,7 +12,7 @@ import pytest
 
 from tianlong import prompting
 from tianlong.config import Settings
-from tianlong.llm import LLM, ClaudeError, JevError, LLMUnavailable, make_llm
+from tianlong.llm import LLM, ClaudeError, JevError, JevTimeout, LLMUnavailable, make_llm
 from tianlong.narrator import NarrationReport, narrate, narrate_text, player_brief, template_narration
 from tianlong.narrator.checks import blacklist_for, build_checker, split_sentences, text_len
 from tianlong.narrator.narrate import c3_prompt, mind_heuristic, puppet_heuristic
@@ -29,13 +29,19 @@ def force_j5(llm: LLM, marker: str, question: str = 'mind', value: float = 0.95,
     orig = llm.jev.ask
     seen: list[str] = []
 
-    async def ask(kind: str, state: Any, questions: Any, *, hints: Any = None, escalated: bool = False) -> Any:
+    async def ask(kind: str, state: Any, questions: Any, *, hints: Any = None, escalated: bool = False,
+                  timeout_s: float | None = None) -> Any:
         seen.append(kind)
         if kind == 'J5':
             if error is not None:
                 raise error
             if delay:
-                await asyncio.sleep(delay)
+                # 与真客户端一样：时限由 ask 自己管，到点抛 JevTimeout（narrator 不再在外面套 wait_for，T6）
+                try:
+                    async with asyncio.timeout(timeout_s):
+                        await asyncio.sleep(delay)
+                except TimeoutError:
+                    raise JevTimeout('J5: timed out', timeout_s=timeout_s) from None
             sentence = str(state).split('【要核对的句子】')[-1]
             if marker in sentence:
                 hints = {**(hints or {}), question: value}
@@ -71,8 +77,8 @@ async def test_violating_sentences_are_dropped_and_missing_facts_appended(
     assert '段誉' not in text and '3' not in text
     assert [v for _, v in rep.dropped] == [['name:段誉'], ['digit']]
     # 第二、三条事实没写到：用模板句补在段末，先后不变
-    assert rep.appended == ['马五德冷冷地对你示警：叫你别多嘴。', '你仔细打量段公子。']
-    assert text.endswith('马五德冷冷地对你示警：叫你别多嘴。你仔细打量段公子。')
+    assert rep.appended == ['马五德冷冷地提醒你：叫你别多嘴。', '你仔细打量段公子。']
+    assert text.endswith('马五德冷冷地提醒你：叫你别多嘴。你仔细打量段公子。')
     assert rep.source == 'mixed'
     assert not log['closed_early']
 
@@ -92,7 +98,7 @@ async def test_third_violation_stops_the_stream_and_template_finishes(
     # 切句要看下一片才知道一句收没收住，所以第五片已经取出、没有显示；第六片不再取
     assert log['closed_early'] and log['yielded'] == 5
     assert '后面这句' not in text and '钟灵' not in text and '暗暗怨' not in text and '手机' not in text
-    assert text == GOOD_1 + '马五德冷冷地对你示警：叫你别多嘴。你仔细打量段公子。'
+    assert text == GOOD_1 + '马五德冷冷地提醒你：叫你别多嘴。你仔细打量段公子。'
     assert 'J5' in seen and 'J5_cover' in seen
 
 
@@ -101,12 +107,12 @@ async def test_j5_puppet_and_extra_flags_drop_sentences(
 ) -> None:
     defs, state, view = scene
     force_j5(llm, '拔腿', question='puppet')
-    pieces = [GOOD_1, '你拔腿便往外走。', '马五德冷冷地对你示警：叫你别多嘴。', '你仔细打量段公子。']
+    pieces = [GOOD_1, '你拔腿便往外走。', '马五德冷冷地提醒你：叫你别多嘴。', '你仔细打量段公子。']
     monkeypatch.setattr(llm.claude, 'stream_text', fake_stream(pieces))
     rep = NarrationReport()
     text = await narrate_text(llm, state, defs, view, report=rep)
     assert rep.dropped == [('你拔腿便往外走。', ['j5:puppet'])]
-    assert text == GOOD_1 + '马五德冷冷地对你示警：叫你别多嘴。你仔细打量段公子。'
+    assert text == GOOD_1 + '马五德冷冷地提醒你：叫你别多嘴。你仔细打量段公子。'
     assert rep.appended == [] and rep.source == 'claude'
 
 
@@ -171,7 +177,7 @@ async def test_failure_mid_stream_keeps_text_and_finishes_with_template(
     monkeypatch.setattr(llm.claude, 'stream_text', stream_text)
     rep = NarrationReport()
     text = await narrate_text(llm, state, defs, view, report=rep)
-    assert text == GOOD_1 + '马五德冷冷地对你示警：叫你别多嘴。你仔细打量段公子。'
+    assert text == GOOD_1 + '马五德冷冷地提醒你：叫你别多嘴。你仔细打量段公子。'
     assert 'ClaudeError' in (rep.error or '')
 
 
@@ -197,7 +203,7 @@ async def test_rules_only_check_skips_j5(settings: Settings, scene: Any, tmp_pat
 
 async def test_max_tokens_drops_the_unfinished_tail(llm: LLM, scene: Any, monkeypatch: pytest.MonkeyPatch) -> None:
     defs, state, view = scene
-    pieces = [GOOD_1, '马五德冷冷地对你示警：叫你别多嘴。', '你仔细打量着段公子，只见他']
+    pieces = [GOOD_1, '马五德冷冷地提醒你：叫你别多嘴。', '你仔细打量着段公子，只见他']
     monkeypatch.setattr(llm.claude, 'stream_text', fake_stream(pieces, stop_reason='max_tokens'))
     rep = NarrationReport()
     text = await narrate_text(llm, state, defs, view, report=rep)
@@ -210,7 +216,7 @@ async def test_complete_last_sentence_survives_max_tokens(
     llm: LLM, scene: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     defs, state, view = scene
-    pieces = [GOOD_1, '马五德冷冷地对你示警：叫你别多嘴。', '你仔细打量段公子。']
+    pieces = [GOOD_1, '马五德冷冷地提醒你：叫你别多嘴。', '你仔细打量段公子。']
     monkeypatch.setattr(llm.claude, 'stream_text', fake_stream(pieces, stop_reason='max_tokens'))
     text = await narrate_text(llm, state, defs, view)
     assert text == ''.join(pieces)
@@ -218,7 +224,7 @@ async def test_complete_last_sentence_survives_max_tokens(
 
 async def test_length_cap_stops_at_sentence_end(llm: LLM, scene: Any, monkeypatch: pytest.MonkeyPatch) -> None:
     defs, state, view = scene
-    head = [GOOD_1, '马五德冷冷地对你示警：叫你别多嘴。', '你仔细打量段公子。']
+    head = [GOOD_1, '马五德冷冷地提醒你：叫你别多嘴。', '你仔细打量段公子。']
     filler = ['厅里一片寂静，众人都望着场中那片空地。'] * 30
     log: dict[str, Any] = {}
     monkeypatch.setattr(llm.claude, 'stream_text', fake_stream(head + filler, log=log))
@@ -258,10 +264,10 @@ async def test_consumer_stopping_early_closes_the_stream(
 
 async def test_paragraph_breaks_survive(llm: LLM, scene: Any, monkeypatch: pytest.MonkeyPatch) -> None:
     defs, state, view = scene
-    pieces = [GOOD_1 + '\n\n', '马五德冷冷地对你示警：叫你别多嘴。你仔细打量段公子。']
+    pieces = [GOOD_1 + '\n\n', '马五德冷冷地提醒你：叫你别多嘴。你仔细打量段公子。']
     monkeypatch.setattr(llm.claude, 'stream_text', fake_stream(pieces))
     text = await narrate_text(llm, state, defs, view)
-    assert text == GOOD_1 + '\n' + '马五德冷冷地对你示警：叫你别多嘴。你仔细打量段公子。'
+    assert text == GOOD_1 + '\n' + '马五德冷冷地提醒你：叫你别多嘴。你仔细打量段公子。'
 
 
 def test_prompt_fields_and_player_brief(scene: Any) -> None:
@@ -275,6 +281,10 @@ def test_prompt_fields_and_player_brief(scene: Any) -> None:
     assert '（语气冷淡）' in user
     brief = player_brief(state, defs)
     assert '茶商伙计' in brief and '不会武功' in brief and '行商的本事' in brief
+    # 身份标签按 world.yaml 的键 role:<id> 取（P5）：至少有一个身份写了进来
+    labels = defs.world.labels or {}
+    mine = [str(labels[f'role:{r}']) for r in state.chars[state.player].roles if f'role:{r}' in labels]
+    assert mine and all(m in brief for m in mine), (mine, brief)
     ck = build_checker(state, defs, view)
     assert [v for v in ck.check(brief) if v.startswith('name:')] == []
 
@@ -289,10 +299,10 @@ def test_rule_hints() -> None:
 
 async def test_unterminated_last_sentence_is_closed(llm: LLM, scene: Any, monkeypatch: pytest.MonkeyPatch) -> None:
     defs, state, view = scene
-    pieces = [GOOD_1, '马五德冷冷地对你示警：叫你别多嘴。', '你仔细打量段公子']
+    pieces = [GOOD_1, '马五德冷冷地提醒你：叫你别多嘴。', '你仔细打量段公子']
     monkeypatch.setattr(llm.claude, 'stream_text', fake_stream(pieces))
     text = await narrate_text(llm, state, defs, view)
-    assert text == GOOD_1 + '马五德冷冷地对你示警：叫你别多嘴。你仔细打量段公子。'
+    assert text == GOOD_1 + '马五德冷冷地提醒你：叫你别多嘴。你仔细打量段公子。'
 
 
 async def test_walk_many_turns_output_stays_clean(llm: LLM) -> None:

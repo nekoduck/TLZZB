@@ -25,8 +25,8 @@ DAWN = 3 * TICKS_PER_HOUR  # 卯时初：每日清晨的活性检查
 
 
 def run_due_scheduled(state: WorldState, defs: Defs) -> list[Event]:
-    """到点的 scheduled。内核没有公开的入口（advance_time 只在推进时间时执行），这里借用它的内部函数。"""
-    return timeflow._run_scheduled(state, defs)  # noqa: SLF001
+    """到点的 scheduled：内核的公开入口 ``timeflow.run_due_scheduled``（K5）。"""
+    return timeflow.run_due_scheduled(state, defs)
 
 
 def finished_by_done_when(state: WorldState, defs: Defs) -> list[str]:

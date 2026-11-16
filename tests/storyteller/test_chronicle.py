@@ -56,24 +56,41 @@ def test_low_salience_not_recorded(w):
     assert not w.s.chronicle
 
 
-def _plain_defs(w):
-    """去掉情境自带的年谱句（chronicle_open / chronicle_close），看通用句。"""
+def _plain_defs(w, *, title: bool = False):
+    """去掉情境自带的年谱句（chronicle_open / chronicle_close；title=False 时连标题也去掉），看退路。"""
     d = w.defs.situations["bout_laugh"].model_copy(deep=True)
-    for k in ("chronicle_open", "chronicle_close"):
+    for k in ("chronicle_open", "chronicle_close") + (() if title else ("title",)):
         (d.__pydantic_extra__ or {}).pop(k, None)
     return w.defs.model_copy(update={"situations": {**w.defs.situations, "bout_laugh": d}})
 
 
 def test_situation_open_and_close_entries(w):
+    """什么都没写的情境：一句通顺的通用句（T1：不再是「甲、乙在某地起了一场事」）。"""
     defs = _plain_defs(w)
     chronicle.record(w.s, defs, [])
     w.open_bout()
     chronicle.record(w.s, defs, [])
     sid = next(iter(w.s.situations))
-    assert w.s.chronicle[-1].known_to_player and "起了一场事" in w.s.chronicle[-1].text
+    assert w.s.chronicle[-1].known_to_player
+    assert w.s.chronicle[-1].text == "在⟦jianhu_hall⟧，⟦gong_guangjie⟧和⟦duan_yu⟧之间出了一件事"
     w.fx([{"close": sid}])
     chronicle.record(w.s, defs, [])
-    assert "了结了" in w.s.chronicle[-1].text
+    assert w.s.chronicle[-1].text == "在⟦jianhu_hall⟧，⟦gong_guangjie⟧和⟦duan_yu⟧之间的那件事有了结果"
+    assert not any("起了一场事" in e.text for e in w.s.chronicle)
+
+
+def test_situation_entries_fall_back_to_the_title(w):
+    """没写年谱句、写了标题的情境：年谱借标题那一句。"""
+    defs = _plain_defs(w, title=True)
+    chronicle.record(w.s, defs, [])
+    w.open_bout()
+    chronicle.record(w.s, defs, [])
+    sid = next(iter(w.s.situations))
+    title = w.s.chronicle[-1].text
+    assert title == "⟦gong_guangjie⟧在场中比剑，⟦duan_yu⟧在一旁看着"
+    w.fx([{"close": sid}])
+    chronicle.record(w.s, defs, [])
+    assert w.s.chronicle[-1].text == title + "——这件事有了结果"
 
 
 def test_situation_entries_use_the_situations_own_lines(w):

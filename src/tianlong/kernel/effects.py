@@ -1253,7 +1253,40 @@ def close_situation(state: WorldState, defs: Defs, sid: str) -> None:
     prefix = f"{sid}."
     for k in [k for k in state.flags if k.startswith(prefix)]:
         del state.flags[k]
+    void_setpiece_requests(state)
     recompute_scene(state, defs)
+
+
+def setpiece_gone(state: WorldState, action: dict | None) -> bool:
+    """所求之事是某场情境里的一招，而那场情境已经散了（再也做不出）。"""
+    if not action or action.get("verb") != "setpiece":
+        return False
+    name = (action.get("params") or {}).get("situation")
+    if not isinstance(name, str) or not name:
+        return False
+    return not any(name in (s.id, s.kind) for s in state.situations.values())
+
+
+def void_setpiece_requests(state: WorldState) -> None:
+    """情境散了以后：求人在那场情境里做的一招再也做不成。
+
+    还没答复的请求过期；答应了还没做的那一步（``req_<请求>``）作废，请求过期，连带的许诺就此了结
+    （事情已经不在了，不算失信：不扣信任、不记「答应的事没有做到」）。已经做完的不动。
+    """
+    for r in state.requests.values():
+        if r.status not in ("open", "countered", "agreed") or not setpiece_gone(state, r.action):
+            continue
+        if r.status == "agreed":
+            c = state.chars.get(r.to)
+            ag = c.agenda if c is not None else None
+            sid = f"req_{r.id}"
+            if c is None or ag is None or not any(st.id == sid and st.state == "pending" for st in ag.steps):
+                continue  # 那一步已经做完（或早已作废）
+            set_step_state(state, c, sid, "void")
+        r.status = "expired"
+        for p in state.promises.values():
+            if p.request == r.id and p.status == "open":
+                p.status = "broken"
 
 
 def situation_ctx(state: WorldState, sid: str, self_id: str | None = None) -> Ctx:

@@ -31,7 +31,9 @@ def fresh() -> tuple[Defs, WorldState]:
 def settings(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Settings:
     for k in KEY_ENVS:
         monkeypatch.delenv(k, raising=False)
-    return load_settings(REPO / "config.toml", env_file=tmp_path / "none.env")
+    s = load_settings(REPO / "config.toml", env_file=tmp_path / "none.env")
+    s.route.classify = "jev_first"  # 这些测试验 J1 → C1 的路；改路由的测试各自另设
+    return s
 
 
 @pytest.fixture

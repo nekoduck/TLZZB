@@ -78,26 +78,113 @@ class Fact:
     kind: str = 'event'  # event / heard / player
     event_id: int | None = None
     by_player: bool = False
+    spoken: bool = False  # 这件事是一句话（接下一件事时用「随即」，不用「又」）
+
+
+_STANCE_TAIL = re.compile(r'(?:^|[，,]\s*)(?:语气[\u4e00-\u9fff]{1,4}|语带讥讽|说得支支吾吾)$')
+_OTHER = '对方'  # 要旨里指听话的人（内核、minds、storyteller 的约定）
+_NO_OTHER_RULE = frozenset({'tell', 'lie'})  # 转述的事实里也可能有「对方」，那不是听话的人
+
+
+def _addressees(to: Sequence[Any]) -> str:
+    names = [str(t) for t in to if t]
+    if not names:
+        return ''
+    if len(names) == 1:
+        return names[0]
+    if len(names) == 2:
+        return f'{names[0]}和{names[1]}'
+    return '众人'
+
+
+def _quote_head(act: str, b: str) -> str:
+    if act == 'ask':
+        return f'你向{b}问道' if b else '你问道'
+    if act == 'greet':
+        return f'你向{b}招呼道' if b else '你招呼道'
+    return f'你对{b}说' if b else '你开口说'
+
+
+def speech_sentence(actor: str, sp: dict, *, by_player: bool = False) -> str:  # noqa: C901
+    """一句话写成一句通顺的叙述（不加引号）：谁、什么语气、对谁、说了什么。
+
+    内核的事实句是「某人对某人请求：要旨」这样的记录体，直接当叙述读不通（「对你答应了：答应……」
+    「问：问对方的来历」）。这里按言语行为重排：要旨里的「对方」写成听话的人；语气写成状语，
+    要旨末尾重复的「语气冷淡」之类去掉。
+    """
+    act = str(sp.get('act') or '')
+    b = _addressees(sp.get('to') or [])
+    adv = '' if by_player else STANCE_ADV.get(str(sp.get('stance') or ''), '')
+    how = adv + ('低声' if sp.get('whisper') else '')
+    g = _STANCE_TAIL.sub('', str(sp.get('gist') or '').strip().rstrip('。')).strip()
+    a = actor
+    if g and b and _OTHER in g and act not in _NO_OTHER_RULE:
+        return f'{a}{how}{g.replace(_OTHER, b)}。'
+    to_b = f'向{b}' if b else ''
+    if act == 'greet':
+        tail = f'，{g}' if g and not by_player else ''
+        return f'{a}{how}{to_b}打了个招呼{tail}。'
+    if act in ('tell', 'lie'):
+        if not g:
+            return f'{a}{how}同{b}说了几句话。' if b else f'{a}{how}说了几句话。'
+        head = f'{a}{how}对{b}说' if b else f'{a}{how}说'
+        return f'{head}：{g.replace("：", "，")}。'
+    if act == 'ask':
+        if g.startswith(('问', '打听')):
+            return f'{a}{how}{to_b}{g}。'
+        return f'{a}{how}{to_b}问话' + (f'：{g}' if g else '') + '。'
+    if act in ('request', 'plead'):
+        word = '求情' if act == 'plead' else '开口相求'
+        if not g:
+            return f'{a}{how}{to_b}{word}。'
+        if by_player and b:
+            return f'你{how}求{b}{g}。'  # 选项里的所求之事是以对方为主语的一件事
+        return f'{a}{how}{to_b}{word}：{g}。'
+    if act == 'order':
+        return (f'{a}{how}吩咐{b}：{g}。' if g else f'{a}{how}吩咐了{b}几句。') if b else f'{a}{how}吩咐了几句。'
+    if act == 'agree':
+        rest = (g[2:] if g.startswith('答应') else g).lstrip('了')
+        if not rest:
+            return f'{a}{how}答应了{b}。' if b else f'{a}{how}答应了。'
+        return f'{a}{how}答应{rest}。' if not b or b in rest else f'{a}{how}答应{b}{rest}。'
+    if act == 'refuse':
+        tail = f'，{g}' if g and g != '一口回绝' else ''
+        return f'{a}{how}回绝了{b}{tail}。' if b else f'{a}{how}一口回绝{tail}。'
+    if act == 'promise' and g.startswith('许'):
+        return f'{a}{how}{to_b}{g}。'
+    lead = {
+        'bargain': f'{to_b}开了个条件',
+        'promise': f'{to_b}许诺',
+        'threaten': f'威胁{b}' if b else '出言威胁',
+        'warn': f'提醒{b}' if b else '出言提醒',
+        'comfort': f'安慰{b}' if b else '出言安慰',
+        'insult': f'冲{b}骂了几句' if b else '骂了几句',
+        'taunt': f'对{b}出言相激' if b else '出言相激',
+    }.get(act, f'对{b}说' if b else '开口说')
+    if g:
+        return f'{a}{how}{lead}：{g}。'
+    if act == 'warn':
+        return f'{a}{how}{lead}多加小心。'
+    if act == 'comfort':
+        return f'{a}{how}{lead}几句。'
+    return f'{a}{how}{lead}。'
 
 
 def _speech_line(ev: ViewEvent, spoken_text: str | None) -> str:
     text = ev.text.strip()
     sp = ev.speech or {}
+    act = str(sp.get('act') or '')
+    if act == 'whisper' or not act:
+        return close_sentence(text)  # 只看见有人凑近低声说话，没听见说什么
+    actor = '你' if ev.by_player else (ev.actor or '')
+    if not actor:
+        return close_sentence(text)
     if ev.by_player:
         said = sp.get('spoken_text') or spoken_text
-        if said:
-            head = text.split('：', 1)[0] if '：' in text else text
-            quote = cn_digits(str(said).strip()).strip('「」“”"')
-            if quote:
-                return f'{head}：「{quote}」'
-        return close_sentence(text)
-    adv = STANCE_ADV.get(str(sp.get('stance') or ''), '')
-    actor = ev.actor or ''
-    if adv and actor and text.startswith(actor):
-        rest = text[len(actor):]
-        if rest.startswith('对') or rest.startswith('向'):
-            text = actor + adv + rest
-    return close_sentence(text)
+        quote = cn_digits(str(said).strip()).strip('「」“”"') if said else ''
+        if quote:
+            return f'{_quote_head(act, _addressees(sp.get("to") or []))}：「{quote}」'
+    return speech_sentence(actor, sp, by_player=ev.by_player)
 
 
 def fact_list(view: PlayerView, *, player_fact: str = '', spoken_text: str | None = None) -> list[Fact]:
@@ -125,7 +212,10 @@ def fact_list(view: PlayerView, *, player_fact: str = '', spoken_text: str | Non
                 text = f'{text}（语气{stance}）'
         else:
             line = close_sentence(ev.text)
-        out.append(Fact(text=text, line=line, actor=ev.actor, kind='event', event_id=ev.id, by_player=ev.by_player))
+        if any(f.kind == 'event' and f.line == line and f.actor == ev.actor for f in out):
+            continue  # 同一回合里同一个人把同一件事又做了、又说了一遍：只写一次
+        out.append(Fact(text=text, line=line, actor=ev.actor, kind='event', event_id=ev.id, by_player=ev.by_player,
+                        spoken=bool(ev.speech)))
     for h in view.heard:
         h = h.strip()
         if h:
@@ -161,7 +251,9 @@ def _join_lines(facts: Sequence[Fact]) -> list[str]:
             and text_len(lines[-1]) + text_len(line) <= 60
         ):
             rest = line[len(actor):]
-            lines[-1] = _strip_end(lines[-1]) + '，又' + rest
+            # 先说了话、紧接着做事（答应了，随即照做）用「随即」；其余接连两件事用「又」
+            link = '，随即' if prev.spoken and not f.spoken else '，又'
+            lines[-1] = _strip_end(lines[-1]) + link + rest
             merged_prev = True
             prev = f
             continue
@@ -182,7 +274,9 @@ def _join_lines(facts: Sequence[Fact]) -> list[str]:
 
 
 def _scene_lines(view: PlayerView) -> list[str]:
-    return [place_text(s.strip()) for s in split_sentences(view.location_desc or '') if s.strip()]
+    """地点描述逐句；同一句只留一次（两个人先后留下同样的痕迹时，描述里会有两句一样的话）。"""
+    lines = [place_text(s.strip()) for s in split_sentences(view.location_desc or '') if s.strip()]
+    return list(dict.fromkeys(lines))
 
 
 def _scene_pad(view: PlayerView, salt: int) -> list[str]:
@@ -262,7 +356,7 @@ def template_sentences(
     optional += _body_lines(view)
     for line in optional:
         k = text_len(line)
-        if n + k > max_len:
+        if n + k > max_len or line in out:
             continue
         out.append(line)
         n += k
@@ -486,6 +580,10 @@ def _variants(state: WorldState, defs: Defs, action: Any) -> list[str]:  # noqa:
         return ['拼命挣脱', '试着挣开束缚']
     if verb == 'setpiece':
         d = desc
+        if d.startswith('你') and len(d) > 1:
+            # 情境里玩家自己那一招的描述以「你」开头（「你报上来意」）：选项写打算，不带主语
+            d = d[1:].lstrip('，、 ')
+            return [d, f'试着{d}']
         return [d if d.startswith('试着') else f'试着{d}', d]
     if verb == 'say':
         return [desc]
@@ -669,6 +767,7 @@ __all__ = [
     'place_text',
     'speech_fact',
     'speech_label',
+    'speech_sentence',
     'template_narration',
     'template_sentences',
     'travel_summary',

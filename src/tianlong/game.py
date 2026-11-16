@@ -610,7 +610,7 @@ class Game:
             storyteller.note_choice(st, df, option)
             self._mark_chosen(index)
         else:
-            storyteller.note_action(st, df, fresh or act)
+            storyteller.note_action(st, df, fresh or act, speech)  # 只说了一句话的：记的是那句话
             self._mark_chosen(None)
         # 3 在场的人各自反应
         await self._micro_rounds(evs, int(self.settings.limits.max_micro_rounds))

@@ -45,12 +45,18 @@ def _situation_text(state: WorldState, defs: Defs, info: dict[str, Any], *, open
     roles = dict(info.get("roles") or {})
     if custom:
         return refs.fill_roles(str(custom), roles)
-    people = [cid for cid in dict.fromkeys(roles.values())]
-    who = "、".join(f"⟦{c}⟧" for c in people[:3]) or "几个人"
-    where = f"⟦{info['loc']}⟧" if info.get("loc") else ""
-    if opened:
-        return f"{who}在{where}起了一场事"
-    return f"{who}在{where}的那场事了结了"
+    title = extra.get("title")
+    if title:
+        # 没写年谱句的情境：借它的标题（牵挂里用的那一句）
+        t = refs.fill_roles(str(title), roles).strip().rstrip("。")
+        return t if opened else f"{t}——这件事有了结果"
+    people = [f"⟦{cid}⟧" for cid in dict.fromkeys(roles.values())][:3]
+    where = f"在⟦{info['loc']}⟧，" if info.get("loc") else ""
+    if len(people) >= 2:
+        who = "、".join(people[:-1]) + "和" + people[-1]
+        return f"{where}{who}之间出了一件事" if opened else f"{where}{who}之间的那件事有了结果"
+    who = people[0] if people else "有人"
+    return f"{where}{who}遇上了一件事" if opened else f"{where}{who}遇上的那件事有了结果"
 
 
 def _role_text(defs: Defs, me: str, role: str, gained: bool) -> str | None:

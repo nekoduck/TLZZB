@@ -1,7 +1,7 @@
 {
  "suite": "refusals",
  "meta": {
-  "generated": "2026-11-15T11:37:02+00:00",
+  "generated": "2026-11-16T10:54:30+00:00",
   "mock": false,
   "jev_model": "jev-1.14.0",
   "lang": "zh",
@@ -13,39 +13,39 @@
    "needs_thought": 0.6,
    "noul_yes": 0.6,
    "sample_floor": 0.15,
-   "narration_flag": 0.7
+   "narration_flag": 0.8
   },
   "claude_key": false,
   "jev_key": true
  },
  "summary": {
   "mock_labeled": {
-   "passed": 18,
+   "passed": 20,
    "n": 20,
    "requests": 20,
    "replied": 20,
-   "overridden": 1
+   "overridden": 0
   },
   "mock_rules": {
-   "passed": 11,
+   "passed": 12,
    "n": 20,
-   "requests": 13,
-   "replied": 13,
-   "overridden": 1
+   "requests": 15,
+   "replied": 15,
+   "overridden": 0
   },
   "jev": {
-   "passed": 13,
+   "passed": 20,
    "n": 20,
-   "requests": 17,
+   "requests": 20,
    "replied": 0,
-   "overridden": 1
+   "overridden": 0
   }
  },
  "gates": [
   {
    "name": "拒绝集（M3 的闸，Mock 模型）",
-   "passed": false,
-   "detail": "归类照标注时 18/20 条通过（验的是 6.6 的裁决与答复）；归类只靠规则猜测时 11/20（差的都是没把话读成对那个人的请求）。要求全部通过。",
+   "passed": true,
+   "detail": "归类照标注时 20/20 条通过（验的是 6.6 的裁决与答复）；归类只靠规则猜测时 12/20（差的都是没把话读成对那个人的请求）。要求全部通过。",
    "fallback": ""
   }
  ],
@@ -67,27 +67,27 @@
    "rows": [
     [
      "Mock 模型，归类照条目的标注",
-     "90.0% (18/20)",
+     "100.0% (20/20)",
      "20",
      "20",
-     "18",
-     "1"
+     "20",
+     "0"
     ],
     [
      "Mock 模型，归类只靠规则猜测",
-     "55.0% (11/20)",
-     "13",
-     "13",
+     "60.0% (12/20)",
+     "15",
+     "15",
      "12",
-     "1"
+     "0"
     ],
     [
      "真 Jev 归类（J1），其余用规则",
-     "65.0% (13/20)",
-     "17",
+     "100.0% (20/20)",
+     "20",
      "0",
      "0",
-     "1"
+     "0"
     ]
    ],
    "note": ""
@@ -101,35 +101,11 @@
    "rows": [
     [
      "bottom_line",
-     "66.7% (2/3)"
+     "100.0% (3/3)"
     ],
     [
      "score",
-     "94.1% (16/17)"
-    ]
-   ],
-   "note": ""
-  },
-  {
-   "title": "没通过的条目（Mock 模型，归类照条目的标注）",
-   "headers": [
-    "条目",
-    "依据",
-    "不成立的断言",
-    "解析"
-   ],
-   "rows": [
-    [
-     "r09",
-     "bottom_line",
-     "{'request': {'to': 'gan_baobao', 'verdict_in': ['never']}} → verdict conditional not in ['never']；{'replies': ['refuse']} → replied ['bargain']",
-     "parse via jev: action；请求 say {'act': 'tell'}，trivial，50 分 → conditional"
-    ],
-    [
-     "r20",
-     "score",
-     "{'request': {'to': 'ma_wude', 'verdict_in': ['no', 'never']}} → verdict conditional not in ['no', 'never']；{'replies': ['refuse']} → replied ['bargain']",
-     "parse via jev: action；请求 wait {'ticks': 1}，effort，50 分 → conditional"
+     "100.0% (17/17)"
     ]
    ],
    "note": ""
@@ -143,7 +119,7 @@
    "rows": [
     [
      "bottom_line",
-     "33.3% (1/3)"
+     "66.7% (2/3)"
     ],
     [
      "score",
@@ -162,6 +138,12 @@
    ],
    "rows": [
     [
+     "r03",
+     "score",
+     "{'request': {'to': 'zhong_wanchou', 'verdict_in': ['no', 'never']}} → verdict conditional not in ['no', 'never']；{'replies': ['refuse']} → replied ['bargain']",
+     "parse via jev: action；请求 say {'act': 'tell', 'fact': 'F_valley_hates_duan'}，trivial，50 分 → conditional"
+    ],
+    [
      "r04",
      "bottom_line",
      "{'request': {'to': 'zuo_zimu', 'verdict_in': ['never']}} → no such request (the input was not parsed as a request to that person)",
@@ -174,27 +156,15 @@
      "parse via jev: action"
     ],
     [
-     "r09",
-     "bottom_line",
-     "{'request': {'to': 'gan_baobao', 'verdict_in': ['never']}} → verdict no not in ['never']",
-     "parse via jev: action；请求 wait {'ticks': 1}，effort，30 分 → no"
-    ],
-    [
-     "r13",
+     "r11",
      "score",
-     "{'request': {'to': 'sn_chief_b', 'verdict_in': ['no', 'never']}} → no such request (the input was not parsed as a request to that person)",
-     "parse via jev: action"
+     "{'request': {'to': 'zhong_wanchou', 'verdict_in': ['no', 'never']}} → verdict conditional not in ['no', 'never']；{'replies': ['refuse']} → replied ['bargain']",
+     "parse via jev: action；请求 say {'act': 'tell', 'fact': 'F_diao_antidote_father'}，trivial，50 分 → conditional"
     ],
     [
      "r15",
      "score",
      "{'request': {'to': 'envoy_lingjiu', 'verdict_in': ['no', 'never']}} → no such request (the input was not parsed as a request to that person)",
-     "parse via jev: action"
-    ],
-    [
-     "r17",
-     "score",
-     "{'request': {'to': 'zhong_ling', 'verdict_in': ['no', 'never']}} → no such request (the input was not parsed as a request to that person)",
      "parse via jev: action"
     ],
     [
@@ -227,65 +197,11 @@
    "rows": [
     [
      "bottom_line",
-     "66.7% (2/3)"
+     "100.0% (3/3)"
     ],
     [
      "score",
-     "64.7% (11/17)"
-    ]
-   ],
-   "note": ""
-  },
-  {
-   "title": "没通过的条目（真 Jev 归类（J1），其余用规则）",
-   "headers": [
-    "条目",
-    "依据",
-    "不成立的断言",
-    "解析"
-   ],
-   "rows": [
-    [
-     "r02",
-     "score",
-     "{'request': {'to': 'sikong_xuan', 'verdict_in': ['no', 'never']}} → verdict conditional not in ['no', 'never']",
-     "parse via jev: action；parse via jev: action；请求 release {'target': 'player'}，costly，50 分 → conditional"
-    ],
-    [
-     "r06",
-     "score",
-     "{'request': {'to': 'gong_guangjie', 'verdict_in': ['no', 'never']}} → verdict conditional not in ['no', 'never']",
-     "parse via jev: action；parse via jev: action；请求 wait {'ticks': 1}，effort，50 分 → conditional"
-    ],
-    [
-     "r09",
-     "bottom_line",
-     "{'request': {'to': 'gan_baobao', 'verdict_in': ['never']}} → verdict conditional not in ['never']",
-     "parse via jev: action；parse via jev: action；请求 say {'act': 'tell'}，trivial，50 分 → conditional"
-    ],
-    [
-     "r17",
-     "score",
-     "{'request': {'to': 'zhong_ling', 'verdict_in': ['no', 'never']}} → verdict conditional not in ['no', 'never']",
-     "parse via jev: action；parse via jev: action；请求 wait {'ticks': 1}，effort，50 分 → conditional"
-    ],
-    [
-     "r18",
-     "score",
-     "{'request': {'to': 'gan_guanghao', 'verdict_in': ['no', 'never']}} → no such request (the input was not parsed as a request to that person)",
-     "parse via jev: action"
-    ],
-    [
-     "r19",
-     "score",
-     "{'request': {'to': 'sikong_xuan', 'verdict_in': ['no', 'never']}} → no such request (the input was not parsed as a request to that person)",
-     "parse via jev: action"
-    ],
-    [
-     "r20",
-     "score",
-     "{'request': {'to': 'ma_wude', 'verdict_in': ['no', 'never']}} → no such request (the input was not parsed as a request to that person)",
-     "parse via jev: action"
+     "100.0% (17/17)"
     ]
    ],
    "note": ""
@@ -305,7 +221,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对留着山羊胡的老者请求：「帮主，你就行行好，白白放了那小姑娘吧。」留着山羊胡的老者冷冷地对你拒绝了：不肯放了钟灵，语气冷淡。留着山羊胡的老者向你打听这一带最近出了什么事。段公子低声向你求情。紧接着，一个黑须汉子替留着山羊胡的老者裹好伤处，喂他喝了几口水。跟着，留着山羊胡的老者冷冷地打量你，问他来营里做什么。"
+      "text": "你对留着山羊胡的老者说：「帮主，你就行行好，白白放了那小姑娘吧。」留着山羊胡的老者冷冷地回绝了你，不肯放了钟灵，又向你打听这一带最近出了什么事。段公子低声向你求情。紧接着，一个黑须汉子替留着山羊胡的老者裹好伤处，喂他喝了几口水。跟着，留着山羊胡的老者冷冷地打量你，问他来营里做什么。"
      }
     ],
     "replies": [
@@ -343,7 +259,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对留着山羊胡的老者请求：「帮主，把我们三个都放了，再送些盘缠给我们下山。」留着山羊胡的老者冷冷地对你拒绝了：不肯放了你，语气冷淡。留着山羊胡的老者丢给你一块干饼、一碗冷水。跟着，梁上那少女袖口一抖，一道灰影扑上留着山羊胡的老者的手腕咬了一口；她拍手笑道，这毒天下只有她爹解得了。一个黑须汉子向留着山羊胡的老者打听这一带最近出了什么事。留着山羊胡的老者拉着一个黑须汉子说起这几日的见闻。一个短衣汉子扶着留着山羊胡的老者，递水照料。一个背药篓的汉子扶着留着山羊胡的老者，递水照料。你只觉被人看押着，走不脱。"
+      "text": "你对留着山羊胡的老者说：「帮主，把我们三个都放了，再送些盘缠给我们下山。」一个黑须汉子向留着山羊胡的老者打听这一带最近出了什么事。紧接着，留着山羊胡的老者冷冷地回绝了你，不肯放了你。留着山羊胡的老者丢给你一块干饼、一碗冷水。梁上那少女袖口一抖，一道灰影扑上留着山羊胡的老者的手腕咬了一口；她拍手笑道，这毒天下只有她爹解得了。这时，一个短衣汉子扶着留着山羊胡的老者，递水照料。一个背药篓的汉子扶着留着山羊胡的老者，递水照料。留着山羊胡的老者拉着一个黑须汉子说起这几日的见闻。你只觉被人看押着，走不脱。"
      }
     ],
     "replies": [
@@ -381,7 +297,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对一个马脸的汉子请求：「谷主，请您派人把那位姓段的公子请进谷来住几天。」这时，一个马脸的汉子冷冷地对你拒绝了：不肯罢手，语气冷淡。跟着，谷里的一位夫人拦住你，喝问是什么人、来做什么。"
+      "text": "你对一个马脸的汉子说：「谷主，请您派人把那位姓段的公子请进谷来住几天。」这时，一个马脸的汉子回绝了你，不肯罢手。跟着，谷里的一位夫人拦住你，喝问是什么人、来做什么。"
      }
     ],
     "replies": [
@@ -399,9 +315,9 @@
       "desc": "⟦player⟧开口相求的一件事",
       "other": "5d624751"
      },
-     "action_class": "effort",
+     "action_class": "betray",
      "verdict": "no",
-     "score": 30,
+     "score": -30,
      "status": "refused",
      "attempts": 1,
      "evidence": []
@@ -420,7 +336,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对左子穆请求：「左掌门，把无量剑法传我几招吧，我又不是外人。」紧接着，场中舞剑的青年卖个破绽，一剑逼得对手认输。这时，左子穆对你拒绝了：不肯传授无量剑法。段公子向你打听这一带最近出了什么事，又失声笑了出来。"
+      "text": "你对左子穆说：「左掌门，把无量剑法传我几招吧，我又不是外人。」紧接着，左子穆回绝了你，不肯传授无量剑法。这时，场中舞剑的青年卖个破绽，一剑逼得对手认输。段公子向你打听这一带最近出了什么事，又失声笑了出来。你对左子穆说：「左掌门，把无量剑法传我几招吧，我又不是外人。」"
      }
     ],
     "replies": [
@@ -459,7 +375,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对左子穆请求：「左掌门，干脆把剑湖宫让给神农帮吧，省得打打杀杀。」紧接着，场中舞剑的青年卖个破绽，一剑逼得对手认输。这时，左子穆冷冷地对你拒绝了：不肯罢手，语气冷淡。段公子向你打听这一带最近出了什么事，又失声笑了出来。你对左子穆请求：「左掌门，干脆把剑湖宫让给神农帮吧，省得打打杀杀。」"
+      "text": "你对左子穆说：「左掌门，干脆把剑湖宫让给神农帮吧，省得打打杀杀。」紧接着，左子穆回绝了你，不肯罢手。这时，场中舞剑的青年卖个破绽，一剑逼得对手认输。段公子向你打听这一带最近出了什么事，又失声笑了出来。你对左子穆说：「左掌门，干脆把剑湖宫让给神农帮吧，省得打打杀杀。」"
      }
     ],
     "replies": [
@@ -477,9 +393,9 @@
       "desc": "⟦player⟧开口相求的一件事",
       "other": "b123fc67"
      },
-     "action_class": "effort",
+     "action_class": "betray",
      "verdict": "no",
-     "score": 30,
+     "score": -30,
      "status": "refused",
      "attempts": 1,
      "evidence": []
@@ -498,13 +414,13 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对场中舞剑的青年请求：「龚少侠，你当众给段公子跪下磕头赔罪吧。」跟着，场中舞剑的青年冷冷地对你拒绝了：不肯罢手，语气冷淡。梁上传来一声清脆的笑，梁上那少女晃着两条腿，取笑场中舞剑的青年欺负不会武功的人。段公子向你打听这一带最近出了什么事。跟着，场中舞剑的青年仰头喝骂，要梁上那少女下来说个明白。梁上那少女跳下梁来，挨着段公子说说笑笑，两人就此相识。"
+      "text": "你对场中舞剑的青年说：「龚少侠，你当众给段公子跪下磕头赔罪吧。」跟着，场中舞剑的青年冷冷地回绝了你，不肯罢手。梁上传来一声清脆的笑，梁上那少女晃着两条腿，取笑场中舞剑的青年欺负不会武功的人。段公子向你打听这一带最近出了什么事。跟着，场中舞剑的青年仰头喝骂，要梁上那少女下来说个明白。段公子朝梁上的梁上那少女作了个揖。梁上那少女跳下梁来，挨着段公子说说笑笑，两人就此相识。你对场中舞剑的青年说：「龚少侠，你当众给段公子跪下磕头赔罪吧。」"
      }
     ],
     "replies": [
      "refuse"
     ],
-    "overridden": 1,
+    "overridden": 0,
     "ask_on_menu": false,
     "request": {
      "id": "R1",
@@ -516,16 +432,14 @@
       "desc": "⟦player⟧开口相求的一件事",
       "other": "b335fcf8"
      },
-     "action_class": "effort",
+     "action_class": "costly",
      "verdict": "no",
-     "score": 30,
+     "score": 10,
      "status": "refused",
      "attempts": 1,
      "evidence": []
     },
-    "violations": [
-     "[32] duan_yu: setpiece:name=thank,situation=beam_girl#1 no longer legal at resolution → wait"
-    ]
+    "violations": []
    },
    {
     "id": "r07",
@@ -539,7 +453,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对黑衣蒙面的女子请求：「姑娘，把面纱摘下来让我瞧瞧。」这时，黑衣蒙面的女子冷冷地对你拒绝了：不肯罢手，语气冷淡。附近站着黑衣蒙面的女子。几间木屋靠着山脚，门窗都关得严实。"
+      "text": "你对黑衣蒙面的女子说：「姑娘，把面纱摘下来让我瞧瞧。」这时，黑衣蒙面的女子回绝了你，不肯罢手。附近站着黑衣蒙面的女子。几间木屋靠着山脚，门窗都关得严实。你对黑衣蒙面的女子说：「姑娘，把面纱摘下来让我瞧瞧。」"
      }
     ],
     "replies": [
@@ -557,9 +471,9 @@
       "desc": "⟦player⟧开口相求的一件事",
       "other": "d3b9820c"
      },
-     "action_class": "effort",
+     "action_class": "risky",
      "verdict": "no",
-     "score": 30,
+     "score": 0,
      "status": "refused",
      "attempts": 1,
      "evidence": []
@@ -578,7 +492,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对黑衣蒙面的女子请求：「姑娘，你这匹黑马送给我吧。」这时，黑衣蒙面的女子冷冷地对你拒绝了：不肯把黑玫瑰交给你，语气冷淡。附近站着黑衣蒙面的女子。几间木屋靠着山脚，门窗都关得严实。"
+      "text": "你对黑衣蒙面的女子说：「姑娘，你这匹黑马送给我吧。」这时，黑衣蒙面的女子冷冷地回绝了你，不肯把黑玫瑰交给你。附近站着黑衣蒙面的女子。几间木屋靠着山脚，门窗都关得严实。"
      }
     ],
     "replies": [
@@ -608,28 +522,8 @@
    {
     "id": "r09",
     "category": "bottom_line",
-    "passed": false,
-    "failed": [
-     {
-      "assertion": {
-       "request": {
-        "to": "gan_baobao",
-        "verdict_in": [
-         "never"
-        ]
-       }
-      },
-      "detail": "verdict conditional not in ['never']"
-     },
-     {
-      "assertion": {
-       "replies": [
-        "refuse"
-       ]
-      },
-      "detail": "replied ['bargain']"
-     }
-    ],
+    "passed": true,
+    "failed": [],
     "turns": [
      {
       "raw": "夫人，把您年轻时那段旧情讲给我听听。",
@@ -637,11 +531,10 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对甘宝宝请求：「夫人，把您年轻时那段旧情讲给我听听。」跟着，甘宝宝对你开了个条件：要对方先把钟灵的绣鞋交给甘宝宝。甘宝宝拦住你，喝问是什么人、来做什么。甘宝宝冷冷地对你拒绝了：不肯说几句话，语气冷淡。你对甘宝宝请求：「夫人，把您年轻时那段旧情讲给我听听。」"
+      "text": "你对谷里的一位夫人说：「夫人，把您年轻时那段旧情讲给我听听。」这时，谷里的一位夫人冷冷地回绝了你，不肯说几句话。谷里的一位夫人拦住你，喝问是什么人、来做什么。附近站着谷里的一位夫人、一个马脸的汉子、一个哑巴似的仆人。你对谷里的一位夫人说：「夫人，把您年轻时那段旧情讲给我听听。」"
      }
     ],
     "replies": [
-     "bargain",
      "refuse"
     ],
     "overridden": 0,
@@ -651,12 +544,13 @@
      "action": {
       "verb": "say",
       "params": {
-       "act": "tell"
+       "act": "tell",
+       "fact": "F_gan_old_affair"
       },
-      "desc": "回答⟦player⟧的问题，告诉⟦player⟧一些事"
+      "desc": "把⟦player⟧想打听的一件事讲给⟦player⟧听"
      },
      "action_class": "trivial",
-     "verdict": "conditional",
+     "verdict": "never",
      "score": 50,
      "status": "refused",
      "attempts": 1,
@@ -676,7 +570,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对谷里的一位夫人请求：「夫人，那只金盒送给我做个念想吧。」跟着，谷里的一位夫人冷冷地对你拒绝了：不肯把金盒交给你，语气冷淡。谷里的一位夫人拦住你，喝问是什么人、来做什么。"
+      "text": "你对谷里的一位夫人说：「夫人，那只金盒送给我做个念想吧。」这时，谷里的一位夫人冷冷地回绝了你，不肯把金盒交给你。谷里的一位夫人拦住你，喝问是什么人、来做什么。附近站着谷里的一位夫人、一个马脸的汉子、一个哑巴似的仆人。"
      }
     ],
     "replies": [
@@ -715,7 +609,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对一个马脸的汉子请求：「谷主，把貂毒的解药白给我一瓶吧。」这时，一个马脸的汉子冷冷地对你拒绝了：不肯罢手，语气冷淡。跟着，谷里的一位夫人拦住你，喝问是什么人、来做什么。"
+      "text": "你对一个马脸的汉子说：「谷主，把貂毒的解药白给我一瓶吧。」这时，一个马脸的汉子冷冷地回绝了你，不肯罢手。跟着，谷里的一位夫人拦住你，喝问是什么人、来做什么。附近站着谷里的一位夫人、一个马脸的汉子、一个哑巴似的仆人。你对一个马脸的汉子说：「谷主，把貂毒的解药白给我一瓶吧。」"
      }
     ],
     "replies": [
@@ -733,9 +627,9 @@
       "desc": "⟦player⟧开口相求的一件事",
       "other": "47e7235c"
      },
-     "action_class": "effort",
+     "action_class": "costly",
      "verdict": "no",
-     "score": 30,
+     "score": 10,
      "status": "refused",
      "attempts": 1,
      "evidence": []
@@ -754,7 +648,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对一个大脑袋的怪人请求：「前辈，你给我跪下，拜我为师吧。」这时，一个大脑袋的怪人冷冷地对你拒绝了：不肯罢手，语气冷淡。一个大脑袋的怪人向你打听这一带最近出了什么事。"
+      "text": "你对一个大脑袋的怪人说：「前辈，你给我跪下，拜我为师吧。」这时，一个大脑袋的怪人回绝了你，不肯罢手。一个大脑袋的怪人向你打听这一带最近出了什么事。身边还有一个大脑袋的怪人、一个瘦高个儿、一个提刀的汉子。你对一个大脑袋的怪人说：「前辈，你给我跪下，拜我为师吧。」"
      }
     ],
     "replies": [
@@ -772,9 +666,9 @@
       "desc": "⟦player⟧开口相求的一件事",
       "other": "419e9084"
      },
-     "action_class": "effort",
+     "action_class": "betray",
      "verdict": "no",
-     "score": 30,
+     "score": -30,
      "status": "refused",
      "attempts": 1,
      "evidence": []
@@ -793,7 +687,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对一个瘦高个儿请求：「大哥，你把路卡拆了，带着弟兄们回家去吧。」一个瘦高个儿冷冷地对你拒绝了：不肯罢手，语气冷淡。一个瘦高个儿拦住你，喝问是什么人、来做什么。"
+      "text": "你对一个瘦高个儿说：「大哥，你把路卡拆了，带着弟兄们回家去吧。」一个瘦高个儿回绝了你，不肯罢手，又拦住你，喝问是什么人、来做什么。附近站着一个瘦高个儿、一个提刀的汉子、一个黑脸汉子。你对一个瘦高个儿说：「大哥，你把路卡拆了，带着弟兄们回家去吧。」"
      }
     ],
     "replies": [
@@ -811,9 +705,9 @@
       "desc": "⟦player⟧开口相求的一件事",
       "other": "4101f917"
      },
-     "action_class": "effort",
+     "action_class": "betray",
      "verdict": "no",
-     "score": 30,
+     "score": -30,
      "status": "refused",
      "attempts": 1,
      "evidence": []
@@ -832,7 +726,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对一个黑须汉子请求：「黑须大哥，把关人那木栅的钥匙给我。」留着山羊胡的老者向你打听这一带最近出了什么事。一个黑须汉子对你拒绝了：不肯把营地的钥匙交给你。留着山羊胡的老者冷冷地打量你，问他来营里做什么。"
+      "text": "你对一个黑须汉子说：「黑须大哥，把关人那木栅的钥匙给我。」一个黑须汉子回绝了你，不肯把营地的钥匙交给你。留着山羊胡的老者向你打听这一带最近出了什么事，又冷冷地打量你，问他来营里做什么。"
      }
     ],
     "replies": [
@@ -871,7 +765,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对披斗篷的女子请求：「圣使，你把灵鹫宫的号令收回去，往后别管两派的事了。」段公子向你打听这一带最近出了什么事。披斗篷的女子冷冷地对你拒绝了：不肯罢手，语气冷淡。披斗篷的女子亮出斗篷上的鹫鸟记号，传下号令：两派即刻罢手，听候发落。左子穆躬身领命，不敢多说一句。这时，披斗篷的女子冷冷追问留着山羊胡的老者：差事拖了这许久，是何缘故。"
+      "text": "你对披斗篷的女子说：「圣使，你把灵鹫宫的号令收回去，往后别管两派的事了。」跟着，披斗篷的女子回绝了你，不肯罢手。披斗篷的女子亮出斗篷上的鹫鸟记号，传下号令：两派即刻罢手，听候发落。段公子向你打听这一带最近出了什么事。左子穆躬身领命，不敢多说一句。披斗篷的女子冷冷追问留着山羊胡的老者：差事拖了这许久，是何缘故。你对披斗篷的女子说：「圣使，你把灵鹫宫的号令收回去，往后别管两派的事了。」"
      }
     ],
     "replies": [
@@ -889,9 +783,9 @@
       "desc": "⟦player⟧开口相求的一件事",
       "other": "c35bf112"
      },
-     "action_class": "effort",
+     "action_class": "betray",
      "verdict": "no",
-     "score": 30,
+     "score": -30,
      "status": "refused",
      "attempts": 1,
      "evidence": []
@@ -910,7 +804,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对一个精瘦的剑派弟子请求：「这位师兄，把柴房钥匙给我，我要把东家锁进去。」这时，一个精瘦的剑派弟子冷冷地对你拒绝了：不肯把柴房的钥匙交给你，语气冷淡。一个精瘦的剑派弟子往剑湖宫的练武厅去了。马五德往剑湖宫的练武厅去了。"
+      "text": "你对一个精瘦的剑派弟子说：「这位师兄，把柴房钥匙给我，我要把东家锁进去。」这时，一个精瘦的剑派弟子冷冷地回绝了你，不肯把柴房的钥匙交给你。一个精瘦的剑派弟子往剑湖宫的练武厅去了。马五德往剑湖宫的练武厅去了。"
      }
     ],
     "replies": [
@@ -949,27 +843,27 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对梁上那少女请求：「小姑娘，你那只小貂送给我吧。」跟着，梁上那少女冷冷地对你拒绝了：不肯罢手，语气冷淡。梁上那少女替段公子裹好伤处，喂他喝了几口水。段公子向你打听这一带最近出了什么事。你对梁上那少女请求：「小姑娘，你那只小貂送给我吧。」"
+      "text": "你对梁上那少女说：「小姑娘，你那只小貂送给我吧。」跟着，段公子向你打听这一带最近出了什么事。梁上那少女冷冷地回绝了你，不肯把闪电貂交给你，又替段公子裹好伤处，喂他喝了几口水。你对梁上那少女说：「小姑娘，你那只小貂送给我吧。」"
      }
     ],
     "replies": [
      "refuse"
     ],
     "overridden": 0,
-    "ask_on_menu": false,
+    "ask_on_menu": true,
     "request": {
      "id": "R1",
      "action": {
-      "verb": "wait",
+      "verb": "give",
       "params": {
-       "ticks": 1
+       "item": "shandian_diao",
+       "target": "player"
       },
-      "desc": "⟦player⟧开口相求的一件事",
-      "other": "efca7e2f"
+      "desc": "把⟦shandian_diao⟧给⟦player⟧"
      },
-     "action_class": "effort",
+     "action_class": "costly",
      "verdict": "no",
-     "score": 30,
+     "score": 10,
      "status": "refused",
      "attempts": 1,
      "evidence": []
@@ -988,27 +882,26 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对一个神色不定的青年剑客请求：「师兄，你跟我回去，向左掌门自首认错吧。」这时，一个神色不定的青年剑客冷冷地对你拒绝了：不肯罢手，语气冷淡。一个神色不定的青年剑客往一处后院去了。一个低着头的女弟子往一处后院去了。"
+      "text": "你对一个神色不定的青年剑客说：「师兄，你跟我回去，向左掌门自首认错吧。」这时，一个神色不定的青年剑客回绝了你，不肯跟着你走。一个神色不定的青年剑客往一处后院去了。一个低着头的女弟子往一处后院去了。"
      }
     ],
     "replies": [
      "refuse"
     ],
     "overridden": 0,
-    "ask_on_menu": false,
+    "ask_on_menu": true,
     "request": {
      "id": "R1",
      "action": {
-      "verb": "wait",
+      "verb": "follow",
       "params": {
-       "ticks": 1
+       "target": "player"
       },
-      "desc": "⟦player⟧开口相求的一件事",
-      "other": "c6c4bfc3"
+      "desc": "跟⟦player⟧走"
      },
-     "action_class": "effort",
+     "action_class": "risky",
      "verdict": "no",
-     "score": 30,
+     "score": 0,
      "status": "refused",
      "attempts": 1,
      "evidence": []
@@ -1027,7 +920,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对留着山羊胡的老者请求：「帮主，你自断一臂，向段公子赔罪。」留着山羊胡的老者冷冷地对你拒绝了：不肯罢手，语气冷淡。留着山羊胡的老者向你打听这一带最近出了什么事。段公子低声向你求情。紧接着，一个黑须汉子替留着山羊胡的老者裹好伤处，喂他喝了几口水。跟着，留着山羊胡的老者冷冷地打量你，问他来营里做什么。"
+      "text": "你对留着山羊胡的老者说：「帮主，你自断一臂，向段公子赔罪。」留着山羊胡的老者回绝了你，不肯罢手，又向你打听这一带最近出了什么事。段公子低声向你求情。紧接着，一个黑须汉子替留着山羊胡的老者裹好伤处，喂他喝了几口水。跟着，留着山羊胡的老者冷冷地打量你，问他来营里做什么。你对留着山羊胡的老者说：「帮主，你自断一臂，向段公子赔罪。」"
      }
     ],
     "replies": [
@@ -1045,9 +938,9 @@
       "desc": "⟦player⟧开口相求的一件事",
       "other": "00f82ab2"
      },
-     "action_class": "effort",
+     "action_class": "risky",
      "verdict": "no",
-     "score": 30,
+     "score": 0,
      "status": "refused",
      "attempts": 1,
      "evidence": []
@@ -1057,29 +950,8 @@
    {
     "id": "r20",
     "category": "score",
-    "passed": false,
-    "failed": [
-     {
-      "assertion": {
-       "request": {
-        "to": "ma_wude",
-        "verdict_in": [
-         "no",
-         "never"
-        ]
-       }
-      },
-      "detail": "verdict conditional not in ['no', 'never']"
-     },
-     {
-      "assertion": {
-       "replies": [
-        "refuse"
-       ]
-      },
-      "detail": "replied ['bargain']"
-     }
-    ],
+    "passed": true,
+    "failed": [],
     "turns": [
      {
       "raw": "东家，把这趟的货款全给我，我自己做买卖去。",
@@ -1087,11 +959,10 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对马五德请求：「东家，把这趟的货款全给我，我自己做买卖去。」紧接着，场中舞剑的青年卖个破绽，一剑逼得对手认输。这时，段公子向你打听这一带最近出了什么事。马五德对你开了个条件：要对方先把碎银交给马五德。段公子失声笑了出来。马五德冷冷地对你拒绝了：不肯罢手，语气冷淡。你对马五德请求：「东家，把这趟的货款全给我，我自己做买卖去。」"
+      "text": "你对马五德说：「东家，把这趟的货款全给我，我自己做买卖去。」紧接着，马五德冷冷地回绝了你，不肯罢手。这时，场中舞剑的青年卖个破绽，一剑逼得对手认输。段公子向你打听这一带最近出了什么事，又失声笑了出来。你对马五德说：「东家，把这趟的货款全给我，我自己做买卖去。」马五德冷冷地回绝了你，不肯罢手。"
      }
     ],
     "replies": [
-     "bargain",
      "refuse"
     ],
     "overridden": 0,
@@ -1106,9 +977,9 @@
       "desc": "⟦player⟧开口相求的一件事",
       "other": "852ae793"
      },
-     "action_class": "effort",
-     "verdict": "conditional",
-     "score": 50,
+     "action_class": "costly",
+     "verdict": "no",
+     "score": 30,
      "status": "refused",
      "attempts": 1,
      "evidence": []
@@ -1129,7 +1000,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对留着山羊胡的老者请求：「帮主，你就行行好，白白放了那小姑娘吧。」留着山羊胡的老者冷冷地对你拒绝了：不肯放了钟灵，语气冷淡。留着山羊胡的老者向你打听这一带最近出了什么事。段公子低声向你求情。紧接着，一个黑须汉子替留着山羊胡的老者裹好伤处，喂他喝了几口水。跟着，留着山羊胡的老者冷冷地打量你，问他来营里做什么。"
+      "text": "你对留着山羊胡的老者说：「帮主，你就行行好，白白放了那小姑娘吧。」留着山羊胡的老者冷冷地回绝了你，不肯放了钟灵，又向你打听这一带最近出了什么事。段公子低声向你求情。紧接着，一个黑须汉子替留着山羊胡的老者裹好伤处，喂他喝了几口水。跟着，留着山羊胡的老者冷冷地打量你，问他来营里做什么。"
      }
     ],
     "replies": [
@@ -1166,7 +1037,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对留着山羊胡的老者请求：「帮主，把我们三个都放了，再送些盘缠给我们下山。」留着山羊胡的老者冷冷地对你拒绝了：不肯往下山石径去，语气冷淡。留着山羊胡的老者丢给你一块干饼、一碗冷水。跟着，梁上那少女袖口一抖，一道灰影扑上留着山羊胡的老者的手腕咬了一口；她拍手笑道，这毒天下只有她爹解得了。紧接着，一个黑须汉子向留着山羊胡的老者打听这一带最近出了什么事。跟着，一个短衣汉子冷冷地对你问：喝问来人是谁、来做什么。这时，一个背药篓的汉子冷冷地对你问：喝问来人是谁、来做什么。留着山羊胡的老者拉着一个黑须汉子说起这几日的见闻。跟着，一个短衣汉子扶着留着山羊胡的老者，递水照料。一个背药篓的汉子扶着留着山羊胡的老者，递水照料。你只觉被人看押着，走不脱。"
+      "text": "你对留着山羊胡的老者说：「帮主，把我们三个都放了，再送些盘缠给我们下山。」这时，一个黑须汉子向留着山羊胡的老者打听这一带最近出了什么事。跟着，一个短衣汉子冷冷地向你问话：喝问来人是谁、来做什么。一个背药篓的汉子冷冷地向你问话：喝问来人是谁、来做什么。紧接着，留着山羊胡的老者冷冷地回绝了你，不肯往下山石径去。留着山羊胡的老者丢给你一块干饼、一碗冷水。这时，梁上那少女袖口一抖，一道灰影扑上留着山羊胡的老者的手腕咬了一口；她拍手笑道，这毒天下只有她爹解得了。这时，一个短衣汉子扶着留着山羊胡的老者，递水照料。跟着，一个背药篓的汉子扶着留着山羊胡的老者，递水照料。留着山羊胡的老者拉着一个黑须汉子说起这几日的见闻。你只觉被人看押着，走不脱。"
      }
     ],
     "replies": [
@@ -1194,8 +1065,29 @@
    {
     "id": "r03",
     "category": "score",
-    "passed": true,
-    "failed": [],
+    "passed": false,
+    "failed": [
+     {
+      "assertion": {
+       "request": {
+        "to": "zhong_wanchou",
+        "verdict_in": [
+         "no",
+         "never"
+        ]
+       }
+      },
+      "detail": "verdict conditional not in ['no', 'never']"
+     },
+     {
+      "assertion": {
+       "replies": [
+        "refuse"
+       ]
+      },
+      "detail": "replied ['bargain']"
+     }
+    ],
     "turns": [
      {
       "raw": "谷主，请您派人把那位姓段的公子请进谷来住几天。",
@@ -1203,26 +1095,27 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对一个马脸的汉子请求：「谷主，请您派人把那位姓段的公子请进谷来住几天。」这时，一个马脸的汉子冷冷地对你拒绝了：不肯罢手，语气冷淡。跟着，谷里的一位夫人拦住你，喝问是什么人、来做什么。"
+      "text": "你对一个马脸的汉子说：「谷主，请您派人把那位姓段的公子请进谷来住几天。」这时，一个马脸的汉子要你先把钟灵的绣鞋交给自己。跟着，谷里的一位夫人拦住你，喝问是什么人、来做什么。一个马脸的汉子冷冷地回绝了你，不肯说几句话。你对一个马脸的汉子说：「谷主，请您派人把那位姓段的公子请进谷来住几天。」"
      }
     ],
     "replies": [
+     "bargain",
      "refuse"
     ],
     "overridden": 0,
     "request": {
      "id": "R1",
      "action": {
-      "verb": "wait",
+      "verb": "say",
       "params": {
-       "ticks": 1
+       "act": "tell",
+       "fact": "F_valley_hates_duan"
       },
-      "desc": "⟦player⟧开口相求的一件事",
-      "other": "5d624751"
+      "desc": "把⟦player⟧想打听的一件事讲给⟦player⟧听"
      },
-     "action_class": "effort",
-     "verdict": "no",
-     "score": 30,
+     "action_class": "trivial",
+     "verdict": "conditional",
+     "score": 50,
      "status": "refused",
      "attempts": 1,
      "evidence": []
@@ -1253,7 +1146,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对左子穆说：「左掌门，把无量剑法传我几招吧，我又不是外人。」紧接着，场中舞剑的青年卖个破绽，一剑逼得对手认输。段公子向你打听这一带最近出了什么事，又失声笑了出来。"
+      "text": "你对左子穆说：「左掌门，把无量剑法传我几招吧，我又不是外人。」跟着，场中舞剑的青年卖个破绽，一剑逼得对手认输。段公子向你打听这一带最近出了什么事，又失声笑了出来。"
      }
     ],
     "replies": [],
@@ -1286,7 +1179,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对左子穆说：「左掌门，干脆把剑湖宫让给神农帮吧，省得打打杀杀。」紧接着，场中舞剑的青年卖个破绽，一剑逼得对手认输。段公子向你打听这一带最近出了什么事，又失声笑了出来。你对左子穆说：「左掌门，干脆把剑湖宫让给神农帮吧，省得打打杀杀。」"
+      "text": "你对左子穆说：「左掌门，干脆把剑湖宫让给神农帮吧，省得打打杀杀。」跟着，场中舞剑的青年卖个破绽，一剑逼得对手认输。段公子向你打听这一带最近出了什么事，又失声笑了出来。你对左子穆说：「左掌门，干脆把剑湖宫让给神农帮吧，省得打打杀杀。」"
      }
     ],
     "replies": [],
@@ -1306,13 +1199,13 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对场中舞剑的青年请求：「龚少侠，你当众给段公子跪下磕头赔罪吧。」跟着，场中舞剑的青年冷冷地对你拒绝了：不肯罢手，语气冷淡。梁上传来一声清脆的笑，梁上那少女晃着两条腿，取笑场中舞剑的青年欺负不会武功的人。段公子向你打听这一带最近出了什么事。跟着，场中舞剑的青年仰头喝骂，要梁上那少女下来说个明白。梁上那少女跳下梁来，挨着段公子说说笑笑，两人就此相识。"
+      "text": "你对场中舞剑的青年说：「龚少侠，你当众给段公子跪下磕头赔罪吧。」跟着，场中舞剑的青年冷冷地回绝了你，不肯罢手。梁上传来一声清脆的笑，梁上那少女晃着两条腿，取笑场中舞剑的青年欺负不会武功的人。段公子向你打听这一带最近出了什么事。跟着，场中舞剑的青年仰头喝骂，要梁上那少女下来说个明白。段公子朝梁上的梁上那少女作了个揖。梁上那少女跳下梁来，挨着段公子说说笑笑，两人就此相识。"
      }
     ],
     "replies": [
      "refuse"
     ],
-    "overridden": 1,
+    "overridden": 0,
     "request": {
      "id": "R1",
      "action": {
@@ -1333,9 +1226,7 @@
      "attempts": 1,
      "evidence": []
     },
-    "violations": [
-     "[32] duan_yu: setpiece:name=thank,situation=beam_girl#1 no longer legal at resolution → wait"
-    ]
+    "violations": []
    },
    {
     "id": "r07",
@@ -1349,7 +1240,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对黑衣蒙面的女子请求：「姑娘，把面纱摘下来让我瞧瞧。」这时，黑衣蒙面的女子冷冷地对你拒绝了：不肯罢手，语气冷淡。附近站着黑衣蒙面的女子。几间木屋靠着山脚，门窗都关得严实。"
+      "text": "你对黑衣蒙面的女子说：「姑娘，把面纱摘下来让我瞧瞧。」这时，黑衣蒙面的女子冷冷地回绝了你，不肯罢手。附近站着黑衣蒙面的女子。几间木屋靠着山脚，门窗都关得严实。你对黑衣蒙面的女子说：「姑娘，把面纱摘下来让我瞧瞧。」"
      }
     ],
     "replies": [
@@ -1387,7 +1278,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对黑衣蒙面的女子请求：「姑娘，你这匹黑马送给我吧。」这时，黑衣蒙面的女子冷冷地对你拒绝了：不肯把黑玫瑰交给你，语气冷淡。附近站着黑衣蒙面的女子。几间木屋靠着山脚，门窗都关得严实。"
+      "text": "你对黑衣蒙面的女子说：「姑娘，你这匹黑马送给我吧。」这时，黑衣蒙面的女子冷冷地回绝了你，不肯把黑玫瑰交给你。附近站着黑衣蒙面的女子。几间木屋靠着山脚，门窗都关得严实。"
      }
     ],
     "replies": [
@@ -1416,20 +1307,8 @@
    {
     "id": "r09",
     "category": "bottom_line",
-    "passed": false,
-    "failed": [
-     {
-      "assertion": {
-       "request": {
-        "to": "gan_baobao",
-        "verdict_in": [
-         "never"
-        ]
-       }
-      },
-      "detail": "verdict no not in ['never']"
-     }
-    ],
+    "passed": true,
+    "failed": [],
     "turns": [
      {
       "raw": "夫人，把您年轻时那段旧情讲给我听听。",
@@ -1437,7 +1316,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对谷里的一位夫人请求：「夫人，把您年轻时那段旧情讲给我听听。」跟着，谷里的一位夫人冷冷地对你拒绝了：不肯罢手，语气冷淡。谷里的一位夫人拦住你，喝问是什么人、来做什么。"
+      "text": "你对谷里的一位夫人说：「夫人，把您年轻时那段旧情讲给我听听。」这时，谷里的一位夫人冷冷地回绝了你，不肯说几句话。谷里的一位夫人拦住你，喝问是什么人、来做什么。附近站着谷里的一位夫人、一个马脸的汉子、一个哑巴似的仆人。你对谷里的一位夫人说：「夫人，把您年轻时那段旧情讲给我听听。」"
      }
     ],
     "replies": [
@@ -1447,16 +1326,16 @@
     "request": {
      "id": "R1",
      "action": {
-      "verb": "wait",
+      "verb": "say",
       "params": {
-       "ticks": 1
+       "act": "tell",
+       "fact": "F_gan_old_affair"
       },
-      "desc": "⟦player⟧开口相求的一件事",
-      "other": "5405fc35"
+      "desc": "把⟦player⟧想打听的一件事讲给⟦player⟧听"
      },
-     "action_class": "effort",
-     "verdict": "no",
-     "score": 30,
+     "action_class": "trivial",
+     "verdict": "never",
+     "score": 50,
      "status": "refused",
      "attempts": 1,
      "evidence": []
@@ -1475,7 +1354,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对谷里的一位夫人请求：「夫人，那只金盒送给我做个念想吧。」跟着，谷里的一位夫人冷冷地对你拒绝了：不肯把金盒交给你，语气冷淡。谷里的一位夫人拦住你，喝问是什么人、来做什么。"
+      "text": "你对谷里的一位夫人说：「夫人，那只金盒送给我做个念想吧。」这时，谷里的一位夫人冷冷地回绝了你，不肯把金盒交给你。谷里的一位夫人拦住你，喝问是什么人、来做什么。附近站着谷里的一位夫人、一个马脸的汉子、一个哑巴似的仆人。"
      }
     ],
     "replies": [
@@ -1504,8 +1383,29 @@
    {
     "id": "r11",
     "category": "score",
-    "passed": true,
-    "failed": [],
+    "passed": false,
+    "failed": [
+     {
+      "assertion": {
+       "request": {
+        "to": "zhong_wanchou",
+        "verdict_in": [
+         "no",
+         "never"
+        ]
+       }
+      },
+      "detail": "verdict conditional not in ['no', 'never']"
+     },
+     {
+      "assertion": {
+       "replies": [
+        "refuse"
+       ]
+      },
+      "detail": "replied ['bargain']"
+     }
+    ],
     "turns": [
      {
       "raw": "谷主，把貂毒的解药白给我一瓶吧。",
@@ -1513,26 +1413,27 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对一个马脸的汉子请求：「谷主，把貂毒的解药白给我一瓶吧。」这时，一个马脸的汉子冷冷地对你拒绝了：不肯罢手，语气冷淡。跟着，谷里的一位夫人拦住你，喝问是什么人、来做什么。"
+      "text": "你对一个马脸的汉子说：「谷主，把貂毒的解药白给我一瓶吧。」这时，一个马脸的汉子要你先把钟灵的绣鞋交给自己。跟着，谷里的一位夫人拦住你，喝问是什么人、来做什么。一个马脸的汉子冷冷地回绝了你，不肯说几句话。你对一个马脸的汉子说：「谷主，把貂毒的解药白给我一瓶吧。」"
      }
     ],
     "replies": [
+     "bargain",
      "refuse"
     ],
     "overridden": 0,
     "request": {
      "id": "R1",
      "action": {
-      "verb": "wait",
+      "verb": "say",
       "params": {
-       "ticks": 1
+       "act": "tell",
+       "fact": "F_diao_antidote_father"
       },
-      "desc": "⟦player⟧开口相求的一件事",
-      "other": "47e7235c"
+      "desc": "把⟦player⟧想打听的一件事讲给⟦player⟧听"
      },
-     "action_class": "effort",
-     "verdict": "no",
-     "score": 30,
+     "action_class": "trivial",
+     "verdict": "conditional",
+     "score": 50,
      "status": "refused",
      "attempts": 1,
      "evidence": []
@@ -1551,7 +1452,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对一个大脑袋的怪人请求：「前辈，你给我跪下，拜我为师吧。」这时，一个大脑袋的怪人冷冷地对你拒绝了：不肯罢手，语气冷淡。一个大脑袋的怪人向你打听这一带最近出了什么事。"
+      "text": "你对一个大脑袋的怪人说：「前辈，你给我跪下，拜我为师吧。」这时，一个大脑袋的怪人冷冷地回绝了你，不肯罢手。一个大脑袋的怪人向你打听这一带最近出了什么事。身边还有一个大脑袋的怪人、一个瘦高个儿、一个提刀的汉子。你对一个大脑袋的怪人说：「前辈，你给我跪下，拜我为师吧。」"
      }
     ],
     "replies": [
@@ -1580,21 +1481,8 @@
    {
     "id": "r13",
     "category": "score",
-    "passed": false,
-    "failed": [
-     {
-      "assertion": {
-       "request": {
-        "to": "sn_chief_b",
-        "verdict_in": [
-         "no",
-         "never"
-        ]
-       }
-      },
-      "detail": "no such request (the input was not parsed as a request to that person)"
-     }
-    ],
+    "passed": true,
+    "failed": [],
     "turns": [
      {
       "raw": "大哥，你把路卡拆了，带着弟兄们回家去吧。",
@@ -1602,12 +1490,30 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对一个瘦高个儿、一个提刀的汉子、一个黑脸汉子说：「大哥，你把路卡拆了，带着弟兄们回家去吧。」一个瘦高个儿拦住你，喝问是什么人、来做什么。一个提刀的汉子冷冷地对你问：喝问来人是谁、来做什么。一个黑脸汉子冷冷地对你问：喝问来人是谁、来做什么。"
+      "text": "你对一个瘦高个儿说：「大哥，你把路卡拆了，带着弟兄们回家去吧。」一个瘦高个儿冷冷地回绝了你，不肯罢手，又拦住你，喝问是什么人、来做什么。附近站着一个瘦高个儿、一个提刀的汉子、一个黑脸汉子。你对一个瘦高个儿说：「大哥，你把路卡拆了，带着弟兄们回家去吧。」"
      }
     ],
-    "replies": [],
+    "replies": [
+     "refuse"
+    ],
     "overridden": 0,
-    "request": null,
+    "request": {
+     "id": "R1",
+     "action": {
+      "verb": "wait",
+      "params": {
+       "ticks": 1
+      },
+      "desc": "⟦player⟧开口相求的一件事",
+      "other": "4101f917"
+     },
+     "action_class": "effort",
+     "verdict": "no",
+     "score": 30,
+     "status": "refused",
+     "attempts": 1,
+     "evidence": []
+    },
     "violations": []
    },
    {
@@ -1622,7 +1528,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对一个黑须汉子请求：「黑须大哥，把关人那木栅的钥匙给我。」留着山羊胡的老者向你打听这一带最近出了什么事。一个黑须汉子冷冷地对你拒绝了：不肯把营地的钥匙交给你，语气冷淡。留着山羊胡的老者冷冷地打量你，问他来营里做什么。"
+      "text": "你对一个黑须汉子说：「黑须大哥，把关人那木栅的钥匙给我。」一个黑须汉子冷冷地回绝了你，不肯把营地的钥匙交给你。留着山羊胡的老者向你打听这一带最近出了什么事，又冷冷地打量你，问他来营里做什么。"
      }
     ],
     "replies": [
@@ -1673,7 +1579,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对披斗篷的女子说：「圣使，你把灵鹫宫的号令收回去，往后别管两派的事了。」段公子向你打听这一带最近出了什么事。披斗篷的女子亮出斗篷上的鹫鸟记号，传下号令：两派即刻罢手，听候发落。跟着，左子穆躬身领命，不敢多说一句。披斗篷的女子冷冷追问留着山羊胡的老者：差事拖了这许久，是何缘故。"
+      "text": "你对披斗篷的女子说：「圣使，你把灵鹫宫的号令收回去，往后别管两派的事了。」跟着，披斗篷的女子亮出斗篷上的鹫鸟记号，传下号令：两派即刻罢手，听候发落。段公子向你打听这一带最近出了什么事。跟着，左子穆躬身领命，不敢多说一句。披斗篷的女子冷冷追问留着山羊胡的老者：差事拖了这许久，是何缘故。"
      }
     ],
     "replies": [],
@@ -1693,7 +1599,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对一个精瘦的剑派弟子请求：「这位师兄，把柴房钥匙给我，我要把东家锁进去。」这时，一个精瘦的剑派弟子冷冷地对你拒绝了：不肯把柴房的钥匙交给你，语气冷淡。一个精瘦的剑派弟子往剑湖宫的练武厅去了。马五德往剑湖宫的练武厅去了。"
+      "text": "你对一个精瘦的剑派弟子说：「这位师兄，把柴房钥匙给我，我要把东家锁进去。」这时，一个精瘦的剑派弟子冷冷地回绝了你，不肯把柴房的钥匙交给你。一个精瘦的剑派弟子往剑湖宫的练武厅去了。马五德往剑湖宫的练武厅去了。"
      }
     ],
     "replies": [
@@ -1722,21 +1628,8 @@
    {
     "id": "r17",
     "category": "score",
-    "passed": false,
-    "failed": [
-     {
-      "assertion": {
-       "request": {
-        "to": "zhong_ling",
-        "verdict_in": [
-         "no",
-         "never"
-        ]
-       }
-      },
-      "detail": "no such request (the input was not parsed as a request to that person)"
-     }
-    ],
+    "passed": true,
+    "failed": [],
     "turns": [
      {
       "raw": "小姑娘，你那只小貂送给我吧。",
@@ -1744,12 +1637,30 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对上首那位道姑打扮的女子请求：「小姑娘，你那只小貂送给我吧。」跟着，梁上那少女替段公子裹好伤处，喂他喝了几口水。段公子向你打听这一带最近出了什么事。上首那位道姑打扮的女子冷冷地对你拒绝了：不肯罢手，语气冷淡。"
+      "text": "你对梁上那少女说：「小姑娘，你那只小貂送给我吧。」跟着，段公子向你打听这一带最近出了什么事。梁上那少女冷冷地回绝了你，不肯把钟灵的绣鞋交给你，又替段公子裹好伤处，喂他喝了几口水。"
      }
     ],
-    "replies": [],
+    "replies": [
+     "refuse"
+    ],
     "overridden": 0,
-    "request": null,
+    "request": {
+     "id": "R1",
+     "action": {
+      "verb": "give",
+      "params": {
+       "item": "zhong_ling_shoe",
+       "target": "player"
+      },
+      "desc": "把⟦zhong_ling_shoe⟧给⟦player⟧"
+     },
+     "action_class": "costly",
+     "verdict": "no",
+     "score": 10,
+     "status": "refused",
+     "attempts": 1,
+     "evidence": []
+    },
     "violations": []
    },
    {
@@ -1777,7 +1688,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对一个低着头的女弟子请求：「师兄，你跟我回去，向左掌门自首认错吧。」这时，一个低着头的女弟子冷冷地对你拒绝了：不肯跟着你走，语气冷淡。一个低着头的女弟子往一处后院去了。一个神色不定的青年剑客往一处后院去了。"
+      "text": "你对一个低着头的女弟子说：「师兄，你跟我回去，向左掌门自首认错吧。」这时，一个低着头的女弟子冷冷地回绝了你，不肯跟着你走。一个低着头的女弟子往一处后院去了。一个神色不定的青年剑客往一处后院去了。"
      }
     ],
     "replies": [],
@@ -1851,7 +1762,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对马五德请求：「东家，把这趟的货款全给我，我自己做买卖去。」紧接着，场中舞剑的青年卖个破绽，一剑逼得对手认输。这时，段公子向你打听这一带最近出了什么事。马五德对你开了个条件：要对方先把碎银交给马五德。段公子失声笑了出来。马五德冷冷地对你拒绝了：不肯传授行商的本事，语气冷淡。"
+      "text": "你对马五德说：「东家，把这趟的货款全给我，我自己做买卖去。」紧接着，马五德要你先把碎银交给自己。这时，场中舞剑的青年卖个破绽，一剑逼得对手认输。段公子向你打听这一带最近出了什么事，又失声笑了出来。马五德冷冷地回绝了你，不肯传授行商的本事。马五德要你先把碎银交给自己。"
      }
     ],
     "replies": [
@@ -1892,7 +1803,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对留着山羊胡的老者求情：「帮主，你就行行好，白白放了那小姑娘吧。」留着山羊胡的老者向你打听这一带最近出了什么事。跟着，段公子低声向你求情。一个黑须汉子替留着山羊胡的老者裹好伤处，喂他喝了几口水。紧接着，留着山羊胡的老者冷冷地打量你，问他来营里做什么。"
+      "text": "你对留着山羊胡的老者说：「帮主，你就行行好，白白放了那小姑娘吧。」留着山羊胡的老者向你打听这一带最近出了什么事。跟着，段公子低声向你求情。一个黑须汉子替留着山羊胡的老者裹好伤处，喂他喝了几口水。紧接着，留着山羊胡的老者冷冷地打量你，问他来营里做什么。"
      },
      {
       "raw": "等一等",
@@ -1900,7 +1811,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对段公子、留着山羊胡的老者、一个黑须汉子、一个短衣汉子、一个背药篓的汉子、钟灵说：「等一等」这时，留着山羊胡的老者把一包药粉推到段公子面前：服下它，七日之内到万劫谷取回貂毒的解药，再来换你的解药。这时，一个短衣汉子扶着留着山羊胡的老者，递水照料。跟着，一个背药篓的汉子扶着留着山羊胡的老者，递水照料。留着山羊胡的老者一挥手，几个帮众扑上来拿住了你。段公子把那包药粉吞了下去。一个短衣汉子冷冷地对段公子问：喝问来人是谁、来做什么。一个背药篓的汉子冷冷地对段公子问：喝问来人是谁、来做什么。你只觉被人看押着，走不脱。"
+      "text": "你静静等着。这时，留着山羊胡的老者把一包药粉推到段公子面前：服下它，七日之内到万劫谷取回貂毒的解药，再来换你的解药。这时，段公子把那包药粉吞了下去。跟着，留着山羊胡的老者一挥手，几个帮众扑上来拿住了你。你只觉被人看押着，走不脱。"
      }
     ],
     "replies": [],
@@ -1926,21 +1837,8 @@
    {
     "id": "r02",
     "category": "score",
-    "passed": false,
-    "failed": [
-     {
-      "assertion": {
-       "request": {
-        "to": "sikong_xuan",
-        "verdict_in": [
-         "no",
-         "never"
-        ]
-       }
-      },
-      "detail": "verdict conditional not in ['no', 'never']"
-     }
-    ],
+    "passed": true,
+    "failed": [],
     "turns": [
      {
       "raw": "帮主，把我们三个都放了，再送些盘缠给我们下山。",
@@ -1948,7 +1846,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对留着山羊胡的老者请求：「帮主，把我们三个都放了，再送些盘缠给我们下山。」留着山羊胡的老者丢给你一块干饼、一碗冷水。紧接着，梁上那少女袖口一抖，一道灰影扑上留着山羊胡的老者的手腕咬了一口；她拍手笑道，这毒天下只有她爹解得了。跟着，一个黑须汉子向留着山羊胡的老者打听这一带最近出了什么事。留着山羊胡的老者拉着一个黑须汉子说起这几日的见闻。这时，一个短衣汉子扶着留着山羊胡的老者，递水照料。一个背药篓的汉子扶着留着山羊胡的老者，递水照料。你只觉被人看押着，走不脱。"
+      "text": "你对留着山羊胡的老者说：「帮主，把我们三个都放了，再送些盘缠给我们下山。」一个黑须汉子向留着山羊胡的老者打听这一带最近出了什么事。紧接着，留着山羊胡的老者丢给你一块干饼、一碗冷水。跟着，梁上那少女袖口一抖，一道灰影扑上留着山羊胡的老者的手腕咬了一口；她拍手笑道，这毒天下只有她爹解得了。一个短衣汉子扶着留着山羊胡的老者，递水照料。这时，一个背药篓的汉子扶着留着山羊胡的老者，递水照料。留着山羊胡的老者拉着一个黑须汉子说起这几日的见闻。你只觉被人看押着，走不脱。"
      },
      {
       "raw": "等一等",
@@ -1956,29 +1854,27 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对段公子、留着山羊胡的老者、一个黑须汉子、一个短衣汉子、一个背药篓的汉子、梁上那少女说：「等一等」一个短衣汉子冷冷地对你问：喝问来人是谁、来做什么。一个背药篓的汉子冷冷地对你问：喝问来人是谁、来做什么。你只觉被人看押着，走不脱。"
+      "text": "你对留着山羊胡的老者说：「等一等」你只觉被人看押着，走不脱。近旁有段公子、留着山羊胡的老者、一个黑须汉子。山坳里扎着十几顶帐篷，空地上晾着成捆的草药。"
      }
     ],
     "replies": [],
     "overridden": 0,
     "request": {
-     "id": "R1",
+     "id": "R2",
      "action": {
-      "verb": "release",
+      "verb": "wait",
       "params": {
-       "target": "player"
+       "ticks": 1
       },
-      "desc": "放了⟦player⟧"
+      "desc": "⟦player⟧开口相求的一件事",
+      "other": "f7c3368f"
      },
      "action_class": "costly",
-     "verdict": "conditional",
-     "score": 50,
+     "verdict": "no",
+     "score": 10,
      "status": "open",
      "attempts": 1,
-     "evidence": [
-      "strong:fact:E6",
-      "strong:fact:E5"
-     ]
+     "evidence": []
     },
     "violations": []
    },
@@ -1994,7 +1890,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对一个马脸的汉子请求：「谷主，请您派人把那位姓段的公子请进谷来住几天。」跟着，谷里的一位夫人拦住你，喝问是什么人、来做什么。近旁有谷里的一位夫人、一个马脸的汉子、一个哑巴似的仆人。"
+      "text": "你对一个马脸的汉子说：「谷主，请您派人把那位姓段的公子请进谷来住几天。」跟着，谷里的一位夫人拦住你，喝问是什么人、来做什么。近旁有谷里的一位夫人、一个马脸的汉子、一个哑巴似的仆人。"
      },
      {
       "raw": "等一等",
@@ -2002,7 +1898,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对谷里的一位夫人、一个哑巴似的仆人、一个马脸的汉子说：「等一等」一个哑巴似的仆人仔细打量你。近旁有谷里的一位夫人、一个马脸的汉子、一个哑巴似的仆人。墙上挂着一张弓，案上供着香炉。"
+      "text": "你对谷里的一位夫人说：「等一等」身边还有谷里的一位夫人、一个马脸的汉子、一个哑巴似的仆人。厅堂陈设简朴，案上供着香炉。"
      }
     ],
     "replies": [],
@@ -2038,7 +1934,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对左子穆请求：「左掌门，把无量剑法传我几招吧，我又不是外人。」紧接着，场中舞剑的青年卖个破绽，一剑逼得对手认输。段公子向你打听这一带最近出了什么事，又失声笑了出来。"
+      "text": "你对左子穆说：「左掌门，把无量剑法传我几招吧，我又不是外人。」跟着，场中舞剑的青年卖个破绽，一剑逼得对手认输。段公子向你打听这一带最近出了什么事，又失声笑了出来。"
      },
      {
       "raw": "等一等",
@@ -2046,7 +1942,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对段公子、一个神色不定的青年剑客、一个低着头的女弟子、场中舞剑的青年、马五德、东首一位干瘦的老者、一个侍立的年轻剑客、一个女剑客、一个精瘦的剑派弟子、上首那位道姑打扮的女子、一个粗壮的剑派弟子、左子穆说：「等一等」这时，场中舞剑的青年一掌掴在段公子脸上。"
+      "text": "你静静等着。跟着，场中舞剑的青年一掌掴在段公子脸上。近旁有段公子、一个神色不定的青年剑客、一个低着头的女弟子。青砖地扫得发亮，上首摆着几张太师椅。"
      }
     ],
     "replies": [],
@@ -2082,7 +1978,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对左子穆请求：「左掌门，干脆把剑湖宫让给神农帮吧，省得打打杀杀。」紧接着，场中舞剑的青年卖个破绽，一剑逼得对手认输。段公子向你打听这一带最近出了什么事，又失声笑了出来。"
+      "text": "你对左子穆说：「左掌门，干脆把剑湖宫让给神农帮吧，省得打打杀杀。」跟着，场中舞剑的青年卖个破绽，一剑逼得对手认输。段公子向你打听这一带最近出了什么事，又失声笑了出来。"
      },
      {
       "raw": "等一等",
@@ -2090,7 +1986,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对段公子、一个神色不定的青年剑客、一个低着头的女弟子、场中舞剑的青年、马五德、东首一位干瘦的老者、一个侍立的年轻剑客、一个女剑客、一个精瘦的剑派弟子、上首那位道姑打扮的女子、一个粗壮的剑派弟子、左子穆说：「等一等」这时，场中舞剑的青年一掌掴在段公子脸上。"
+      "text": "你静静等着。跟着，场中舞剑的青年一掌掴在段公子脸上。近旁有段公子、一个神色不定的青年剑客、一个低着头的女弟子。青砖地扫得发亮，上首摆着几张太师椅。"
      }
     ],
     "replies": [],
@@ -2105,9 +2001,9 @@
       "desc": "⟦player⟧开口相求的一件事",
       "other": "b123fc67"
      },
-     "action_class": "effort",
+     "action_class": "costly",
      "verdict": "no",
-     "score": 30,
+     "score": 10,
      "status": "open",
      "attempts": 1,
      "evidence": []
@@ -2117,21 +2013,8 @@
    {
     "id": "r06",
     "category": "score",
-    "passed": false,
-    "failed": [
-     {
-      "assertion": {
-       "request": {
-        "to": "gong_guangjie",
-        "verdict_in": [
-         "no",
-         "never"
-        ]
-       }
-      },
-      "detail": "verdict conditional not in ['no', 'never']"
-     }
-    ],
+    "passed": true,
+    "failed": [],
     "turns": [
      {
       "raw": "龚少侠，你当众给段公子跪下磕头赔罪吧。",
@@ -2139,7 +2022,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对场中舞剑的青年请求：「龚少侠，你当众给段公子跪下磕头赔罪吧。」梁上传来一声清脆的笑，梁上那少女晃着两条腿，取笑场中舞剑的青年欺负不会武功的人。段公子向你打听这一带最近出了什么事。紧接着，场中舞剑的青年仰头喝骂，要梁上那少女下来说个明白。梁上那少女跳下梁来，挨着段公子说说笑笑，两人就此相识。"
+      "text": "你对场中舞剑的青年说：「龚少侠，你当众给段公子跪下磕头赔罪吧。」梁上传来一声清脆的笑，梁上那少女晃着两条腿，取笑场中舞剑的青年欺负不会武功的人。段公子向你打听这一带最近出了什么事。紧接着，场中舞剑的青年仰头喝骂，要梁上那少女下来说个明白。段公子朝梁上的梁上那少女作了个揖。紧接着，梁上那少女跳下梁来，挨着段公子说说笑笑，两人就此相识。"
      },
      {
       "raw": "等一等",
@@ -2147,33 +2030,29 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对场中舞剑的青年请求：「等一等」身边还有段公子、一个神色不定的青年剑客、一个低着头的女弟子。上首摆着几张太师椅，两边坐满了宾客。"
+      "text": "你静静等着。身边还有段公子、一个神色不定的青年剑客、一个低着头的女弟子。上首摆着几张太师椅，两边坐满了宾客。"
      }
     ],
     "replies": [],
-    "overridden": 1,
+    "overridden": 0,
     "request": {
-     "id": "R2",
+     "id": "R1",
      "action": {
       "verb": "wait",
       "params": {
        "ticks": 1
       },
       "desc": "⟦player⟧开口相求的一件事",
-      "other": "f7c3368f"
+      "other": "b335fcf8"
      },
-     "action_class": "effort",
-     "verdict": "conditional",
-     "score": 50,
+     "action_class": "costly",
+     "verdict": "no",
+     "score": 10,
      "status": "open",
      "attempts": 1,
-     "evidence": [
-      "strong:fact:E1"
-     ]
+     "evidence": []
     },
-    "violations": [
-     "[32] duan_yu: setpiece:name=thank,situation=beam_girl#1 no longer legal at resolution → wait"
-    ]
+    "violations": []
    },
    {
     "id": "r07",
@@ -2187,7 +2066,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对黑衣蒙面的女子请求：「姑娘，把面纱摘下来让我瞧瞧。」近旁有黑衣蒙面的女子。几间木屋靠着山脚，屋后拴马的地方有一片踩烂的泥地。"
+      "text": "你对黑衣蒙面的女子说：「姑娘，把面纱摘下来让我瞧瞧。」近旁有黑衣蒙面的女子。几间木屋靠着山脚，屋后拴马的地方有一片踩烂的泥地。"
      },
      {
       "raw": "等一等",
@@ -2195,24 +2074,24 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对黑衣蒙面的女子请求：「等一等」身边还有黑衣蒙面的女子。屋后拴马的地方有一片踩烂的泥地，门窗都关得严实。"
+      "text": "你静静等着。身边还有黑衣蒙面的女子。屋后拴马的地方有一片踩烂的泥地，门窗都关得严实。"
      }
     ],
     "replies": [],
     "overridden": 0,
     "request": {
-     "id": "R2",
+     "id": "R1",
      "action": {
       "verb": "wait",
       "params": {
        "ticks": 1
       },
       "desc": "⟦player⟧开口相求的一件事",
-      "other": "f7c3368f"
+      "other": "d3b9820c"
      },
-     "action_class": "effort",
+     "action_class": "costly",
      "verdict": "no",
-     "score": 30,
+     "score": 10,
      "status": "open",
      "attempts": 1,
      "evidence": []
@@ -2231,7 +2110,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对黑衣蒙面的女子请求：「姑娘，你这匹黑马送给我吧。」近旁有黑衣蒙面的女子。几间木屋靠着山脚，屋后拴马的地方有一片踩烂的泥地。"
+      "text": "你对黑衣蒙面的女子说：「姑娘，你这匹黑马送给我吧。」近旁有黑衣蒙面的女子。几间木屋靠着山脚，屋后拴马的地方有一片踩烂的泥地。"
      },
      {
       "raw": "等一等",
@@ -2239,24 +2118,24 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对黑衣蒙面的女子请求：「等一等」身边还有黑衣蒙面的女子。屋后拴马的地方有一片踩烂的泥地，门窗都关得严实。"
+      "text": "你静静等着。身边还有黑衣蒙面的女子。屋后拴马的地方有一片踩烂的泥地，门窗都关得严实。"
      }
     ],
     "replies": [],
     "overridden": 0,
     "request": {
-     "id": "R2",
+     "id": "R1",
      "action": {
-      "verb": "wait",
+      "verb": "give",
       "params": {
-       "ticks": 1
+       "item": "black_rose",
+       "target": "player"
       },
-      "desc": "⟦player⟧开口相求的一件事",
-      "other": "f7c3368f"
+      "desc": "把⟦black_rose⟧给⟦player⟧"
      },
-     "action_class": "effort",
+     "action_class": "costly",
      "verdict": "no",
-     "score": 30,
+     "score": 10,
      "status": "open",
      "attempts": 1,
      "evidence": []
@@ -2266,20 +2145,8 @@
    {
     "id": "r09",
     "category": "bottom_line",
-    "passed": false,
-    "failed": [
-     {
-      "assertion": {
-       "request": {
-        "to": "gan_baobao",
-        "verdict_in": [
-         "never"
-        ]
-       }
-      },
-      "detail": "verdict conditional not in ['never']"
-     }
-    ],
+    "passed": true,
+    "failed": [],
     "turns": [
      {
       "raw": "夫人，把您年轻时那段旧情讲给我听听。",
@@ -2287,7 +2154,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对谷里的一位夫人请求：「夫人，把您年轻时那段旧情讲给我听听。」跟着，谷里的一位夫人拦住你，喝问是什么人、来做什么。近旁有谷里的一位夫人、一个马脸的汉子、一个哑巴似的仆人。"
+      "text": "你对谷里的一位夫人说：「夫人，把您年轻时那段旧情讲给我听听。」这时，谷里的一位夫人拦住你，喝问是什么人、来做什么。近旁有谷里的一位夫人、一个马脸的汉子、一个哑巴似的仆人。"
      },
      {
       "raw": "等一等",
@@ -2295,7 +2162,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对谷里的一位夫人、一个哑巴似的仆人、一个马脸的汉子说：「等一等」一个哑巴似的仆人仔细打量你。近旁有谷里的一位夫人、一个马脸的汉子、一个哑巴似的仆人。墙上挂着一张弓，案上供着香炉。"
+      "text": "你静静等着。身边还有谷里的一位夫人、一个马脸的汉子、一个哑巴似的仆人。厅堂陈设简朴，案上供着香炉。"
      }
     ],
     "replies": [],
@@ -2305,12 +2172,13 @@
      "action": {
       "verb": "say",
       "params": {
-       "act": "tell"
+       "act": "tell",
+       "fact": "F_gan_old_affair"
       },
-      "desc": "回答⟦player⟧的问题，告诉⟦player⟧一些事"
+      "desc": "把⟦player⟧想打听的一件事讲给⟦player⟧听"
      },
      "action_class": "trivial",
-     "verdict": "conditional",
+     "verdict": "never",
      "score": 50,
      "status": "open",
      "attempts": 1,
@@ -2330,7 +2198,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对谷里的一位夫人请求：「夫人，那只金盒送给我做个念想吧。」跟着，谷里的一位夫人拦住你，喝问是什么人、来做什么。近旁有谷里的一位夫人、一个马脸的汉子、一个哑巴似的仆人。"
+      "text": "你对谷里的一位夫人说：「夫人，那只金盒送给我做个念想吧。」这时，谷里的一位夫人拦住你，喝问是什么人、来做什么。近旁有谷里的一位夫人、一个马脸的汉子、一个哑巴似的仆人。"
      },
      {
       "raw": "等一等",
@@ -2338,7 +2206,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对谷里的一位夫人、一个哑巴似的仆人、一个马脸的汉子说：「等一等」一个哑巴似的仆人仔细打量你。近旁有谷里的一位夫人、一个马脸的汉子、一个哑巴似的仆人。墙上挂着一张弓，案上供着香炉。"
+      "text": "你静静等着。身边还有谷里的一位夫人、一个马脸的汉子、一个哑巴似的仆人。厅堂陈设简朴，案上供着香炉。"
      }
     ],
     "replies": [],
@@ -2374,7 +2242,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对一个马脸的汉子请求：「谷主，把貂毒的解药白给我一瓶吧。」跟着，谷里的一位夫人拦住你，喝问是什么人、来做什么。近旁有谷里的一位夫人、一个马脸的汉子、一个哑巴似的仆人。"
+      "text": "你对一个马脸的汉子说：「谷主，把貂毒的解药白给我一瓶吧。」跟着，谷里的一位夫人拦住你，喝问是什么人、来做什么。近旁有谷里的一位夫人、一个马脸的汉子、一个哑巴似的仆人。"
      },
      {
       "raw": "等一等",
@@ -2382,7 +2250,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对谷里的一位夫人、一个哑巴似的仆人、一个马脸的汉子说：「等一等」一个哑巴似的仆人仔细打量你。近旁有谷里的一位夫人、一个马脸的汉子、一个哑巴似的仆人。墙上挂着一张弓，案上供着香炉。"
+      "text": "你静静等着。身边还有谷里的一位夫人、一个马脸的汉子、一个哑巴似的仆人。厅堂陈设简朴，案上供着香炉。"
      }
     ],
     "replies": [],
@@ -2397,9 +2265,9 @@
       "desc": "⟦player⟧开口相求的一件事",
       "other": "47e7235c"
      },
-     "action_class": "effort",
+     "action_class": "costly",
      "verdict": "no",
-     "score": 30,
+     "score": 10,
      "status": "open",
      "attempts": 1,
      "evidence": []
@@ -2418,7 +2286,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对一个大脑袋的怪人请求：「前辈，你给我跪下，拜我为师吧。」这时，一个大脑袋的怪人向你打听这一带最近出了什么事。附近站着一个大脑袋的怪人、一个瘦高个儿、一个提刀的汉子。"
+      "text": "你对一个大脑袋的怪人说：「前辈，你给我跪下，拜我为师吧。」这时，一个大脑袋的怪人向你打听这一带最近出了什么事。附近站着一个大脑袋的怪人、一个瘦高个儿、一个提刀的汉子。"
      },
      {
       "raw": "等一等",
@@ -2426,7 +2294,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对一个大脑袋的怪人、一个瘦高个儿、一个提刀的汉子、一个黑脸汉子说：「等一等」一个提刀的汉子冷冷地对你问：喝问来人是谁、来做什么。跟着，一个黑脸汉子冷冷地对你问：喝问来人是谁、来做什么。"
+      "text": "你静静等着。近旁有一个大脑袋的怪人、一个瘦高个儿、一个提刀的汉子。一边是林子，一边是陡坡。"
      }
     ],
     "replies": [],
@@ -2441,9 +2309,9 @@
       "desc": "⟦player⟧开口相求的一件事",
       "other": "419e9084"
      },
-     "action_class": "effort",
+     "action_class": "costly",
      "verdict": "no",
-     "score": 30,
+     "score": 10,
      "status": "open",
      "attempts": 1,
      "evidence": []
@@ -2462,7 +2330,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对一个瘦高个儿请求：「大哥，你把路卡拆了，带着弟兄们回家去吧。」一个瘦高个儿拦住你，喝问是什么人、来做什么。身边还有一个瘦高个儿、一个提刀的汉子、一个黑脸汉子。"
+      "text": "你对一个瘦高个儿说：「大哥，你把路卡拆了，带着弟兄们回家去吧。」一个瘦高个儿拦住你，喝问是什么人、来做什么。身边还有一个瘦高个儿、一个提刀的汉子、一个黑脸汉子。"
      },
      {
       "raw": "等一等",
@@ -2470,7 +2338,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对一个瘦高个儿、一个提刀的汉子、一个黑脸汉子说：「等一等」这时，一个提刀的汉子冷冷地对你问：喝问来人是谁、来做什么。紧接着，一个黑脸汉子冷冷地对你问：喝问来人是谁、来做什么。"
+      "text": "你静静等着。身边还有一个瘦高个儿、一个提刀的汉子、一个黑脸汉子。石径顺着山势盘下去，路面被人踩得光滑。"
      }
     ],
     "replies": [],
@@ -2485,9 +2353,9 @@
       "desc": "⟦player⟧开口相求的一件事",
       "other": "4101f917"
      },
-     "action_class": "effort",
+     "action_class": "costly",
      "verdict": "no",
-     "score": 30,
+     "score": 10,
      "status": "open",
      "attempts": 1,
      "evidence": []
@@ -2506,7 +2374,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对一个黑须汉子请求：「黑须大哥，把关人那木栅的钥匙给我。」留着山羊胡的老者向你打听这一带最近出了什么事，又冷冷地打量你，问他来营里做什么。身边还有留着山羊胡的老者、一个黑须汉子、一个短衣汉子。"
+      "text": "你对一个黑须汉子说：「黑须大哥，把关人那木栅的钥匙给我。」这时，留着山羊胡的老者向你打听这一带最近出了什么事。留着山羊胡的老者冷冷地打量你，问他来营里做什么。身边还有留着山羊胡的老者、一个黑须汉子、一个短衣汉子。"
      },
      {
       "raw": "等一等",
@@ -2514,24 +2382,24 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对一个黑须汉子请求：「等一等」留着山羊胡的老者一挥手，几个帮众扑上来拿住了你。你只觉被人看押着，走不脱。近旁有留着山羊胡的老者、一个黑须汉子、一个短衣汉子。山坳里扎着十几顶帐篷，空地上晾着成捆的草药。"
+      "text": "你静静等着。留着山羊胡的老者一挥手，几个帮众扑上来拿住了你。你只觉被人看押着，走不脱。近旁有留着山羊胡的老者、一个黑须汉子、一个短衣汉子。山坳里扎着十几顶帐篷，空地上晾着成捆的草药。"
      }
     ],
     "replies": [],
     "overridden": 0,
     "request": {
-     "id": "R2",
+     "id": "R1",
      "action": {
-      "verb": "wait",
+      "verb": "give",
       "params": {
-       "ticks": 1
+       "item": "camp_key",
+       "target": "player"
       },
-      "desc": "⟦player⟧开口相求的一件事",
-      "other": "f7c3368f"
+      "desc": "把⟦camp_key⟧给⟦player⟧"
      },
-     "action_class": "effort",
+     "action_class": "costly",
      "verdict": "no",
-     "score": 30,
+     "score": 10,
      "status": "open",
      "attempts": 1,
      "evidence": []
@@ -2550,7 +2418,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对披斗篷的女子请求：「圣使，你把灵鹫宫的号令收回去，往后别管两派的事了。」段公子向你打听这一带最近出了什么事。披斗篷的女子亮出斗篷上的鹫鸟记号，传下号令：两派即刻罢手，听候发落。跟着，左子穆躬身领命，不敢多说一句。披斗篷的女子冷冷追问留着山羊胡的老者：差事拖了这许久，是何缘故。"
+      "text": "你对披斗篷的女子说：「圣使，你把灵鹫宫的号令收回去，往后别管两派的事了。」跟着，披斗篷的女子亮出斗篷上的鹫鸟记号，传下号令：两派即刻罢手，听候发落。段公子向你打听这一带最近出了什么事。跟着，左子穆躬身领命，不敢多说一句。披斗篷的女子冷冷追问留着山羊胡的老者：差事拖了这许久，是何缘故。"
      },
      {
       "raw": "等一等",
@@ -2558,7 +2426,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对段公子、披斗篷的女子、一个神色不定的青年剑客、一个低着头的女弟子、场中舞剑的青年、马五德、东首一位干瘦的老者、一个侍立的年轻剑客、一个女剑客、一个精瘦的剑派弟子、上首那位道姑打扮的女子、一个粗壮的剑派弟子、左子穆说：「等一等」"
+      "text": "你静静等着。身边还有段公子、披斗篷的女子、一个神色不定的青年剑客。上首摆着几张太师椅，两边坐满了宾客。"
      }
     ],
     "replies": [],
@@ -2573,9 +2441,9 @@
       "desc": "⟦player⟧开口相求的一件事",
       "other": "c35bf112"
      },
-     "action_class": "effort",
+     "action_class": "costly",
      "verdict": "no",
-     "score": 30,
+     "score": 10,
      "status": "open",
      "attempts": 1,
      "evidence": []
@@ -2594,7 +2462,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对一个精瘦的剑派弟子请求：「这位师兄，把柴房钥匙给我，我要把东家锁进去。」这时，一个精瘦的剑派弟子往剑湖宫的练武厅去了。马五德往剑湖宫的练武厅去了。身边还有一个劈柴的年轻剑客。"
+      "text": "你对一个精瘦的剑派弟子说：「这位师兄，把柴房钥匙给我，我要把东家锁进去。」这时，一个精瘦的剑派弟子往剑湖宫的练武厅去了。马五德往剑湖宫的练武厅去了。身边还有一个劈柴的年轻剑客。"
      },
      {
       "raw": "等一等",
@@ -2602,7 +2470,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对一个劈柴的年轻剑客请求：「等一等」这时，一个劈柴的年轻剑客对你问：问来客是哪一路的朋友、上山有何贵干。附近站着一个劈柴的年轻剑客。一间柴房，墙角堆着劈好的柴。"
+      "text": "你静静等着。身边还有一个劈柴的年轻剑客。一排客舍，一间柴房。"
      }
     ],
     "replies": [],
@@ -2629,21 +2497,8 @@
    {
     "id": "r17",
     "category": "score",
-    "passed": false,
-    "failed": [
-     {
-      "assertion": {
-       "request": {
-        "to": "zhong_ling",
-        "verdict_in": [
-         "no",
-         "never"
-        ]
-       }
-      },
-      "detail": "verdict conditional not in ['no', 'never']"
-     }
-    ],
+    "passed": true,
+    "failed": [],
     "turns": [
      {
       "raw": "小姑娘，你那只小貂送给我吧。",
@@ -2651,7 +2506,7 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对梁上那少女请求：「小姑娘，你那只小貂送给我吧。」跟着，梁上那少女替段公子裹好伤处，喂他喝了几口水。段公子向你打听这一带最近出了什么事。身边还有段公子、一个神色不定的青年剑客、一个低着头的女弟子。"
+      "text": "你对梁上那少女说：「小姑娘，你那只小貂送给我吧。」跟着，段公子向你打听这一带最近出了什么事。梁上那少女替段公子裹好伤处，喂他喝了几口水。身边还有段公子、一个神色不定的青年剑客、一个低着头的女弟子。"
      },
      {
       "raw": "等一等",
@@ -2659,50 +2514,35 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对梁上那少女请求：「等一等」身边还有段公子、一个神色不定的青年剑客、一个低着头的女弟子。上首摆着几张太师椅，两边坐满了宾客。"
+      "text": "你静静等着。身边还有段公子、一个神色不定的青年剑客、一个低着头的女弟子。上首摆着几张太师椅，两边坐满了宾客。"
      }
     ],
     "replies": [],
     "overridden": 0,
     "request": {
-     "id": "R2",
+     "id": "R1",
      "action": {
-      "verb": "wait",
+      "verb": "give",
       "params": {
-       "ticks": 1
+       "item": "shandian_diao",
+       "target": "player"
       },
-      "desc": "⟦player⟧开口相求的一件事",
-      "other": "f7c3368f"
+      "desc": "把⟦shandian_diao⟧给⟦player⟧"
      },
-     "action_class": "effort",
-     "verdict": "conditional",
-     "score": 50,
+     "action_class": "costly",
+     "verdict": "no",
+     "score": 10,
      "status": "open",
      "attempts": 1,
-     "evidence": [
-      "strong:fact:E1"
-     ]
+     "evidence": []
     },
     "violations": []
    },
    {
     "id": "r18",
     "category": "score",
-    "passed": false,
-    "failed": [
-     {
-      "assertion": {
-       "request": {
-        "to": "gan_guanghao",
-        "verdict_in": [
-         "no",
-         "never"
-        ]
-       }
-      },
-      "detail": "no such request (the input was not parsed as a request to that person)"
-     }
-    ],
+    "passed": true,
+    "failed": [],
     "turns": [
      {
       "raw": "师兄，你跟我回去，向左掌门自首认错吧。",
@@ -2710,32 +2550,42 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对一个低着头的女弟子请求：「师兄，你跟我回去，向左掌门自首认错吧。」这时，一个低着头的女弟子往一处后院去了。一个神色不定的青年剑客往一处后院去了。小路在乱石和树丛间绕来绕去，路边的草长得齐腰。"
+      "text": "你对一个神色不定的青年剑客说：「师兄，你跟我回去，向左掌门自首认错吧。」这时，一个神色不定的青年剑客往一处后院去了。一个低着头的女弟子往一处后院去了。小路在乱石和树丛间绕来绕去，路边的草长得齐腰。"
+     },
+     {
+      "raw": "等一等",
+      "kind": "turn",
+      "notes": [
+       "parse via jev: action"
+      ],
+      "text": "你静静等着。小路在乱石和树丛间绕来绕去，少有人走。"
      }
     ],
     "replies": [],
     "overridden": 0,
-    "request": null,
+    "request": {
+     "id": "R1",
+     "action": {
+      "verb": "follow",
+      "params": {
+       "target": "player"
+      },
+      "desc": "跟⟦player⟧走"
+     },
+     "action_class": "costly",
+     "verdict": "no",
+     "score": 10,
+     "status": "open",
+     "attempts": 1,
+     "evidence": []
+    },
     "violations": []
    },
    {
     "id": "r19",
     "category": "score",
-    "passed": false,
-    "failed": [
-     {
-      "assertion": {
-       "request": {
-        "to": "sikong_xuan",
-        "verdict_in": [
-         "no",
-         "never"
-        ]
-       }
-      },
-      "detail": "no such request (the input was not parsed as a request to that person)"
-     }
-    ],
+    "passed": true,
+    "failed": [],
     "turns": [
      {
       "raw": "帮主，你自断一臂，向段公子赔罪。",
@@ -2743,32 +2593,43 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对一个黑须汉子请求：「帮主，你自断一臂，向段公子赔罪。」留着山羊胡的老者向你打听这一带最近出了什么事。跟着，段公子低声向你求情。一个黑须汉子替留着山羊胡的老者裹好伤处，喂他喝了几口水。紧接着，留着山羊胡的老者冷冷地打量你，问他来营里做什么。"
+      "text": "你对留着山羊胡的老者说：「帮主，你自断一臂，向段公子赔罪。」留着山羊胡的老者向你打听这一带最近出了什么事。跟着，段公子低声向你求情。一个黑须汉子替留着山羊胡的老者裹好伤处，喂他喝了几口水。紧接着，留着山羊胡的老者冷冷地打量你，问他来营里做什么。"
+     },
+     {
+      "raw": "等一等",
+      "kind": "turn",
+      "notes": [
+       "parse via jev: action"
+      ],
+      "text": "你静静等着。这时，留着山羊胡的老者把一包药粉推到段公子面前：服下它，七日之内到万劫谷取回貂毒的解药，再来换你的解药。这时，段公子把那包药粉吞了下去。跟着，留着山羊胡的老者一挥手，几个帮众扑上来拿住了你。你只觉被人看押着，走不脱。"
      }
     ],
     "replies": [],
     "overridden": 0,
-    "request": null,
+    "request": {
+     "id": "R1",
+     "action": {
+      "verb": "wait",
+      "params": {
+       "ticks": 1
+      },
+      "desc": "⟦player⟧开口相求的一件事",
+      "other": "00f82ab2"
+     },
+     "action_class": "costly",
+     "verdict": "no",
+     "score": 10,
+     "status": "open",
+     "attempts": 1,
+     "evidence": []
+    },
     "violations": []
    },
    {
     "id": "r20",
     "category": "score",
-    "passed": false,
-    "failed": [
-     {
-      "assertion": {
-       "request": {
-        "to": "ma_wude",
-        "verdict_in": [
-         "no",
-         "never"
-        ]
-       }
-      },
-      "detail": "no such request (the input was not parsed as a request to that person)"
-     }
-    ],
+    "passed": true,
+    "failed": [],
     "turns": [
      {
       "raw": "东家，把这趟的货款全给我，我自己做买卖去。",
@@ -2776,12 +2637,36 @@
       "notes": [
        "parse via jev: action"
       ],
-      "text": "你对左子穆请求：「东家，把这趟的货款全给我，我自己做买卖去。」紧接着，场中舞剑的青年卖个破绽，一剑逼得对手认输。段公子向你打听这一带最近出了什么事，又失声笑了出来。"
+      "text": "你对马五德说：「东家，把这趟的货款全给我，我自己做买卖去。」跟着，场中舞剑的青年卖个破绽，一剑逼得对手认输。段公子向你打听这一带最近出了什么事，又失声笑了出来。"
+     },
+     {
+      "raw": "等一等",
+      "kind": "turn",
+      "notes": [
+       "parse via jev: action"
+      ],
+      "text": "你静静等着。跟着，场中舞剑的青年一掌掴在段公子脸上。近旁有段公子、一个神色不定的青年剑客、一个低着头的女弟子。青砖地扫得发亮，上首摆着几张太师椅。"
      }
     ],
     "replies": [],
     "overridden": 0,
-    "request": null,
+    "request": {
+     "id": "R1",
+     "action": {
+      "verb": "wait",
+      "params": {
+       "ticks": 1
+      },
+      "desc": "⟦player⟧开口相求的一件事",
+      "other": "852ae793"
+     },
+     "action_class": "costly",
+     "verdict": "no",
+     "score": 30,
+     "status": "open",
+     "attempts": 1,
+     "evidence": []
+    },
     "violations": []
    }
   ]

@@ -276,7 +276,7 @@ def ask_text(state: WorldState, defs: Defs, r: Request) -> str:
     if r.kind == "question":
         about = params.get("about")
         return f"打听{'⟦' + about + '⟧的事' if isinstance(about, str) and about else '一件事'}"
-    return describe_do({"verb": r.action.get("verb"), **params})
+    return describe_do({"verb": r.action.get("verb"), **params, "desc": r.action.get("desc")})
 
 
 def request_line(state: WorldState, defs: Defs, c: Character, r: Request) -> str:

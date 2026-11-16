@@ -85,7 +85,8 @@ def test_banned_words_digits_latin_markup() -> None:
     defs, state = fresh_world()
     ck = build_checker(state, defs)
     assert ck.check('你掏出手机看了看。') == ['banned:手机']
-    assert ck.check('你的经验值涨了。') == ['banned:经验', 'banned:经验值']
+    assert ck.check('你的经验值涨了。') == ['banned:经验值']
+    assert ck.check('他走江湖的经验不少。') == []  # 「经验」是寻常说法，不禁（P5）
     assert ck.check('他走了3步。') == ['digit']
     assert ck.check('他走了３步。') == ['digit']
     assert ck.check('一个NPC走过来。') == ['banned:NPC', 'latin']

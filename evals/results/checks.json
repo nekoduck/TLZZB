@@ -1,7 +1,7 @@
 {
  "suite": "checks",
  "meta": {
-  "generated": "2026-11-15T11:34:55+00:00",
+  "generated": "2026-11-16T10:56:27+00:00",
   "mock": false,
   "jev_model": "jev-1.14.0",
   "lang": "zh",
@@ -13,48 +13,48 @@
    "needs_thought": 0.6,
    "noul_yes": 0.6,
    "sample_floor": 0.15,
-   "narration_flag": 0.7
+   "narration_flag": 0.8
   },
   "claude_key": false,
   "jev_key": true
  },
  "summary": {
   "at_threshold": {
-   "threshold": 0.7,
+   "threshold": 0.8,
    "n": 100,
    "violating": 50,
    "clean": 50,
-   "detected": 50,
-   "false_kills": 11,
-   "detection": 1.0,
-   "false_kill": 0.22,
+   "detected": 48,
+   "false_kills": 4,
+   "detection": 0.96,
+   "false_kill": 0.08,
    "labels": {
     "extra": {
-     "tp": 19,
-     "fp": 13,
-     "fn": 0,
-     "tn": 68,
-     "precision": 0.59375,
-     "recall": 1.0,
-     "accuracy": 0.87
+     "tp": 16,
+     "fp": 8,
+     "fn": 3,
+     "tn": 73,
+     "precision": 0.6666666666666666,
+     "recall": 0.8421052631578947,
+     "accuracy": 0.89
     },
     "mind": {
-     "tp": 15,
+     "tp": 14,
      "fp": 0,
-     "fn": 0,
+     "fn": 1,
      "tn": 85,
      "precision": 1.0,
-     "recall": 1.0,
-     "accuracy": 1.0
+     "recall": 0.9333333333333333,
+     "accuracy": 0.99
     },
     "puppet": {
      "tp": 17,
-     "fp": 13,
+     "fp": 5,
      "fn": 0,
-     "tn": 70,
-     "precision": 0.5666666666666667,
+     "tn": 78,
+     "precision": 0.7727272727272727,
      "recall": 1.0,
-     "accuracy": 0.87
+     "accuracy": 0.95
     }
    }
   },
@@ -71,12 +71,12 @@
     "labels": {
      "extra": {
       "tp": 19,
-      "fp": 45,
+      "fp": 43,
       "fn": 0,
-      "tn": 36,
-      "precision": 0.296875,
+      "tn": 38,
+      "precision": 0.3064516129032258,
       "recall": 1.0,
-      "accuracy": 0.55
+      "accuracy": 0.57
      },
      "mind": {
       "tp": 15,
@@ -104,9 +104,9 @@
     "violating": 50,
     "clean": 50,
     "detected": 50,
-    "false_kills": 23,
+    "false_kills": 24,
     "detection": 1.0,
-    "false_kill": 0.46,
+    "false_kill": 0.48,
     "labels": {
      "extra": {
       "tp": 19,
@@ -128,12 +128,12 @@
      },
      "puppet": {
       "tp": 17,
-      "fp": 31,
+      "fp": 34,
       "fn": 0,
-      "tn": 52,
-      "precision": 0.3541666666666667,
+      "tn": 49,
+      "precision": 0.3333333333333333,
       "recall": 1.0,
-      "accuracy": 0.69
+      "accuracy": 0.66
      }
     }
    },
@@ -143,18 +143,18 @@
     "violating": 50,
     "clean": 50,
     "detected": 50,
-    "false_kills": 18,
+    "false_kills": 19,
     "detection": 1.0,
-    "false_kill": 0.36,
+    "false_kill": 0.38,
     "labels": {
      "extra": {
       "tp": 19,
-      "fp": 25,
+      "fp": 26,
       "fn": 0,
-      "tn": 56,
-      "precision": 0.4318181818181818,
+      "tn": 55,
+      "precision": 0.4222222222222222,
       "recall": 1.0,
-      "accuracy": 0.75
+      "accuracy": 0.74
      },
      "mind": {
       "tp": 15,
@@ -167,12 +167,12 @@
      },
      "puppet": {
       "tp": 17,
-      "fp": 27,
+      "fp": 25,
       "fn": 0,
-      "tn": 56,
-      "precision": 0.38636363636363635,
+      "tn": 58,
+      "precision": 0.40476190476190477,
       "recall": 1.0,
-      "accuracy": 0.73
+      "accuracy": 0.75
      }
     }
    },
@@ -182,18 +182,18 @@
     "violating": 50,
     "clean": 50,
     "detected": 50,
-    "false_kills": 14,
+    "false_kills": 12,
     "detection": 1.0,
-    "false_kill": 0.28,
+    "false_kill": 0.24,
     "labels": {
      "extra": {
       "tp": 19,
-      "fp": 20,
+      "fp": 18,
       "fn": 0,
-      "tn": 61,
-      "precision": 0.48717948717948717,
+      "tn": 63,
+      "precision": 0.5135135135135135,
       "recall": 1.0,
-      "accuracy": 0.8
+      "accuracy": 0.82
      },
      "mind": {
       "tp": 15,
@@ -206,12 +206,12 @@
      },
      "puppet": {
       "tp": 17,
-      "fp": 17,
+      "fp": 19,
       "fn": 0,
-      "tn": 66,
-      "precision": 0.5,
+      "tn": 64,
+      "precision": 0.4722222222222222,
       "recall": 1.0,
-      "accuracy": 0.83
+      "accuracy": 0.81
      }
     }
    },
@@ -221,9 +221,9 @@
     "violating": 50,
     "clean": 50,
     "detected": 50,
-    "false_kills": 11,
+    "false_kills": 10,
     "detection": 1.0,
-    "false_kill": 0.22,
+    "false_kill": 0.2,
     "labels": {
      "extra": {
       "tp": 19,
@@ -245,12 +245,12 @@
      },
      "puppet": {
       "tp": 17,
-      "fp": 13,
+      "fp": 14,
       "fn": 0,
-      "tn": 70,
-      "precision": 0.5666666666666667,
+      "tn": 69,
+      "precision": 0.5483870967741935,
       "recall": 1.0,
-      "accuracy": 0.87
+      "accuracy": 0.86
      }
     }
    },
@@ -265,12 +265,12 @@
     "false_kill": 0.14,
     "labels": {
      "extra": {
-      "tp": 18,
-      "fp": 10,
-      "fn": 1,
-      "tn": 71,
-      "precision": 0.6428571428571429,
-      "recall": 0.9473684210526315,
+      "tp": 19,
+      "fp": 11,
+      "fn": 0,
+      "tn": 70,
+      "precision": 0.6333333333333333,
+      "recall": 1.0,
       "accuracy": 0.89
      },
      "mind": {
@@ -284,12 +284,12 @@
      },
      "puppet": {
       "tp": 17,
-      "fp": 10,
+      "fp": 9,
       "fn": 0,
-      "tn": 73,
-      "precision": 0.6296296296296297,
+      "tn": 74,
+      "precision": 0.6538461538461539,
       "recall": 1.0,
-      "accuracy": 0.9
+      "accuracy": 0.91
      }
     }
    },
@@ -299,18 +299,18 @@
     "violating": 50,
     "clean": 50,
     "detected": 48,
-    "false_kills": 3,
+    "false_kills": 4,
     "detection": 0.96,
-    "false_kill": 0.06,
+    "false_kill": 0.08,
     "labels": {
      "extra": {
-      "tp": 17,
-      "fp": 7,
-      "fn": 2,
-      "tn": 74,
-      "precision": 0.7083333333333334,
-      "recall": 0.8947368421052632,
-      "accuracy": 0.91
+      "tp": 16,
+      "fp": 8,
+      "fn": 3,
+      "tn": 73,
+      "precision": 0.6666666666666666,
+      "recall": 0.8421052631578947,
+      "accuracy": 0.89
      },
      "mind": {
       "tp": 14,
@@ -337,19 +337,19 @@
     "n": 100,
     "violating": 50,
     "clean": 50,
-    "detected": 44,
+    "detected": 43,
     "false_kills": 2,
-    "detection": 0.88,
+    "detection": 0.86,
     "false_kill": 0.04,
     "labels": {
      "extra": {
-      "tp": 14,
+      "tp": 13,
       "fp": 5,
-      "fn": 5,
+      "fn": 6,
       "tn": 76,
-      "precision": 0.7368421052631579,
-      "recall": 0.7368421052631579,
-      "accuracy": 0.9
+      "precision": 0.7222222222222222,
+      "recall": 0.6842105263157895,
+      "accuracy": 0.89
      },
      "mind": {
       "tp": 13,
@@ -362,12 +362,12 @@
      },
      "puppet": {
       "tp": 15,
-      "fp": 4,
+      "fp": 3,
       "fn": 2,
-      "tn": 79,
-      "precision": 0.7894736842105263,
+      "tn": 80,
+      "precision": 0.8333333333333334,
       "recall": 0.8823529411764706,
-      "accuracy": 0.94
+      "accuracy": 0.95
      }
     }
    },
@@ -376,28 +376,28 @@
     "n": 100,
     "violating": 50,
     "clean": 50,
-    "detected": 33,
-    "false_kills": 1,
-    "detection": 0.66,
-    "false_kill": 0.02,
+    "detected": 30,
+    "false_kills": 0,
+    "detection": 0.6,
+    "false_kill": 0.0,
     "labels": {
      "extra": {
-      "tp": 10,
-      "fp": 4,
-      "fn": 9,
-      "tn": 77,
-      "precision": 0.7142857142857143,
-      "recall": 0.5263157894736842,
-      "accuracy": 0.87
+      "tp": 8,
+      "fp": 3,
+      "fn": 11,
+      "tn": 78,
+      "precision": 0.7272727272727273,
+      "recall": 0.42105263157894735,
+      "accuracy": 0.86
      },
      "mind": {
-      "tp": 11,
+      "tp": 10,
       "fp": 0,
-      "fn": 4,
+      "fn": 5,
       "tn": 85,
       "precision": 1.0,
-      "recall": 0.7333333333333333,
-      "accuracy": 0.96
+      "recall": 0.6666666666666666,
+      "accuracy": 0.95
      },
      "puppet": {
       "tp": 12,
@@ -417,18 +417,18 @@
    "violating": 50,
    "clean": 50,
    "detected": 48,
-   "false_kills": 3,
+   "false_kills": 4,
    "detection": 0.96,
-   "false_kill": 0.06,
+   "false_kill": 0.08,
    "labels": {
     "extra": {
-     "tp": 17,
-     "fp": 7,
-     "fn": 2,
-     "tn": 74,
-     "precision": 0.7083333333333334,
-     "recall": 0.8947368421052632,
-     "accuracy": 0.91
+     "tp": 16,
+     "fp": 8,
+     "fn": 3,
+     "tn": 73,
+     "precision": 0.6666666666666666,
+     "recall": 0.8421052631578947,
+     "accuracy": 0.89
     },
     "mind": {
      "tp": 14,
@@ -452,25 +452,25 @@
   },
   "failed": 0,
   "latency": {
-   "median_s": 0.09037239749977743,
-   "p95_s": 0.363043422550345
+   "median_s": 0.09472824099975696,
+   "p95_s": 0.43663931444980336
   }
  },
  "gates": [
   {
    "name": "J5 核对（7.12）",
-   "passed": false,
-   "detail": "门槛 0.70：检出率 100.0%（50/50），误杀率 22.0%（11/50）；要求检出不低于 80%、误杀不高于 10%。 扫描里过闸且检出最高的门槛：0.80（检出 96.0%，误杀 6.0%）。",
+   "passed": true,
+   "detail": "门槛 0.80：检出率 96.0%（48/50），误杀率 8.0%（4/50）；要求检出不低于 80%、误杀不高于 10%。 扫描里过闸且检出最高的门槛：0.80（检出 96.0%，误杀 8.0%）。",
    "fallback": "只留字符串检查（route.check = 'rules_only'），并把 C3 的长度上限调低"
   }
  ],
  "skipped": [],
  "notes": [
-  "J5 请求时延中位 90 ms、P95 363 ms；没答上来 0 条。"
+  "J5 请求时延中位 95 ms、P95 437 ms；没答上来 0 条。"
  ],
  "tables": [
   {
-   "title": "门槛 narration_flag = 0.70",
+   "title": "门槛 narration_flag = 0.80",
    "headers": [
     "指标",
     "值"
@@ -478,11 +478,11 @@
    "rows": [
     [
      "违规句检出率（至少一项过门槛）",
-     "100.0% (50/50)"
+     "96.0% (48/50)"
     ],
     [
      "干净句误杀率（任一项过门槛）",
-     "22.0% (11/50)"
+     "8.0% (4/50)"
     ]
    ],
    "note": ""
@@ -502,33 +502,33 @@
    "rows": [
     [
      "extra（多写）",
-     "59.4%",
-     "100.0%",
-     "87.0%",
-     "19",
-     "13",
-     "0",
-     "68"
+     "66.7%",
+     "84.2%",
+     "89.0%",
+     "16",
+     "8",
+     "3",
+     "73"
     ],
     [
      "mind（读心）",
      "100.0%",
-     "100.0%",
-     "100.0%",
-     "15",
+     "93.3%",
+     "99.0%",
+     "14",
      "0",
-     "0",
+     "1",
      "85"
     ],
     [
      "puppet（替玩家做主）",
-     "56.7%",
+     "77.3%",
      "100.0%",
-     "87.0%",
+     "95.0%",
      "17",
-     "13",
+     "5",
      "0",
-     "70"
+     "78"
     ]
    ],
    "note": ""
@@ -551,25 +551,25 @@
     [
      "0.55",
      "100.0% (50/50)",
-     "46.0% (23/50)",
+     "48.0% (24/50)",
      "否"
     ],
     [
      "0.60",
      "100.0% (50/50)",
-     "36.0% (18/50)",
+     "38.0% (19/50)",
      "否"
     ],
     [
      "0.65",
      "100.0% (50/50)",
-     "28.0% (14/50)",
+     "24.0% (12/50)",
      "否"
     ],
     [
-     "0.70（现用）",
+     "0.70",
      "100.0% (50/50)",
-     "22.0% (11/50)",
+     "20.0% (10/50)",
      "否"
     ],
     [
@@ -579,21 +579,21 @@
      "否"
     ],
     [
-     "0.80",
+     "0.80（现用）",
      "96.0% (48/50)",
-     "6.0% (3/50)",
+     "8.0% (4/50)",
      "是"
     ],
     [
      "0.85",
-     "88.0% (44/50)",
+     "86.0% (43/50)",
      "4.0% (2/50)",
      "是"
     ],
     [
      "0.90",
-     "66.0% (33/50)",
-     "2.0% (1/50)",
+     "60.0% (30/50)",
+     "0.0% (0/50)",
      "否"
     ]
    ],
@@ -606,7 +606,18 @@
     "标注",
     "各题的概率"
    ],
-   "rows": [],
+   "rows": [
+    [
+     "s059",
+     "mind",
+     "extra 0.76、mind 0.77、puppet 0.62"
+    ],
+    [
+     "s098",
+     "extra",
+     "extra 0.77、mind 0.10、puppet 0.71"
+    ]
+   ],
    "note": ""
   },
   {
@@ -619,58 +630,23 @@
    "rows": [
     [
      "s015",
-     "extra、puppet",
-     "extra 0.91、mind 0.16、puppet 0.80"
-    ],
-    [
-     "s027",
-     "puppet",
-     "extra 0.55、mind 0.18、puppet 0.78"
-    ],
-    [
-     "s034",
-     "puppet",
-     "extra 0.58、mind 0.21、puppet 0.74"
-    ],
-    [
-     "s035",
-     "puppet",
-     "extra 0.58、mind 0.05、puppet 0.77"
+     "extra",
+     "extra 0.90、mind 0.15、puppet 0.78"
     ],
     [
      "s044",
      "puppet",
-     "extra 0.54、mind 0.02、puppet 0.88"
+     "extra 0.54、mind 0.01、puppet 0.90"
     ],
     [
      "s045",
      "extra",
-     "extra 0.80、mind 0.02、puppet 0.66"
+     "extra 0.82、mind 0.02、puppet 0.71"
     ],
     [
      "s048",
      "extra",
-     "extra 0.84、mind 0.02、puppet 0.68"
-    ],
-    [
-     "s052",
-     "puppet",
-     "extra 0.37、mind 0.13、puppet 0.74"
-    ],
-    [
-     "s060",
-     "puppet",
-     "extra 0.52、mind 0.02、puppet 0.79"
-    ],
-    [
-     "s089",
-     "extra",
-     "extra 0.72、mind 0.05、puppet 0.43"
-    ],
-    [
-     "s093",
-     "puppet",
-     "extra 0.49、mind 0.03、puppet 0.73"
+     "extra 0.85、mind 0.02、puppet 0.73"
     ]
    ],
    "note": ""
@@ -686,12 +662,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.43,
+    "extra": 0.39,
     "mind": 0.14,
-    "puppet": 0.23
+    "puppet": 0.24
    },
    "failed": false,
-   "seconds": 0.3635369199996603
+   "seconds": 0.49655618599990703
   },
   {
    "id": "s002",
@@ -702,12 +678,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.51,
-    "mind": 0.17,
-    "puppet": 0.36
+    "extra": 0.54,
+    "mind": 0.16,
+    "puppet": 0.34
    },
    "failed": false,
-   "seconds": 0.3856542640000953
+   "seconds": 0.46268378300010227
   },
   {
    "id": "s003",
@@ -718,12 +694,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.39,
-    "mind": 0.1,
-    "puppet": 0.4
+    "extra": 0.34,
+    "mind": 0.11,
+    "puppet": 0.3
    },
    "failed": false,
-   "seconds": 0.363017449000381
+   "seconds": 0.41792192000002615
   },
   {
    "id": "s004",
@@ -734,12 +710,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.65,
-    "mind": 0.91,
-    "puppet": 0.49
+    "extra": 0.68,
+    "mind": 0.92,
+    "puppet": 0.52
    },
    "failed": false,
-   "seconds": 0.3212385789997825
+   "seconds": 0.5252949679997982
   },
   {
    "id": "s005",
@@ -750,12 +726,12 @@
     "puppet": true
    },
    "p": {
-    "extra": 0.52,
+    "extra": 0.55,
     "mind": 0.13,
-    "puppet": 0.9
+    "puppet": 0.91
    },
    "failed": false,
-   "seconds": 0.4672665800003415
+   "seconds": 0.43817104600020684
   },
   {
    "id": "s006",
@@ -768,10 +744,10 @@
    "p": {
     "extra": 0.95,
     "mind": 0.12,
-    "puppet": 0.65
+    "puppet": 0.58
    },
    "failed": false,
-   "seconds": 0.4675307930001509
+   "seconds": 0.45529608400011057
   },
   {
    "id": "s007",
@@ -784,10 +760,10 @@
    "p": {
     "extra": 0.47,
     "mind": 0.94,
-    "puppet": 0.48
+    "puppet": 0.5
    },
    "failed": false,
-   "seconds": 0.3553548380000393
+   "seconds": 0.43193120900014037
   },
   {
    "id": "s008",
@@ -799,11 +775,11 @@
    },
    "p": {
     "extra": 0.58,
-    "mind": 0.17,
+    "mind": 0.18,
     "puppet": 0.83
    },
    "failed": false,
-   "seconds": 0.3675727630002257
+   "seconds": 0.4365586969997821
   },
   {
    "id": "s009",
@@ -814,12 +790,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.58,
-    "mind": 0.42,
-    "puppet": 0.51
+    "extra": 0.59,
+    "mind": 0.48,
+    "puppet": 0.52
    },
    "failed": false,
-   "seconds": 0.1509319870001491
+   "seconds": 0.11892010899964589
   },
   {
    "id": "s010",
@@ -830,12 +806,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.36,
-    "mind": 0.06,
-    "puppet": 0.6
+    "extra": 0.32,
+    "mind": 0.07,
+    "puppet": 0.61
    },
    "failed": false,
-   "seconds": 0.14652309699977195
+   "seconds": 0.12363915600008113
   },
   {
    "id": "s011",
@@ -846,12 +822,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.55,
+    "extra": 0.51,
     "mind": 0.09,
-    "puppet": 0.49
+    "puppet": 0.45
    },
    "failed": false,
-   "seconds": 0.1113547859999926
+   "seconds": 0.08821696699988024
   },
   {
    "id": "s012",
@@ -862,12 +838,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.68,
-    "mind": 0.94,
-    "puppet": 0.53
+    "extra": 0.67,
+    "mind": 0.93,
+    "puppet": 0.51
    },
    "failed": false,
-   "seconds": 0.10542805499972019
+   "seconds": 0.10498981899991122
   },
   {
    "id": "s013",
@@ -878,12 +854,12 @@
     "puppet": true
    },
    "p": {
-    "extra": 0.54,
+    "extra": 0.47,
     "mind": 0.09,
     "puppet": 0.84
    },
    "failed": false,
-   "seconds": 0.13293360099987694
+   "seconds": 0.059412448999864864
   },
   {
    "id": "s014",
@@ -894,12 +870,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.92,
+    "extra": 0.93,
     "mind": 0.09,
-    "puppet": 0.87
+    "puppet": 0.85
    },
    "failed": false,
-   "seconds": 0.09043782999970063
+   "seconds": 0.1072133939997002
   },
   {
    "id": "s015",
@@ -910,12 +886,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.91,
-    "mind": 0.16,
-    "puppet": 0.8
+    "extra": 0.9,
+    "mind": 0.15,
+    "puppet": 0.78
    },
    "failed": false,
-   "seconds": 0.1292172240000582
+   "seconds": 0.13997820199983835
   },
   {
    "id": "s016",
@@ -926,12 +902,12 @@
     "puppet": true
    },
    "p": {
-    "extra": 0.66,
-    "mind": 0.07,
+    "extra": 0.68,
+    "mind": 0.08,
     "puppet": 0.91
    },
    "failed": false,
-   "seconds": 0.08234455000001617
+   "seconds": 0.09431333099973926
   },
   {
    "id": "s017",
@@ -942,12 +918,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.87,
+    "extra": 0.88,
     "mind": 0.85,
     "puppet": 0.85
    },
    "failed": false,
-   "seconds": 0.10665079799991872
+   "seconds": 0.0760637130001669
   },
   {
    "id": "s018",
@@ -958,12 +934,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.19,
+    "extra": 0.22,
     "mind": 0.04,
-    "puppet": 0.5
+    "puppet": 0.54
    },
    "failed": false,
-   "seconds": 0.09253229499972804
+   "seconds": 0.10440939399995841
   },
   {
    "id": "s019",
@@ -974,12 +950,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.2,
-    "mind": 0.08,
-    "puppet": 0.19
+    "extra": 0.19,
+    "mind": 0.09,
+    "puppet": 0.24
    },
    "failed": false,
-   "seconds": 0.09197644000005312
+   "seconds": 0.09585016699975313
   },
   {
    "id": "s020",
@@ -990,12 +966,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.77,
-    "mind": 0.91,
-    "puppet": 0.56
+    "extra": 0.76,
+    "mind": 0.89,
+    "puppet": 0.55
    },
    "failed": false,
-   "seconds": 0.08922322300031738
+   "seconds": 0.0972799030000715
   },
   {
    "id": "s021",
@@ -1006,12 +982,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.27,
+    "extra": 0.24,
     "mind": 0.05,
     "puppet": 0.29
    },
    "failed": false,
-   "seconds": 0.07608093699991514
+   "seconds": 0.0905849680002575
   },
   {
    "id": "s022",
@@ -1027,7 +1003,7 @@
     "puppet": 0.95
    },
    "failed": false,
-   "seconds": 0.1054055269996752
+   "seconds": 0.07640541099999609
   },
   {
    "id": "s023",
@@ -1040,10 +1016,10 @@
    "p": {
     "extra": 0.52,
     "mind": 0.94,
-    "puppet": 0.65
+    "puppet": 0.59
    },
    "failed": false,
-   "seconds": 0.08932617999971626
+   "seconds": 0.08846177000032185
   },
   {
    "id": "s024",
@@ -1054,12 +1030,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.94,
-    "mind": 0.06,
-    "puppet": 0.45
+    "extra": 0.92,
+    "mind": 0.07,
+    "puppet": 0.41
    },
    "failed": false,
-   "seconds": 0.09204384100030438
+   "seconds": 0.0925080470001376
   },
   {
    "id": "s025",
@@ -1070,12 +1046,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.35,
+    "extra": 0.38,
     "mind": 0.26,
-    "puppet": 0.54
+    "puppet": 0.57
    },
    "failed": false,
-   "seconds": 0.06882109000025594
+   "seconds": 0.08186432699994839
   },
   {
    "id": "s026",
@@ -1086,12 +1062,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.45,
+    "extra": 0.47,
     "mind": 0.03,
-    "puppet": 0.52
+    "puppet": 0.55
    },
    "failed": false,
-   "seconds": 0.09238111100012247
+   "seconds": 0.07716785699994944
   },
   {
    "id": "s027",
@@ -1102,12 +1078,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.55,
+    "extra": 0.53,
     "mind": 0.18,
-    "puppet": 0.78
+    "puppet": 0.76
    },
    "failed": false,
-   "seconds": 0.08622655999988638
+   "seconds": 0.11685325200005536
   },
   {
    "id": "s028",
@@ -1119,11 +1095,11 @@
    },
    "p": {
     "extra": 0.22,
-    "mind": 0.19,
-    "puppet": 0.18
+    "mind": 0.18,
+    "puppet": 0.21
    },
    "failed": false,
-   "seconds": 0.07993559699980324
+   "seconds": 0.1237758809998013
   },
   {
    "id": "s029",
@@ -1134,12 +1110,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.83,
+    "extra": 0.82,
     "mind": 0.89,
-    "puppet": 0.53
+    "puppet": 0.57
    },
    "failed": false,
-   "seconds": 0.11449426199988011
+   "seconds": 0.08662673099979656
   },
   {
    "id": "s030",
@@ -1151,11 +1127,11 @@
    },
    "p": {
     "extra": 0.52,
-    "mind": 0.12,
-    "puppet": 0.42
+    "mind": 0.1,
+    "puppet": 0.43
    },
    "failed": false,
-   "seconds": 0.07042502800004513
+   "seconds": 0.10341134000009333
   },
   {
    "id": "s031",
@@ -1166,12 +1142,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.8,
-    "mind": 0.16,
-    "puppet": 0.54
+    "extra": 0.81,
+    "mind": 0.17,
+    "puppet": 0.57
    },
    "failed": false,
-   "seconds": 0.09304327700010617
+   "seconds": 0.11360163900008047
   },
   {
    "id": "s032",
@@ -1182,12 +1158,12 @@
     "puppet": true
    },
    "p": {
-    "extra": 0.71,
+    "extra": 0.66,
     "mind": 0.22,
     "puppet": 0.88
    },
    "failed": false,
-   "seconds": 0.08455942000000505
+   "seconds": 0.12029405000021143
   },
   {
    "id": "s033",
@@ -1199,11 +1175,11 @@
    },
    "p": {
     "extra": 0.95,
-    "mind": 0.2,
-    "puppet": 0.62
+    "mind": 0.23,
+    "puppet": 0.58
    },
    "failed": false,
-   "seconds": 0.10877452100021401
+   "seconds": 0.1108778530001473
   },
   {
    "id": "s034",
@@ -1214,12 +1190,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.58,
-    "mind": 0.21,
-    "puppet": 0.74
+    "extra": 0.56,
+    "mind": 0.2,
+    "puppet": 0.72
    },
    "failed": false,
-   "seconds": 0.10410015799971006
+   "seconds": 0.1634408509999048
   },
   {
    "id": "s035",
@@ -1230,12 +1206,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.58,
+    "extra": 0.6,
     "mind": 0.05,
-    "puppet": 0.77
+    "puppet": 0.76
    },
    "failed": false,
-   "seconds": 0.10662546999992628
+   "seconds": 0.16378594300022087
   },
   {
    "id": "s036",
@@ -1246,12 +1222,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.28,
-    "mind": 0.13,
-    "puppet": 0.19
+    "extra": 0.31,
+    "mind": 0.1,
+    "puppet": 0.21
    },
    "failed": false,
-   "seconds": 0.10993064500007677
+   "seconds": 0.08552199299992935
   },
   {
    "id": "s037",
@@ -1262,12 +1238,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.32,
+    "extra": 0.37,
     "mind": 0.13,
-    "puppet": 0.25
+    "puppet": 0.27
    },
    "failed": false,
-   "seconds": 0.10007072500002323
+   "seconds": 0.130547579999984
   },
   {
    "id": "s038",
@@ -1278,12 +1254,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.59,
+    "extra": 0.63,
     "mind": 0.93,
     "puppet": 0.44
    },
    "failed": false,
-   "seconds": 0.08586944199987556
+   "seconds": 0.08224880600027973
   },
   {
    "id": "s039",
@@ -1299,7 +1275,7 @@
     "puppet": 0.13
    },
    "failed": false,
-   "seconds": 0.09282461599968883
+   "seconds": 0.08006213999988177
   },
   {
    "id": "s040",
@@ -1310,12 +1286,12 @@
     "puppet": true
    },
    "p": {
-    "extra": 0.47,
-    "mind": 0.09,
-    "puppet": 0.94
+    "extra": 0.48,
+    "mind": 0.08,
+    "puppet": 0.95
    },
    "failed": false,
-   "seconds": 0.07761529799972777
+   "seconds": 0.06958321000001888
   },
   {
    "id": "s041",
@@ -1326,12 +1302,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.93,
+    "extra": 0.94,
     "mind": 0.09,
     "puppet": 0.24
    },
    "failed": false,
-   "seconds": 0.09633756299990637
+   "seconds": 0.07832077600005505
   },
   {
    "id": "s042",
@@ -1342,12 +1318,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.77,
-    "mind": 0.94,
-    "puppet": 0.47
+    "extra": 0.78,
+    "mind": 0.93,
+    "puppet": 0.4
    },
    "failed": false,
-   "seconds": 0.08788825000010547
+   "seconds": 0.06846463100009714
   },
   {
    "id": "s043",
@@ -1358,12 +1334,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.61,
+    "extra": 0.65,
     "mind": 0.22,
-    "puppet": 0.38
+    "puppet": 0.4
    },
    "failed": false,
-   "seconds": 0.10183871200024441
+   "seconds": 0.06341361700015113
   },
   {
    "id": "s044",
@@ -1375,11 +1351,11 @@
    },
    "p": {
     "extra": 0.54,
-    "mind": 0.02,
-    "puppet": 0.88
+    "mind": 0.01,
+    "puppet": 0.9
    },
    "failed": false,
-   "seconds": 0.08642556599988893
+   "seconds": 0.137059894000231
   },
   {
    "id": "s045",
@@ -1390,12 +1366,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.8,
+    "extra": 0.82,
     "mind": 0.02,
-    "puppet": 0.66
+    "puppet": 0.71
    },
    "failed": false,
-   "seconds": 0.08889851000003546
+   "seconds": 0.07757352199996603
   },
   {
    "id": "s046",
@@ -1411,7 +1387,7 @@
     "puppet": 0.94
    },
    "failed": false,
-   "seconds": 0.1059520040003008
+   "seconds": 0.09647244600000704
   },
   {
    "id": "s047",
@@ -1424,10 +1400,10 @@
    "p": {
     "extra": 0.97,
     "mind": 0.05,
-    "puppet": 0.57
+    "puppet": 0.61
    },
    "failed": false,
-   "seconds": 0.11284274599984201
+   "seconds": 0.11601294500042059
   },
   {
    "id": "s048",
@@ -1438,12 +1414,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.84,
+    "extra": 0.85,
     "mind": 0.02,
-    "puppet": 0.68
+    "puppet": 0.73
    },
    "failed": false,
-   "seconds": 0.08503503600013573
+   "seconds": 0.07555439599991587
   },
   {
    "id": "s049",
@@ -1454,12 +1430,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.95,
+    "extra": 0.96,
     "mind": 0.02,
-    "puppet": 0.65
+    "puppet": 0.66
    },
    "failed": false,
-   "seconds": 0.06759782400013137
+   "seconds": 0.1487862470003165
   },
   {
    "id": "s050",
@@ -1475,7 +1451,7 @@
     "puppet": 0.94
    },
    "failed": false,
-   "seconds": 0.06851406100031454
+   "seconds": 0.09766663200025505
   },
   {
    "id": "s051",
@@ -1486,12 +1462,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.52,
+    "extra": 0.51,
     "mind": 0.02,
     "puppet": 0.29
    },
    "failed": false,
-   "seconds": 0.10759486000006291
+   "seconds": 0.11353224200001932
   },
   {
    "id": "s052",
@@ -1502,12 +1478,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.37,
-    "mind": 0.13,
-    "puppet": 0.74
+    "extra": 0.42,
+    "mind": 0.12,
+    "puppet": 0.72
    },
    "failed": false,
-   "seconds": 0.08130507599980774
+   "seconds": 0.06682680099993377
   },
   {
    "id": "s053",
@@ -1518,12 +1494,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.33,
-    "mind": 0.24,
+    "extra": 0.34,
+    "mind": 0.26,
     "puppet": 0.37
    },
    "failed": false,
-   "seconds": 0.07879213300020638
+   "seconds": 0.13996716200017545
   },
   {
    "id": "s054",
@@ -1534,12 +1510,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.4,
+    "extra": 0.45,
     "mind": 0.93,
-    "puppet": 0.53
+    "puppet": 0.58
    },
    "failed": false,
-   "seconds": 0.07923674999983632
+   "seconds": 0.11234405699997296
   },
   {
    "id": "s055",
@@ -1550,12 +1526,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.87,
-    "mind": 0.14,
+    "extra": 0.88,
+    "mind": 0.13,
     "puppet": 0.69
    },
    "failed": false,
-   "seconds": 0.10875205799993637
+   "seconds": 0.10307561600029658
   },
   {
    "id": "s056",
@@ -1566,12 +1542,12 @@
     "puppet": true
    },
    "p": {
-    "extra": 0.51,
+    "extra": 0.5,
     "mind": 0.15,
-    "puppet": 0.91
+    "puppet": 0.9
    },
    "failed": false,
-   "seconds": 0.09957988899986958
+   "seconds": 0.09390235599994412
   },
   {
    "id": "s057",
@@ -1582,12 +1558,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.44,
-    "mind": 0.22,
+    "extra": 0.36,
+    "mind": 0.24,
     "puppet": 0.22
    },
    "failed": false,
-   "seconds": 0.09302267200018832
+   "seconds": 0.1198103629999423
   },
   {
    "id": "s058",
@@ -1598,12 +1574,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.57,
-    "mind": 0.11,
-    "puppet": 0.29
+    "extra": 0.61,
+    "mind": 0.12,
+    "puppet": 0.3
    },
    "failed": false,
-   "seconds": 0.09758554699965316
+   "seconds": 0.07533405000003768
   },
   {
    "id": "s059",
@@ -1614,12 +1590,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.75,
-    "mind": 0.76,
-    "puppet": 0.61
+    "extra": 0.76,
+    "mind": 0.77,
+    "puppet": 0.62
    },
    "failed": false,
-   "seconds": 0.101968713000133
+   "seconds": 0.10342998800024361
   },
   {
    "id": "s060",
@@ -1630,12 +1606,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.52,
+    "extra": 0.5,
     "mind": 0.02,
-    "puppet": 0.79
+    "puppet": 0.8
    },
    "failed": false,
-   "seconds": 0.08629676000009567
+   "seconds": 0.0865167729998575
   },
   {
    "id": "s061",
@@ -1646,12 +1622,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.28,
+    "extra": 0.29,
     "mind": 0.02,
-    "puppet": 0.17
+    "puppet": 0.18
    },
    "failed": false,
-   "seconds": 0.07070278399987728
+   "seconds": 0.09514315099977466
   },
   {
    "id": "s062",
@@ -1662,12 +1638,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.87,
+    "extra": 0.85,
     "mind": 0.04,
-    "puppet": 0.61
+    "puppet": 0.59
    },
    "failed": false,
-   "seconds": 0.13918617599983918
+   "seconds": 0.09234977999994953
   },
   {
    "id": "s063",
@@ -1678,12 +1654,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.82,
+    "extra": 0.79,
     "mind": 0.04,
-    "puppet": 0.88
+    "puppet": 0.87
    },
    "failed": false,
-   "seconds": 0.1133641610003906
+   "seconds": 0.08072185900027762
   },
   {
    "id": "s064",
@@ -1694,12 +1670,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.68,
+    "extra": 0.64,
     "mind": 0.02,
-    "puppet": 0.51
+    "puppet": 0.44
    },
    "failed": false,
-   "seconds": 0.08806162599967138
+   "seconds": 0.10704046599994399
   },
   {
    "id": "s065",
@@ -1710,12 +1686,12 @@
     "puppet": true
    },
    "p": {
-    "extra": 0.93,
+    "extra": 0.92,
     "mind": 0.03,
     "puppet": 0.94
    },
    "failed": false,
-   "seconds": 0.08899290399995152
+   "seconds": 0.09091740499980006
   },
   {
    "id": "s066",
@@ -1726,12 +1702,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.7,
+    "extra": 0.74,
     "mind": 0.02,
-    "puppet": 0.55
+    "puppet": 0.51
    },
    "failed": false,
-   "seconds": 0.08849396799996612
+   "seconds": 0.11215888600008839
   },
   {
    "id": "s067",
@@ -1742,12 +1718,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.47,
-    "mind": 0.02,
-    "puppet": 0.62
+    "extra": 0.46,
+    "mind": 0.03,
+    "puppet": 0.59
    },
    "failed": false,
-   "seconds": 0.12202417700018486
+   "seconds": 0.09350730799997109
   },
   {
    "id": "s068",
@@ -1758,12 +1734,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.36,
-    "mind": 0.2,
-    "puppet": 0.21
+    "extra": 0.37,
+    "mind": 0.17,
+    "puppet": 0.15
    },
    "failed": false,
-   "seconds": 0.1070257460000903
+   "seconds": 0.08127262400012114
   },
   {
    "id": "s069",
@@ -1774,12 +1750,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.22,
-    "mind": 0.36,
-    "puppet": 0.15
+    "extra": 0.21,
+    "mind": 0.38,
+    "puppet": 0.18
    },
    "failed": false,
-   "seconds": 0.09030696499985424
+   "seconds": 0.09206065699981991
   },
   {
    "id": "s070",
@@ -1790,12 +1766,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.38,
+    "extra": 0.37,
     "mind": 0.94,
-    "puppet": 0.44
+    "puppet": 0.38
    },
    "failed": false,
-   "seconds": 0.06704191899962098
+   "seconds": 0.09336433500038765
   },
   {
    "id": "s071",
@@ -1806,12 +1782,12 @@
     "puppet": true
    },
    "p": {
-    "extra": 0.63,
-    "mind": 0.16,
+    "extra": 0.57,
+    "mind": 0.15,
     "puppet": 0.95
    },
    "failed": false,
-   "seconds": 0.08483659800003807
+   "seconds": 0.09618636300001526
   },
   {
    "id": "s072",
@@ -1823,11 +1799,11 @@
    },
    "p": {
     "extra": 0.93,
-    "mind": 0.16,
-    "puppet": 0.27
+    "mind": 0.14,
+    "puppet": 0.3
    },
    "failed": false,
-   "seconds": 0.11277815199991892
+   "seconds": 0.1033705650002048
   },
   {
    "id": "s073",
@@ -1838,12 +1814,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.35,
-    "mind": 0.11,
-    "puppet": 0.46
+    "extra": 0.39,
+    "mind": 0.09,
+    "puppet": 0.43
    },
    "failed": false,
-   "seconds": 0.07092611699999907
+   "seconds": 0.07709840500001519
   },
   {
    "id": "s074",
@@ -1854,12 +1830,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.65,
+    "extra": 0.62,
     "mind": 0.09,
-    "puppet": 0.34
+    "puppet": 0.32
    },
    "failed": false,
-   "seconds": 0.06863578299999062
+   "seconds": 0.06782466200002091
   },
   {
    "id": "s075",
@@ -1870,12 +1846,12 @@
     "puppet": true
    },
    "p": {
-    "extra": 0.31,
-    "mind": 0.19,
+    "extra": 0.29,
+    "mind": 0.17,
     "puppet": 0.91
    },
    "failed": false,
-   "seconds": 0.08257294299983187
+   "seconds": 0.1292607370000951
   },
   {
    "id": "s076",
@@ -1886,12 +1862,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.34,
+    "extra": 0.37,
     "mind": 0.09,
-    "puppet": 0.34
+    "puppet": 0.4
    },
    "failed": false,
-   "seconds": 0.07529899400014983
+   "seconds": 0.09724283000014111
   },
   {
    "id": "s077",
@@ -1902,12 +1878,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.39,
+    "extra": 0.37,
     "mind": 0.13,
-    "puppet": 0.26
+    "puppet": 0.23
    },
    "failed": false,
-   "seconds": 0.0760945330002869
+   "seconds": 0.08927171899995301
   },
   {
    "id": "s078",
@@ -1918,12 +1894,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.65,
-    "mind": 0.24,
-    "puppet": 0.47
+    "extra": 0.56,
+    "mind": 0.21,
+    "puppet": 0.37
    },
    "failed": false,
-   "seconds": 0.12526845500042327
+   "seconds": 0.07625186100040082
   },
   {
    "id": "s079",
@@ -1934,12 +1910,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.66,
+    "extra": 0.61,
     "mind": 0.93,
-    "puppet": 0.36
+    "puppet": 0.33
    },
    "failed": false,
-   "seconds": 0.07843894600000567
+   "seconds": 0.08305188800022734
   },
   {
    "id": "s080",
@@ -1950,12 +1926,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.91,
-    "mind": 0.08,
-    "puppet": 0.62
+    "extra": 0.9,
+    "mind": 0.09,
+    "puppet": 0.67
    },
    "failed": false,
-   "seconds": 0.14144193099991753
+   "seconds": 0.08561277399985556
   },
   {
    "id": "s081",
@@ -1966,12 +1942,12 @@
     "puppet": true
    },
    "p": {
-    "extra": 0.48,
-    "mind": 0.12,
-    "puppet": 0.87
+    "extra": 0.46,
+    "mind": 0.13,
+    "puppet": 0.88
    },
    "failed": false,
-   "seconds": 0.08118250699999408
+   "seconds": 0.13638557400008722
   },
   {
    "id": "s082",
@@ -1982,12 +1958,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.41,
-    "mind": 0.25,
-    "puppet": 0.24
+    "extra": 0.42,
+    "mind": 0.27,
+    "puppet": 0.23
    },
    "failed": false,
-   "seconds": 0.08498245299961127
+   "seconds": 0.09162912600004347
   },
   {
    "id": "s083",
@@ -1998,12 +1974,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.68,
-    "mind": 0.87,
+    "extra": 0.7,
+    "mind": 0.88,
     "puppet": 0.53
    },
    "failed": false,
-   "seconds": 0.07698825799980114
+   "seconds": 0.10520770400034962
   },
   {
    "id": "s084",
@@ -2014,12 +1990,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.91,
-    "mind": 0.12,
+    "extra": 0.89,
+    "mind": 0.15,
     "puppet": 0.48
    },
    "failed": false,
-   "seconds": 0.08214436199978081
+   "seconds": 0.09290916700001617
   },
   {
    "id": "s085",
@@ -2030,12 +2006,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.49,
+    "extra": 0.54,
     "mind": 0.02,
-    "puppet": 0.55
+    "puppet": 0.61
    },
    "failed": false,
-   "seconds": 0.07889793599997574
+   "seconds": 0.10860076700009813
   },
   {
    "id": "s086",
@@ -2046,12 +2022,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.5,
+    "extra": 0.49,
     "mind": 0.03,
-    "puppet": 0.27
+    "puppet": 0.33
    },
    "failed": false,
-   "seconds": 0.08285837499988702
+   "seconds": 0.08488200800002232
   },
   {
    "id": "s087",
@@ -2062,12 +2038,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.87,
+    "extra": 0.88,
     "mind": 0.03,
     "puppet": 0.89
    },
    "failed": false,
-   "seconds": 0.07379250500025591
+   "seconds": 0.11091377800039481
   },
   {
    "id": "s088",
@@ -2078,12 +2054,12 @@
     "puppet": true
    },
    "p": {
-    "extra": 0.7,
+    "extra": 0.73,
     "mind": 0.03,
     "puppet": 0.91
    },
    "failed": false,
-   "seconds": 0.07839841499981048
+   "seconds": 0.08146239300003799
   },
   {
    "id": "s089",
@@ -2094,12 +2070,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.72,
-    "mind": 0.05,
-    "puppet": 0.43
+    "extra": 0.64,
+    "mind": 0.06,
+    "puppet": 0.45
    },
    "failed": false,
-   "seconds": 0.11306148299991037
+   "seconds": 0.08774100299979182
   },
   {
    "id": "s090",
@@ -2110,12 +2086,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.88,
-    "mind": 0.05,
+    "extra": 0.89,
+    "mind": 0.04,
     "puppet": 0.62
    },
    "failed": false,
-   "seconds": 0.08119048099979409
+   "seconds": 0.10187467500009006
   },
   {
    "id": "s091",
@@ -2126,12 +2102,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.59,
+    "extra": 0.61,
     "mind": 0.02,
     "puppet": 0.67
    },
    "failed": false,
-   "seconds": 0.08111682900016604
+   "seconds": 0.08988932000011118
   },
   {
    "id": "s092",
@@ -2142,12 +2118,12 @@
     "puppet": true
    },
    "p": {
-    "extra": 0.73,
-    "mind": 0.03,
+    "extra": 0.77,
+    "mind": 0.02,
     "puppet": 0.93
    },
    "failed": false,
-   "seconds": 0.11935919500001546
+   "seconds": 0.0787165830001868
   },
   {
    "id": "s093",
@@ -2158,12 +2134,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.49,
+    "extra": 0.46,
     "mind": 0.03,
-    "puppet": 0.73
+    "puppet": 0.68
    },
    "failed": false,
-   "seconds": 0.09047749499995916
+   "seconds": 0.10299313899986373
   },
   {
    "id": "s094",
@@ -2174,12 +2150,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.3,
-    "mind": 0.04,
-    "puppet": 0.4
+    "extra": 0.29,
+    "mind": 0.03,
+    "puppet": 0.42
    },
    "failed": false,
-   "seconds": 0.0878964490002545
+   "seconds": 0.199392899999566
   },
   {
    "id": "s095",
@@ -2190,12 +2166,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.39,
+    "extra": 0.43,
     "mind": 0.03,
-    "puppet": 0.58
+    "puppet": 0.49
    },
    "failed": false,
-   "seconds": 0.08587254299982305
+   "seconds": 0.08677543199974025
   },
   {
    "id": "s096",
@@ -2206,12 +2182,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.52,
-    "mind": 0.93,
-    "puppet": 0.43
+    "extra": 0.51,
+    "mind": 0.94,
+    "puppet": 0.46
    },
    "failed": false,
-   "seconds": 0.09802088700007516
+   "seconds": 0.09335716900022817
   },
   {
    "id": "s097",
@@ -2222,12 +2198,12 @@
     "puppet": true
    },
    "p": {
-    "extra": 0.35,
+    "extra": 0.39,
     "mind": 0.03,
     "puppet": 0.92
    },
    "failed": false,
-   "seconds": 0.09005690399999366
+   "seconds": 0.08791786599977058
   },
   {
    "id": "s098",
@@ -2238,12 +2214,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.82,
-    "mind": 0.09,
-    "puppet": 0.76
+    "extra": 0.77,
+    "mind": 0.1,
+    "puppet": 0.71
    },
    "failed": false,
-   "seconds": 0.0816838339997048
+   "seconds": 0.08671889599963833
   },
   {
    "id": "s099",
@@ -2254,12 +2230,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.48,
-    "mind": 0.6,
-    "puppet": 0.53
+    "extra": 0.49,
+    "mind": 0.58,
+    "puppet": 0.54
    },
    "failed": false,
-   "seconds": 0.08106008999993719
+   "seconds": 0.08512640800017834
   },
   {
    "id": "s100",
@@ -2270,12 +2246,12 @@
     "puppet": false
    },
    "p": {
-    "extra": 0.82,
-    "mind": 0.04,
+    "extra": 0.83,
+    "mind": 0.03,
     "puppet": 0.62
    },
    "failed": false,
-   "seconds": 0.06441154899994217
+   "seconds": 0.09340428300038184
   }
  ]
 }

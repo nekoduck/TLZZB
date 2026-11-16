@@ -77,10 +77,18 @@ async def test_intent_from_jev_uses_the_two_nouls(scene: Scene) -> None:
     a = _ans(**base, has_speech=0.9, meaningful=0.9, act={"tell": 0.9, "ask": 0.1}, to={"all": 0.9, "p1": 0.1})
     it = intake.intent_from_jev(a, menu, th, [])
     assert it.kind == "both" and it.act == "tell" and it.to == []
-    # 是非题落在中间：没把握，转 C1
-    a = _ans(**base, has_speech=0.5, meaningful=0.95)
+    # 是非题落在中间，kind 又不是很有把握：没把握，转 C1
+    weak = {**base, "kind": {"act": 0.8, "say": 0.15, "both": 0.03, "meta": 0.02}}
+    a = _ans(**weak, has_speech=0.5, meaningful=0.95)
     it = intake.intent_from_jev(a, menu, th, [])
     assert intake.jev_unsure(a, it, th)
+    # kind 很有把握（不低于 0.9）时以它为准：has_speech 落在中间不算没把握
+    a = _ans(**base, has_speech=0.5, meaningful=0.95)
+    it = intake.intent_from_jev(a, menu, th, [])
+    assert it.kind == "act" and not intake.jev_unsure(a, it, th)
+    # 读不读得出意思落在中间：照旧算没把握
+    a = _ans(**base, has_speech=0.1, meaningful=0.5)
+    assert intake.jev_unsure(a, intake.intent_from_jev(a, menu, th, []), th)
     # kind 头两名太近：转 C1
     a = _ans(kind={"act": 0.5, "say": 0.45, "both": 0.03, "meta": 0.02}, verb=base["verb"], target=base["target"],
              has_speech=0.1, meaningful=0.95)

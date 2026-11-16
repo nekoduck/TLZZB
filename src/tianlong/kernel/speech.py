@@ -496,6 +496,11 @@ def accept(state: WorldState, defs: Defs, r: Request) -> None:
     do = _do_pattern(r)
     if r.kind == "question":
         return
+    if effects.setpiece_gone(state, r.action):
+        # 所求是某场情境里的一招，而那场情境已经散了：嘴上答应了也无事可做——不插那一步
+        # （否则它会卡在打算最前面直到期限），请求就此过期，也不算一桩许诺。
+        r.status = "expired"
+        return
     st = Step(
         id=f"req_{r.id}",
         text=f"答应⟦{r.frm}⟧的请求",
@@ -509,11 +514,17 @@ def accept(state: WorldState, defs: Defs, r: Request) -> None:
         id=pid,
         frm=r.to,
         to=r.frm,
-        text=st.text,
+        text=asked_text(r.action),  # 许诺写的是答应了的那件事本身，不是「答应某人的请求」
         do=do,
         deadline=state.tick + PROMISE_DAYS * TICKS_PER_DAY,
         request=r.id,
     )
+
+
+def asked_text(action: dict | None, speaker: str | None = None) -> str:
+    """一桩请求所求之事的说法：提的时候带了描述（``desc``，如情境里的一招）就用它，否则按动词拼。"""
+    desc = str((action or {}).get("desc") or "").strip().rstrip("。")
+    return desc or ask_phrase(action or {}, speaker)
 
 
 # ---------------------------------------------------------------- processing
@@ -526,9 +537,10 @@ def gist_for(sp: Speech, speaker: str, state: WorldState) -> str:
     if act in ("tell", "warn", "lie") and sp.fact_refs:
         return "；".join(state.facts[f].text for f in sp.fact_refs if f in state.facts)
     if act == "greet":
-        return f"自称⟦{speaker}⟧"
+        # 玩家自己打招呼：事实句按玩家视角渲染时「自称⟦玩家⟧」会成「自称你」
+        return "报了自己的姓名" if speaker == state.player else f"自称⟦{speaker}⟧"
     if act in REQUEST_ACTS and sp.ask_action:
-        return "想让对方" + ask_phrase(sp.ask_action, speaker)
+        return "想让对方" + asked_text(sp.ask_action, speaker)
     return ""
 
 

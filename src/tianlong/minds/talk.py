@@ -19,7 +19,7 @@ from tianlong.kernel import speech as kspeech
 from tianlong.kernel.actions import VERBS
 from tianlong.kernel.defs import Defs
 from tianlong.kernel.speech import RequestView, SpeechOptions
-from tianlong.kernel.state import Character, Event, Speech, WorldState, has_status
+from tianlong.kernel.state import Character, Ctx, Event, Speech, WorldState, has_status
 
 STANCES = ("plain", "warm", "cold", "angry", "pleading", "mocking", "evasive")
 STANCE_SUFFIX = {
@@ -51,11 +51,18 @@ def labels(kind: str) -> dict[str, str]:
 # ---------------------------------------------------------------- describing actions
 
 
-def describe_do(do: dict) -> str:
-    """把一个动作模式（{verb, target, item, …}）说成一句中文，实体用 ⟦id⟧。"""
+def describe_do(do: dict, speaker: str | None = None) -> str:
+    """把一个动作模式（{verb, target, item, …}）说成一句中文，实体用 ⟦id⟧。
+
+    情境里的一招用 ``desc``（提请求时写下的说法）；对象是说话的人自己时写「自己」。
+    """
     verb = do.get("verb")
+    if verb == "setpiece":  # 情境里的一招：用提请求时写下的说法；没有也不把「情境」两个字漏给人看
+        return str(do.get("desc") or "").strip().rstrip("。") or "照办"
     t, item = do.get("target"), do.get("item")
     tr = f"⟦{t}⟧" if isinstance(t, str) and t else "对方"
+    if speaker is not None and t == speaker:
+        tr = "自己"
     ir = f"⟦{item}⟧" if isinstance(item, str) and item else "东西"
     if verb == "give":
         return f"把{ir}交给{tr}"
@@ -91,7 +98,7 @@ def describe_do(do: dict) -> str:
     if verb == "wait" or verb is None:
         return "罢手"
     spec = VERBS.get(str(verb))
-    label = spec.label if spec is not None else str(verb)
+    label = spec.label if spec is not None else "照办"
     return f"{label}{tr}" if isinstance(t, str) and t else label
 
 
@@ -183,6 +190,23 @@ def derive_ask(state: WorldState, c: Character, act: str, to: list[str]) -> dict
     return None
 
 
+def step_ask(state: WorldState, c: Character, act: str) -> tuple[dict, str | None] | None:
+    """眼下这一步打算是开口相求、而且写明了所求之事（``do.ask`` / ``do.cls``）：照它求。
+
+    返回（所求之事，类别）。与离场结算（world.offscreen）读的是同一处，在场、离场求的是同一件事。
+    """
+    st = danger.current_step(c)
+    if st is None or st.do.get("verb") != "say" or st.do.get("act") != act:
+        return None
+    ask = st.do.get("ask")
+    if not isinstance(ask, dict) or not ask.get("verb"):
+        return None
+    ctx = Ctx(self_id=c.id)
+    params = {k: predicates.resolve_id(v, state, ctx) for k, v in (ask.get("params") or {}).items()}
+    cls = st.do.get("cls")
+    return {"verb": str(ask["verb"]), "params": params}, (str(cls) if cls else None)
+
+
 def star_text(state: WorldState, defs: Defs, c: Character) -> str | None:
     st = danger.current_step(c)
     if st is None or st.do.get("verb") != "say":
@@ -217,25 +241,26 @@ def make_gist(
     elif act == "ask":
         base = f"问⟦{sp.about}⟧是什么来历" if sp.about else "打听近来的事"
     elif act == "request":
-        base = "请对方" + describe_do(flat(sp.ask_action))
+        base = "请对方" + describe_do(flat(sp.ask_action), speaker.id)
     elif act == "order":
-        base = "命对方" + describe_do(flat(sp.ask_action))
+        base = "命对方" + describe_do(flat(sp.ask_action), speaker.id)
     elif act == "plead":
         ask = flat(sp.ask_action)
         base = "求对方放了自己" if ask.get("verb") == "release" else "求对方手下留情"
     elif act == "agree":
-        base = ("答应" + describe_do(flat(r.condition if r.frm == speaker.id else r.action))) if r else "答应了"
+        me = speaker.id
+        base = ("答应" + describe_do(flat(r.condition if r.frm == me else r.action), me)) if r else "答应了"
     elif act == "refuse":
         if r is not None and r.kind == "question":
             base = "不肯回答"
         elif r is not None and r.frm == speaker.id:
             base = "不肯答应对方开的条件"
         else:
-            base = ("不肯" + describe_do(flat(r.action))) if r else "一口回绝"
+            base = ("不肯" + describe_do(flat(r.action), speaker.id)) if r else "一口回绝"
     elif act == "bargain":
-        base = "要对方先" + describe_do(flat(sp.condition)) if sp.condition else "要对方先拿出点诚意"
+        base = "要对方先" + describe_do(flat(sp.condition), speaker.id) if sp.condition else "要对方先拿出点诚意"
     elif act == "promise":
-        base = "许诺会" + describe_do(sp.promise_do) if sp.promise_do else "许下一个诺言"
+        base = "许诺会" + describe_do(sp.promise_do, speaker.id) if sp.promise_do else "许下一个诺言"
     elif act == "threaten":
         base = "要对方识相些，否则不客气"
     elif act == "comfort":
@@ -243,7 +268,7 @@ def make_gist(
     elif act == "insult":
         base = "骂对方不知好歹"
     elif act == "taunt":
-        base = "出言讥讽，激对方动手"
+        base = "激对方动手"
     elif act == "lie":
         base = "编了一套说辞搪塞"
     else:
@@ -260,6 +285,8 @@ def flat(do: dict | None) -> dict:
         return {"verb": None}
     out = {"verb": do.get("verb")}
     out.update(do.get("params") or {})
+    if do.get("desc"):
+        out["desc"] = do["desc"]
     return out
 
 
@@ -337,8 +364,15 @@ def compose(
         sp.fact_refs = [f for f in facts if f in opts.facts][:MAX_TELL]
     if act == "order" and not sp.to:  # 命令只对听命于自己的人有效
         sp.to = [t for t in heard if state.chars[t].superior == c.id][:1]
+    wrote_ask = False
     if act in ASK_ACTS:
-        sp.ask_action = derive_ask(state, c, act, sp.to)
+        written = step_ask(state, c, act) if (opts.star or {}).get("act") == act else None
+        if written is not None:
+            sp.ask_action, cls = written
+            sp.action_class = cls
+            wrote_ask = True
+        else:
+            sp.ask_action = derive_ask(state, c, act, sp.to)
         if sp.ask_action is None:
             return None
     if act == "ask" and sp.to and not _knows(c, sp.to[0]):
@@ -347,7 +381,8 @@ def compose(
         st = danger.current_step(c)
         sp.promise_do = None if st is None else dict(st.do)
     sp.whisper = bool(whisper and sp.to)
-    star = star_text(state, defs, c) if (opts.star or {}).get("act") == act else None
+    # ★ 的那一步写明了所求之事的，要旨照所求之事写（「请对方……」）；没写的才借那一步的说明
+    star = star_text(state, defs, c) if (opts.star or {}).get("act") == act and not wrote_ask else None
     sp.gist = (gist or "").strip()[:GIST_MAX] or make_gist(state, c, sp, view=view, star=star)
     return validate(state, defs, c, sp, opts)
 
@@ -390,6 +425,8 @@ def star_speech(
         return None
     act = str(star.get("act", "tell"))
     to = star.get("to")
+    if isinstance(to, str) and to and to not in hearers(state, c):
+        return None  # 这句话是说给某个人听的，他不在跟前：不对着满屋子的人说
     fact = star.get("fact")
     believed = []
     if isinstance(fact, str):

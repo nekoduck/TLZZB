@@ -21,7 +21,7 @@ from tianlong.kernel.defs import Defs
 from tianlong.kernel.state import Claim, Speech, WorldState, has_status, injury_level
 from tianlong.parser import lexical as lx
 from tianlong.parser import replies, rules
-from tianlong.parser.candidates import CLASS_ORDER, AskCand, has_need, visible_items
+from tianlong.parser.candidates import CLASS_ORDER, AskCand, has_need, request_candidates, visible_items
 from tianlong.parser.intake import ParseResult
 
 Kind = Literal["action", "unclear", "impossible", "meta"]
@@ -92,6 +92,8 @@ def _values(state: WorldState, a: ActionInst) -> set[str]:
 def _absent_reply(state: WorldState, defs: Defs, eid: str, legal: list[ActionInst]) -> str | None:
     """对象此刻不在眼前时的回话；在眼前返回 None。"""
     me = state.chars[state.player]
+    if any(a.params.get("exit") == eid for a in legal if a.verb in ("go", "flee")):
+        return None  # 合法清单里的一条出路（通到图外的路不在地点表里）
     if eid in state.chars:
         o = state.chars[eid]
         if o.loc == me.loc and o.onstage and perception.visible_to(me, o):
@@ -342,12 +344,33 @@ def _about(state: WorldState, defs: Defs, result: ParseResult, to: list[str], ca
     return None
 
 
+def _in_charge(state: WorldState, hearers: list[str]) -> str | None:
+    """对众人开口相求：落到在场主事的人头上（在场听他吩咐的人最多的那一位）；没有这样的人返回 None。"""
+    def subs(h: str) -> int:
+        return sum(1 for o in state.chars.values() if o.superior == h and o.loc == state.chars[h].loc)
+
+    ranked = sorted(hearers, key=lambda h: -subs(h))
+    if not ranked or subs(ranked[0]) == 0:
+        return None
+    if len(ranked) > 1 and subs(ranked[1]) == subs(ranked[0]):
+        return None
+    return ranked[0]
+
+
+def _retarget(state: WorldState, defs: Defs, cand: AskCand, who: str, text: str) -> AskCand | None:
+    """候选是按别人列的、话却明明是对 who 说的：换成 who 做得到的同一件事；他做不到这件事返回 None。"""
+    for c in request_candidates(state, defs, state.player, who, text=text, limit=64):
+        if c.type == cand.type and c.slots == cand.slots:
+            return c
+    return None
+
+
 def other_request(state: WorldState, result: ParseResult, to: list[str], hearers: list[str]) -> AskCand | None:
     """求的事不在候选里（「撤兵」「借个火」）：仍记成一个请求，让内核照常裁决、计重复（D）。
 
     动作写成对方等一等，带 other 指纹（同一句话重复说才算同一个请求）；类别至少算「费事」。
     """
-    who = to[0] if to else (hearers[0] if len(hearers) == 1 else None)
+    who = to[0] if to else (hearers[0] if len(hearers) == 1 else _in_charge(state, hearers))
     if who is None:
         return None
     fp = f"{zlib.crc32(result.clean.encode('utf-8')):08x}"
@@ -372,6 +395,9 @@ def build_speech(state: WorldState, defs: Defs, result: ParseResult, action: Act
     cand = menu.ask(it.asks) if (act in speech.REQUEST_ACTS or act == "ask") else None
     if cand is not None and cand.to not in hearers:
         cand = None
+    if cand is not None and to and cand.to not in to:
+        # 说话的对象与候选所属的人对不上：以说话的对象为准，换成他做得到的同一件事（没有就照候选的）
+        cand = _retarget(state, defs, cand, to[0], result.clean) or cand
     if act in speech.REQUEST_ACTS:
         if cand is None:
             cand = other_request(state, result, to, hearers)

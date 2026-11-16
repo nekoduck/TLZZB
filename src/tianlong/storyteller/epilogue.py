@@ -141,8 +141,11 @@ def _growth(state: WorldState, defs: Defs) -> list[str]:
 
 
 def _threads(state: WorldState, defs: Defs) -> tuple[list[str], list[str]]:
-    opened = [common.pv(state, defs, t.text) for t in threads.open_threads(state)]
-    closed = [common.pv(state, defs, t.text) for t in state.threads.values() if t.closed]
+    opened = list(dict.fromkeys(common.pv(state, defs, t.text) for t in threads.open_threads(state)))
+    # 了结了的：眼前事（情境）的开场与了结已经在年谱里各有一句，这里不再列（它的牵挂写的是
+    # 「某某正在做什么」，放在「了结了的」底下读不通）；同一句只留一条；还开着的不算了结。
+    kinds = [k for k in threads.KIND_ORDER if k != "event"]
+    closed = [t for t in threads.recent_closed(state, defs, 0, kinds=kinds) if t not in opened]
     return opened, closed
 
 

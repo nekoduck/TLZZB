@@ -1,3 +1,23 @@
 # parser-fix progress log
 
 - [start] read findings + eval-runner log. Next: read parser intake/binding/candidates/rules, kernel bottom/speech, then fix bugs 1-6 with regression tests.
+- [done] bugs 1-6 first cut in src (intake: split thing/person target questions, kind/has_speech combine, cls/urgent kept for other requests, addressee fallback; candidates: tell_about carries fact; relations.py + prompts/jev/j1_relations.md; binding: retarget + in-charge). tests/evalrun/test_suites.py::test_raw_answers_and_the_repaired_mapping pins old 'both' behaviour (not my path) -> report. Next: real J1 debug on samples, regression tests, mock gates, real evals.
+- [done] round 2 (asks only for request acts; tell_about desc; 'all' with <=2 hearers; _absent_reply edge exits; has_speech wording; 【眼前刚发生的事】 in j1_state; ask menu pools all hearers). Real classify: J1 core 56.3% -> 75.0% (225/300), all-fields 56.3% -> 60.0%, gate above-threshold coverage 88.3% acc 76.6% (still fails 95%). Next: residual analysis (act, claims), regression tests, mock gates, anticheat/refusals real runs, findings.
+- [done] round 3 (claim/self/meta/warn wording; addressee strength CALLED/LIKELY/HUNCH). Real classify: core 75.7% (227/300), all 68.3%, claims 62.9%->90.2%, to 92.0%; gate coverage 88.3% acc 78.1%. Next: residual kind/act groups, tests, mock gates, real anticheat/refusals.
+- [done] round 4 (kind=act + no verb -> impossible; 【等你答复的事】 in j1_state; has_speech wording v3). Real classify: core 77.7% (233/300), all 69.7%, gate coverage 87.0% acc 80.1%. Next: mock gates (anticheat/refusals --mock), regression tests, real anticheat/refusals, findings.
+- [done] tests/parser/test_parser_evalfix.py (13 regression tests, one per bug + addressee/retarget/in-charge/edge-exit); mock gates: anticheat 40/40, refusals labeled 20/20 (rules-only 12/20). Next: real anticheat + refusals, full test suite, ruff, findings.md, report.
+- [done] bare-verb tie-break (「等一等」 read as say/request by J1 -> act when rule guess agrees and J1 verb sure); found: real refusals r01/r04/r09 failed only because the harness's extra '等一等' turn became a request to the leader (find_request takes the latest). Next: final real runs classify/anticheat/refusals/zh_en/report, findings.md.
+- [done] ask tie-break by cls (x40 flipped show/give between turns), class-only claim match tightened (all entities named), C1 normalize/prompt: asks only for request acts. Next: final real runs (classify, anticheat, refusals, zh_en), findings.md, eval report, full tests, final answer.
+- [done] final real runs written to evals/results (classify J1 core 77.7% 233/300, all 69.7%, gate cov 87.0% acc 80.5% FAIL; anticheat mock 40/40 real 40/40; refusals labeled 20/20 rules 12/20 real 20/20; zh_en zh 83.3% en 80.0%; checks rerun at 0.80: 96%/8%); findings.md rewritten; report regenerated. Next: full test suite, final answer.
+- [final] All items done. tests/parser 64 pass (13+3 new regression tests in tests/parser/test_parser_evalfix.py); full suite 930 passed, 3 failed, 4 xfailed — the failures are tests/evalrun/test_suites.py::test_raw_answers_and_the_repaired_mapping (pins the old 'both' behaviour; not my path; change line 221 to `result.intent.kind == "act"`), tests/acceptance/test_divergence.py::test_a_death_on_day_two[sikong_xuan] and tests/game/test_text_glitches.py (other agents' in-flight work; the latter passes when run alone). ruff clean on src tests scripts. Nothing pending for label 'parser-fix'.
+- DECISIONS.md 的候选条目（本人不拥有该文件，由负责的人并入）：
+  - J1 的对象分两题问：`target` 只列物、出口、景物、本事，`target2` 只列人；按动词（`rules.TARGET_KINDS`）落成主对象与第二对象，动词不带的不取，第二个对象要过 choice_confidence，细看与推只取把握大的一个。
+  - kind 一题把握不低于 0.9 时以它为准：「只是动作」要 has_speech 不低于 0.75 才另算一句话，「在说话」要 has_speech 低于 0.25 才算没话；此时 has_speech 落在中间不算没把握（D-084 的修订）。
+  - 读得懂、是个动作而动词表里没有：kind = impossible（回「此刻你做不到」），不算 unclear。
+  - cls、urgent 两题只要能开口就问；所求之事不在候选里也留着 J1 的 cls（只能更重，至少「费事」，D-087 不变）。asks 只在 request、plead、order 时取，询问不带 asks（J1 与 C1 同）。
+  - 「告诉我某事」的请求动作带 `params.fact`（对方知道、与话对得上的那条事实），内核的 fact_tag 底线据此判 never；内核不改。
+  - 规则对事实的近义词表放 `prompts/jev/j1_relations.md`，只收两方之间的关系；只凭关系词对上的，事实里的实体须个个被点到。
+  - 说话对象由 J1 与规则合定：话里叫了人（CALLED）时 J1 要不低于 0.9 才改得动；J1 没把握听规则的；「对众人」而只有一两个人听得见就是对这几个人；对众人相求落到在场主事的人头上；候选所属的人与说话对象不符时换成后者做得到的同一件事。
+  - J1 的状态加三样：谁听谁的吩咐、【眼前刚发生的事】、【等你答复的事】；claim、self 两题写明「场面里确有其事、话里没讲到的不算」。
+  - 整句只是一个动作词（规则猜测是纯动作、J1 的 verb 把握不低于 0.9、kind 低于 0.9）按动作算；候选请求咬得很紧（差不到 0.15）时取类别与 J1 的 cls 相符的那条。
+  - M3 重测：J1 归类整条链六项全对 56.3% → 77.7%，门槛之上覆盖 87.0%、一致 80.5%，仍未过 7.12 的闸，`route.classify` 维持 claude_first；没有 Claude 钥匙时退回 J1（77.7%）比 rules_only（60.3%）准。防作弊集 Mock 40/40、真 J1 40/40；拒绝集 Mock（照标注）20/20、真 J1 20/20。

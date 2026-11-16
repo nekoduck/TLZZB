@@ -7,6 +7,8 @@
 【你的身子】{{ body or '没什么异样' }}
 【你带着】{{ inventory or '空着手' }}
 【你最近做的事】{{ recent or '刚到这里，还没做什么' }}
+【眼前刚发生的事】{{ seen or '没什么动静' }}
+【等你答复的事】{{ pending or '没有' }}
 {% if words is not none %}
 【玩家的话】
 {{ words }}

@@ -4,12 +4,15 @@ from __future__ import annotations
 
 from tianlong.kernel import growth, perception, predicates
 from tianlong.kernel.defs import Defs
-from tianlong.kernel.state import Character, Ctx, Step, WorldState, has_status
+from tianlong.kernel.state import TICKS_PER_DAY, TICKS_PER_HOUR, Character, Ctx, Step, WorldState, has_status
 
 HOSTILE_AFFINITY = -30
 HOSTILE_VERBS = ("attack", "restrain")
 LETHAL_CHANCE = 50  # 判定失败即坠落、成功率低于它的出口算致命
 LETHAL_POWER_GAP = 2
+LETHAL_STATUS = "poisoned"  # 到期致死的状态（timeflow：期限一到即死）
+DEADLINE_NEAR = TICKS_PER_DAY  # 致死的期限不足一日：danger 至少 1
+DEADLINE_LAST = 2 * TICKS_PER_HOUR  # 只剩两个时辰：danger 至少 2
 
 
 def current_step(c: Character) -> Step | None:
@@ -80,10 +83,28 @@ def fighting_at(state: WorldState, loc: str) -> bool:
     return False
 
 
+def lethal_deadline(state: WorldState, c: Character) -> int | None:
+    """身上到期致死的状态（中毒）离发作还剩多少刻；没有这样的状态返回 None。"""
+    left = [
+        s.until - state.tick for s in c.statuses if s.until is not None and s.kind.startswith(LETHAL_STATUS)
+    ]
+    return min(left) if left else None
+
+
+def deadline_danger(state: WorldState, c: Character) -> int:
+    """致死的期限逼近带来的危险：不足一日为 1，只剩两个时辰为 2（T3）。"""
+    left = lethal_deadline(state, c)
+    if left is None or left >= DEADLINE_NEAR:
+        return 0
+    return 2 if left <= DEADLINE_LAST else 1
+
+
 def danger(state: WorldState, defs: Defs) -> int:
+    """玩家此刻的危险 0 到 3（6.10）：眼前有敌意的人、身边在动手；身上致死的期限逼近也算。"""
     p = state.chars.get(state.player)
     if p is None or not perception.on_map(p):
         return 0
+    floor = deadline_danger(state, p)
     toward = hostiles_toward(state, p.id)
     if any(intends_kill(state, h, p.id) for h in toward):
         return 3
@@ -91,8 +112,8 @@ def danger(state: WorldState, defs: Defs) -> int:
     if any(growth.power(state, defs, h) >= mine + 2 for h in toward) or fighting_at(state, p.loc):
         return 2
     if toward or any_hostility_at(state, p.loc):
-        return 1
-    return 0
+        return max(1, floor)
+    return floor
 
 
 def restrained(c: Character) -> bool:

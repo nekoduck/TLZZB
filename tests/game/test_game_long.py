@@ -171,6 +171,7 @@ async def test_turn_failure_marks_options_stale(settings: Settings, monkeypatch:
 
 
 async def test_budget_warns_then_pauses_and_asks(settings: Settings) -> None:
+    settings.route.classify = "jev_first"  # 本测试看的是 J1 的调用
     s = await new_session(settings)
     g = s.game
     led = g.llm.ledger
@@ -212,6 +213,7 @@ async def test_budget_warns_then_pauses_and_asks(settings: Settings) -> None:
 
 
 async def test_debug_summary_and_cheats(settings: Settings) -> None:
+    settings.route.classify = "jev_first"  # 本测试看的是 J1 的调用
     s = await new_session(settings, debug=True)
     await s.play(*QUIET_YARD)
     st = s.state

@@ -12,6 +12,7 @@ from tianlong.kernel import perception, speech
 from tianlong.kernel.defs import Defs
 from tianlong.kernel.state import WorldState
 from tianlong.parser import lexical as lx
+from tianlong.parser import relations
 from tianlong.parser.candidates import Menu, ask_score, has_need, rule_class
 
 REQUESTISH = ("request", "plead", "order")
@@ -136,11 +137,19 @@ def _by_title(state: WorldState, defs: Defs, head: str, hearers: list[str]) -> s
     return None
 
 
-def addressee(state: WorldState, defs: Defs, clean: str, narr: str, spoken: str, menu: Menu) -> list[str]:
-    """说话的对象（规则猜测）：先叫的人、「对某人说」、唯一在场的人、冲着自己来的人、刚打过交道的人。"""
+CALLED, LIKELY, HUNCH = 3, 2, 1  # 说话对象的猜测有多硬：叫了名字称呼 / 别无旁人或开头带称呼 / 只是冲着「你」说
+
+
+def addressee_guess(state: WorldState, defs: Defs, clean: str, narr: str, spoken: str, menu: Menu,
+                    attempts: list[str] | None = None) -> tuple[list[str], int]:
+    """说话的对象（规则猜测）与这个猜测有多硬（CALLED / LIKELY / HUNCH；猜不出为 0）。
+
+    CALLED：开口先叫的人、「对某人说」。LIKELY：唯一在场的人、开头不带逗号的称呼。
+    HUNCH：只是冲着「你」说，按谁冲着自己来、刚跟谁打过交道去猜；或舞台说明里点到的人。
+    """
     hearers = [o.ref for o in menu.people]
     if not hearers:
-        return []
+        return [], 0
     me = state.chars[state.player]
     # 开口先叫人：「X，……」
     m = lx.VOCATIVE_RE.match(spoken or "")
@@ -148,7 +157,7 @@ def addressee(state: WorldState, defs: Defs, clean: str, narr: str, spoken: str,
         head = m.group(1)
         who = _best_named(state, defs, head, hearers) or _by_title(state, defs, head, hearers)
         if who is not None:
-            return [who]
+            return [who], CALLED
     # 「对 X 说」「问 X」「告诉 X」
     for text in (narr, clean):
         m2 = lx.SPEECH_OBJ_RE.search(text or "")
@@ -159,27 +168,36 @@ def addressee(state: WorldState, defs: Defs, clean: str, narr: str, spoken: str,
                 p = resolve_pronoun(state, menu)
                 who = p if p in hearers else None
             if who is not None:
-                return [who]
+                return [who], CALLED
     if len(hearers) == 1:
-        return [hearers[0]]
+        return [hearers[0]], LIKELY
     # 不带称呼的开头：「公子当心……」
     who = _best_named(state, defs, (spoken or "")[:4], hearers)
     if who is not None:
-        return [who]
+        return [who], LIKELY
     who = _by_title(state, defs, (spoken or "")[:4], hearers)
     if who is not None:
-        return [who]
+        return [who], LIKELY
     # 冲着「你」说而没叫人：冲着自己来的人，或刚打过交道的人
     if lx.SECOND_PERSON.search(spoken or ""):
         from tianlong.kernel import danger
 
         agg = [h for h in hearers if danger.is_hostile(state, state.chars[h], me.id)]
         if len(agg) == 1:
-            return agg
+            return agg, HUNCH
         lp = last_partner(state)
         if lp in hearers:
-            return [lp]
-    return []
+            return [lp], HUNCH
+    # 舞台说明里点到的人（「（拍拍某人的肩膀）别怕」）：括号里的不算动作，但看得出话是冲谁说的
+    who = _best_named(state, defs, "".join(attempts or []), hearers)
+    if who is not None:
+        return [who], HUNCH
+    return [], 0
+
+
+def addressee(state: WorldState, defs: Defs, clean: str, narr: str, spoken: str, menu: Menu) -> list[str]:
+    """说话的对象（规则猜测）：先叫的人、「对某人说」、唯一在场的人、冲着自己来的人、刚打过交道的人。"""
+    return addressee_guess(state, defs, clean, narr, spoken, menu)[0]
 
 
 # ---------------------------------------------------------------- speech acts
@@ -260,38 +278,18 @@ def _setpiece(state: WorldState, defs: Defs, narr: str, menu: Menu) -> str | Non
     return best if best_s >= 3 else None
 
 
-_STOP_BIGRAMS = {"一个", "不是", "知道", "我们", "你们", "他们", "这个", "那个", "什么", "没有", "自己", "一点",
-                 "起来", "出来", "下来", "上来", "这里", "那里", "怎么", "可是", "就是", "还是", "已经"}
-
-
-def _strip_names(state: WorldState, defs: Defs, text: str, ids: list[str]) -> str:
-    out = text
-    for eid in ids:
-        for nm, _ in sorted(lx.names_of(state, defs, eid), key=lambda nw: -len(nw[0])):
-            if nm and len(nm) >= 2:
-                out = out.replace(nm, " ")
-    return out
-
-
 def _claims(state: WorldState, defs: Defs, spoken: str, menu: Menu) -> list[str]:
-    """断言的规则猜测：说到了事实里的人或物，并且有实在的字词对得上。"""
+    """断言的规则猜测：说到了事实里的人或物，并且有对得上的关系词类或实在的字词（parser/relations.py）。"""
     if not spoken or lx.FUTURE.search(spoken):
         return []
-    from tianlong.kernel import refs as krefs
-
     m = lx.VOCATIVE_RE.match(spoken)
     if m:  # 先叫的那个人不算话里提到的人
         spoken = spoken[m.end():]
     scored: list[tuple[int, str]] = []
     for c in menu.claims:
-        rs = krefs.refs_in(c.text)
-        named = [r for r in rs if r != state.player and lx.match_score(state, defs, r, spoken) >= 2]
-        ent = len(named) + (1 if state.player in rs and "我" in spoken else 0)
-        fact_core = krefs.REF_RE.sub(" ", c.text)
-        spoken_core = _strip_names(state, defs, spoken, named)
-        shared = len((lx.bigrams(spoken_core) & lx.bigrams(fact_core)) - _STOP_BIGRAMS)
-        if (ent >= 1 and shared >= 1) or shared >= 3:
-            scored.append((-(3 * ent + 2 * shared), c.key))
+        s = relations.fact_score(state, defs, c.text, spoken)
+        if s > 0:
+            scored.append((-s, c.key))
     scored.sort()
     return [k for _, k in scored[:3]]
 

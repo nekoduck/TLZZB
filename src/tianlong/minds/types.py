@@ -24,6 +24,7 @@ class MindDecision(BaseModel):
     escalated: bool = False  # 本来走 Jev，因没把握或要紧改交 Claude
     important: bool = False  # 内核把这一刻标为要紧（4.3）
     notes: list[str] = []  # 退让与校验的记录，供日志
+    closing: bool = False  # 这一招会让它所在的情境散场（结算时排在同场其他人之后，见 minds.order）
 
 
 def idle_action(actor: str) -> ActionInst:

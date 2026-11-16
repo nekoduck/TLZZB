@@ -70,6 +70,8 @@ class Menu(BaseModel):
     claims: list[ClaimCand] = []
     selfs: list[SelfCand] = []
     addressee: str | None = None  # 候选请求是按谁列的；None 表示在场的人都有
+    guess_to: str | None = None  # 规则猜的说话对象；猜不出为 None
+    guess_strength: int = 0  # 这个猜测有多硬（rules.CALLED / LIKELY / HUNCH）
 
     def obj(self, key_or_id: str | None) -> Opt | None:
         if not key_or_id:
@@ -425,8 +427,8 @@ def _all_request_candidates(state: WorldState, defs: Defs, frm: str, to: str) ->
                                 ["放我过去", "让我过去", "让我们", "放行", "过去", "行个方便", "下山", "进去"],
                                 [], slots={"place": e.to}, extra={"permit": {"verb": "go", "exit": e.to}}))
     # 告诉我一些事
-    out.append(_ask("tell_about", to, "say", {"act": "tell"}, f"回答{P}的问题，告诉{P}一些事", "trivial",
-                    ["告诉", "说说", "讲讲", "是谁", "什么", "哪里", "怎么"], []))
+    out.append(_ask("tell_about", to, "say", {"act": "tell"}, f"把{P}想打听的一件事讲给{P}听", "trivial",
+                    ["告诉", "说说", "讲讲", "讲给", "说给", "是谁", "什么", "哪里", "怎么", "打听"], []))
     # 带我去某处
     for e in actions.usable_exits(state, defs, t)[:3]:
         if e.edge:
@@ -458,6 +460,8 @@ def ask_score(state: WorldState, defs: Defs, c: AskCand, text: str, frm: str) ->
 
     named = sum(1 for r in others if mentioned(r))
     kw = sum(1 for k in c.keys if k and k in text)
+    if c.type == "tell_about" and c.slots.get("fact"):
+        kw += 1  # 话里说的正是对方知道的一件事：算打听
     if others and not named:
         return kw if c.type == "teach_art" and kw else 0  # 「教我两手」：没说是哪门本事也算
     return 2 * kw + 3 * named
@@ -472,12 +476,29 @@ def _doable(state: WorldState, defs: Defs, c: AskCand) -> bool:
     return actions.build(state, defs, c.to, str(verb), dict(c.action.get("params") or {})) is not None
 
 
+def _attach_topic(state: WorldState, defs: Defs, cands: list[AskCand], to: str, text: str) -> None:
+    """「告诉我某事」问的是哪一件：对得上对方知道的某条事实，就把它写进所求的动作（``params.fact``）。
+
+    内核按这条事实的标签查对方的底线（kernel/bottom.py 的 ``fact_tag``）；对不上任何事实的仍是泛泛的一问。
+    """
+    from tianlong.parser import relations
+
+    for c in cands:
+        if c.type != "tell_about":
+            continue
+        fid = relations.topic_fact(state, defs, to, text)
+        if fid is not None:
+            c.action["params"] = {**c.action.get("params", {}), "fact": fid}
+            c.slots = {**c.slots, "fact": fid}
+
+
 def request_candidates(
     state: WorldState, defs: Defs, frm: str, to: str, *, text: str = "", limit: int = MAX_ASKS
 ) -> list[AskCand]:
     """对方（to）做得到、可以求他做的事，至多 limit 件；给了 text 就按它提到的先后排。"""
     cands = [c for c in _all_request_candidates(state, defs, frm, to) if _doable(state, defs, c)]
     if text:
+        _attach_topic(state, defs, cands, to, text)
         cands = [c for _, c in sorted(enumerate(cands), key=lambda ic: (-ask_score(state, defs, ic[1], text, frm),
                                                                          ic[0]))]
     out = cands[:limit]

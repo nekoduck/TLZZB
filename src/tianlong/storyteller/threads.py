@@ -186,15 +186,16 @@ def _event_text(state: WorldState, defs: Defs, sid: str) -> tuple[str, list[str]
     title = (d.model_extra or {}).get("title") if d is not None else None
     if title:
         return refs.fill_roles(str(title), s.roles), people
+    # 没写标题的情境：一个名词短语，开着、了结了都读得通（「了结了的：……还没完」自相矛盾）
     if state.player in s.roles.values():
         if people:
-            return f"你和⟦{people[0]}⟧之间的事还没完", people
-        return "你卷进的那件事还没完", people
+            return f"你和⟦{people[0]}⟧之间的那件事", people
+        return "你卷进的那件事", people
     if len(people) >= 2:
-        return f"眼前⟦{people[0]}⟧和⟦{people[1]}⟧那边正有事", people
+        return f"⟦{people[0]}⟧和⟦{people[1]}⟧之间的那件事", people
     if people:
-        return f"眼前⟦{people[0]}⟧那边正有事", people
-    return "眼前正有事", people
+        return f"⟦{people[0]}⟧那边的事", people
+    return "眼前的那件事", people
 
 
 def _event_wants(state: WorldState, defs: Defs, want: dict[str, dict]) -> None:
@@ -510,9 +511,23 @@ def render_threads(state: WorldState, defs: Defs) -> str:
         for t in group:
             tail = f"（{common.days_left_text(state, t.expires)}）" if t.expires is not None else ""
             lines.append(f"  · {common.pv(state, defs, t.text)}{tail}")
-    closed = [t for t in state.threads.values() if t.closed][-3:]
+    closed = recent_closed(state, defs, 3)
     if closed:
         lines.append("近来了结的：")
-        for t in closed:
-            lines.append(f"  · {common.pv(state, defs, t.text)}")
+        for text in closed:
+            lines.append(f"  · {text}")
     return "\n".join(lines)
+
+
+def recent_closed(state: WorldState, defs: Defs, n: int, *, kinds: Iterable[str] | None = None) -> list[str]:
+    """最近了结的几条牵挂（玩家视角的文字），同一句只留一条（反复开场的情境会了结许多回）。"""
+    want = set(kinds) if kinds is not None else None
+    out: list[str] = []
+    for t in state.threads.values():
+        if not t.closed or (want is not None and t.kind not in want):
+            continue
+        text = common.pv(state, defs, t.text)
+        if text in out:
+            out.remove(text)
+        out.append(text)
+    return out[-n:] if n > 0 else out

@@ -14,7 +14,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import contextlib
 import re
 from collections.abc import AsyncIterator, Sequence
@@ -106,7 +105,7 @@ def player_brief(state: WorldState, defs: Defs) -> str:
         parts.append(f'听{refs.display_name(state, defs, c.superior, p)}差遣')
     labels = defs.world.labels or {}
     for r in c.roles:
-        lbl = labels.get(r)
+        lbl = labels.get(f'role:{r}') or labels.get(r)  # world.yaml 的身份标签键是 role:<id>
         if lbl:
             parts.append(str(lbl))
     fights = c.base_power > 0
@@ -267,9 +266,19 @@ def overlap(fact_text: str, text: str) -> float:
     return len(fb & tb) / len(fb)
 
 
+def fact_overlap(fact: Fact, text: str) -> float:
+    """一条事实在文字里写到了几成：事实句（内核的记录体）与它的模板句（通顺的那一句）取大。
+
+    说话的事两种写法差得远（「某人对你答应了：答应……」与「某人答应你……」），只比事实句的话，
+    照模板句写出来的叙述会被当成「没写到」，在段末再补一遍。
+    """
+    return max(overlap(fact.text, text), overlap(fact.line, text))
+
+
 def covered_heuristic(fact: Fact | str, text: str, threshold: float = 0.5) -> bool:
-    ft = fact.text if isinstance(fact, Fact) else fact
-    return overlap(ft, text) >= threshold
+    if isinstance(fact, Fact):
+        return fact_overlap(fact, text) >= threshold
+    return overlap(fact, text) >= threshold
 
 
 def mind_heuristic(sentence: str) -> bool:
@@ -397,7 +406,9 @@ class _Narration:
         }
         self.report.j5_calls += 1
         try:
-            ans = await asyncio.wait_for(self.llm.jev.ask('J5', state_text, qs, hints=hints), self.check_timeout)
+            # 时限交给 jev.ask（L1）：超时在 calls.jsonl 里记成一条错误行，重放时在同一处再抛，不会错位。
+            # JevTimeout 既是 TimeoutError 也是 LLMError：超时这一支必须写在 LLMError 之前。
+            ans = await self.llm.jev.ask('J5', state_text, qs, hints=hints, timeout_s=self.check_timeout)
         except TimeoutError:
             self.report.j5_timeouts += 1
             return []
@@ -416,7 +427,7 @@ class _Narration:
     async def coverage(self, text: str) -> list[bool]:
         if not self.facts:
             return []
-        heur = [overlap(f.text, text) for f in self.facts]
+        heur = [fact_overlap(f, text) for f in self.facts]
         rough = [h >= 0.5 for h in heur]
         if not self.j5_on or not text.strip():
             return rough
@@ -425,9 +436,7 @@ class _Narration:
         hints = {f'covered_{i}': (1.0 if r else 0.0) for i, r in enumerate(rough)}
         state_text = prompting.render('jev/j5_state', **self.j5_base(), sentence='', paragraph=text.strip())
         try:
-            ans = await asyncio.wait_for(
-                self.llm.jev.ask('J5_cover', state_text, qs, hints=hints), COVER_TIMEOUT_S
-            )
+            ans = await self.llm.jev.ask('J5_cover', state_text, qs, hints=hints, timeout_s=COVER_TIMEOUT_S)
         except (TimeoutError, LLMError) as e:
             self.report.j5_error = self.report.j5_error or f'cover {type(e).__name__}'
             return rough

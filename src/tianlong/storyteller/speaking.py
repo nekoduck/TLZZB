@@ -183,6 +183,22 @@ def harmless(a: SituationAction) -> bool:
     return not a.lethal and not harm_targets(a.effects)
 
 
+def sours(effs: Any, roles: dict[str, str], cid: str) -> bool:
+    """这一招会让 ``cid`` 对人生出恶感（冲着他来的一招：赶他走、给他难堪）。"""
+    for e in effs or []:
+        if not isinstance(e, dict):
+            continue
+        v = e.get("rel")
+        if isinstance(v, list) and len(v) >= 4:
+            who = str(v[0])
+            who = roles.get(who[1:], who) if who.startswith("$") else who
+            if who == cid and isinstance(v[3], int | float) and v[3] < 0:
+                return True
+        if sours(_nested(e), roles, cid):
+            return True
+    return False
+
+
 def ends_situation(d: SituationDef, a: SituationAction) -> bool:
     """这一招立的旗标正是情境散场条件里看的：做了它，这场事多半就了结了。"""
     return bool(flags_set(a.effects) & flags_read(d.exit_when))
@@ -427,6 +443,8 @@ class _Builder:
                 what = move_text(s, a, name, t.id)
                 if what is None:
                     continue
+                if sours(a.effects, s.roles, self.me.id):
+                    continue  # 冲着自己来的一招（喝令你离开）：没有人会劝别人这样对付自己
                 ask = {"verb": "setpiece", "params": params, "desc": what}
                 if self.requested(t.id, ask):
                     continue

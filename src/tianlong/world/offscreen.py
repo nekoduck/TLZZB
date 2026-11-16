@@ -23,7 +23,7 @@ from tianlong.kernel import actions, danger, perception, predicates, resolve
 from tianlong.kernel import speech as speech_mod
 from tianlong.kernel.defs import Defs
 from tianlong.kernel.state import TICKS_PER_HOUR, Character, Ctx, Event, Speech, Step, WorldState, is_alive
-from tianlong.world.common import LOG, Decide, in_scene, loc_of, mark_offscreen
+from tianlong.world.common import LOG, Decide, in_scene, loc_of
 
 MAX_STEPS_PER_HOUR = 6  # 一个时辰里一个人至多处理几段（入场、赶路的几段路；动手或作废一次就收工）
 TARGET_KEYS = ("target", "to")  # do 里指人的键：没写 at 时到这个人身边去做
@@ -216,7 +216,7 @@ def _walk(
         _progress(state, defs, c, budget)
         return False, [], 0, True
     before = c.loc
-    evs = mark_offscreen(resolve.apply(state, defs, act_, source="agenda"))
+    evs = resolve.apply(state, defs, act_, source="agenda", offscreen=True)
     budget -= max(0, need)
     if c.agenda is ag and _step_pending(c, st.id):
         _progress(state, defs, c, 0)
@@ -282,7 +282,7 @@ async def act(state: WorldState, defs: Defs, c: Character, st: Step, *, decide: 
     a = actions.build(state, defs, c.id, str(verb), _params(state, c, st))
     if a is None or actions.blocked_by_bottom(state, defs, a):
         return set_state(state, defs, c, st, "void", "cannot do")
-    evs = mark_offscreen(resolve.apply(state, defs, a, source="agenda"))
+    evs = resolve.apply(state, defs, a, source="agenda", offscreen=True)
     if _step_pending(c, st.id):
         tried = any(e.actor == c.id and e.outcome != "blocked" for e in evs)
         evs += set_state(state, defs, c, st, "done" if tried else "void", "" if tried else "blocked")
@@ -313,10 +313,13 @@ def _speech_for(state: WorldState, c: Character, st: Step) -> Speech:
 
 async def _say(state: WorldState, defs: Defs, c: Character, st: Step, decide: Decide | None) -> list[Event]:
     sp = _speech_for(state, c, st)
+    if sp.to and not {o.id for o in speech_mod.audience(state, c)}.intersection(sp.to):
+        # 这句话是说给某个人听的，他不在跟前：这一步作废（不必让内核把它当违规记一笔）
+        return set_state(state, defs, c, st, "void", "addressee not here")
     carrier = actions.build(state, defs, c.id, "wait", {"ticks": 1})
     if carrier is None:
         return set_state(state, defs, c, st, "void", "cannot speak")
-    evs = mark_offscreen(resolve.apply(state, defs, carrier, sp, source="agenda"))
+    evs = resolve.apply(state, defs, carrier, sp, source="agenda", offscreen=True)
     said = next((e for e in evs if e.verb == "say" and e.actor == c.id), None)
     if said is None:
         return evs + set_state(state, defs, c, st, "void", "speech dropped")
@@ -344,14 +347,24 @@ async def reply(state: WorldState, defs: Defs, rid: str, decide: Decide | None =
             d = None
         a = getattr(d, "action", None) if d is not None else None
         if a is not None:
-            return mark_offscreen(resolve.apply(state, defs, a, getattr(d, "speech", None), source="mind"))
+            sp_d = getattr(d, "speech", None)
+            if sp_d is None or a.verb == "wait":
+                return resolve.apply(state, defs, a, sp_d, source="mind", offscreen=True)
+            # 一句话加一件事：分两次进内核，先话后事。话若是「答应」，内核会把答应的事插成他眼下这一步；
+            # 同一次结算里紧接着做那件事，不变量把它认作「已作废步骤」的事件，整体回滚，连那句答应也丢了。
+            carrier = actions.build(state, defs, to.id, "wait", {"ticks": 1})
+            said = resolve.apply(state, defs, carrier, sp_d, source="mind", offscreen=True) if carrier else []
+            fresh = actions.is_legal(state, defs, a)
+            if fresh is None:
+                return said
+            return said + resolve.apply(state, defs, fresh, None, source="mind", offscreen=True)
     sp = rule_reply(state, defs, rid)
     if sp is None:
         return []
     carrier = actions.build(state, defs, to.id, "wait", {"ticks": 1})
     if carrier is None:
         return []
-    return mark_offscreen(resolve.apply(state, defs, carrier, sp, source="rule"))
+    return resolve.apply(state, defs, carrier, sp, source="rule", offscreen=True)
 
 
 def rule_reply(state: WorldState, defs: Defs, rid: str) -> Speech | None:

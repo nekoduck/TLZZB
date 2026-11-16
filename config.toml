@@ -18,7 +18,7 @@ sample_floor = 0.15
 narration_flag = 0.80       # M3 评测后由 0.70 调高（见 DECISIONS「M3」一节）
 
 [route]                     # jev_first / claude_first / claude_only / rules_only
-classify = 'jev_first'      # J1，退到 C1
+classify = 'claude_first'   # C1 先行，退到 J1：M3 评测里 J1 没过 95% 的闸（见 DECISIONS「M3」一节）
 decide_soul = 'jev_first'   # J2，退到 C2（Sonnet）
 decide_named = 'jev_first'  # J2，退到 C2（Haiku）
 replan = 'jev_first'        # J3，退到 C5

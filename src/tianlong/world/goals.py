@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import math
 import re
 from dataclasses import dataclass, field
@@ -170,11 +171,50 @@ def _status_source(state: WorldState, who: str | None, kinds: tuple[str, ...], p
     return None
 
 
-def _safe_place(state: WorldState, defs: Defs, c: Character, avoid: str | None = None) -> str | None:
-    """最近的、眼下没有人对他怀敌意的别处；同属一方的地方（Location.owner 是他的身份）优先。"""
-    best: tuple[int, int, str] | None = None
+def _heading(state: WorldState, o: Character) -> str | None:
+    """此人眼下这一步要去的别处（打算里写了 at，或这一步就是走、逃）；就地办事、没有打算的为 None。"""
+    st = danger.current_step(o)
+    if st is None:
+        return None
+    if st.at and st.at != o.loc and st.at in state.locations:
+        return st.at
+    if st.do.get("verb") in ("go", "flee"):
+        v = st.do.get("exit") or st.do.get("to")
+        if isinstance(v, str) and v in state.locations and v != o.loc:
+            return v
+    return None
+
+
+def _tie(cid: str, lid: str) -> int:
+    """同样近的几处里各人各有偏好（确定性的：只看人和地点的 id，不掷骰）。"""
+    return int.from_bytes(hashlib.blake2b(f"{cid}|{lid}".encode(), digest_size=4).digest(), "big")
+
+
+def _safe_place(
+    state: WorldState, defs: Defs, c: Character, avoid: str | None = None, *, _yield: bool = True
+) -> str | None:
+    """最近的、眼下没有人对他怀敌意的别处；同属一方的地方（Location.owner 是他的身份）优先。
+
+    躲的是人，所以也避开对头（对他怀敌意的人、``avoid`` 指的那人）正要去的地方。两个互相敌视的人同在
+    一处、各自要躲时，会挑中同一处最近的地方，到了又互相躲回来，来回几日（P6）：让 id 小的先挑，另一个
+    避开他会挑的那一处（实在没有别处可去才同路）；同样近的几处里各人的取舍也不同。
+    """
+    foes = [
+        o
+        for o in state.chars.values()
+        if o.id != c.id and perception.on_map(o) and is_alive(o) and (o.id == avoid or danger.is_hostile(state, o, c.id))
+    ]
+    taken = {h for o in foes if (h := _heading(state, o)) is not None}
+    presumed: set[str] = set()
+    if _yield:
+        for o in foes:
+            if o.loc == c.loc and o.id < c.id and danger.is_hostile(state, c, o.id):
+                alt = _safe_place(state, defs, o, _yield=False)
+                if alt is not None:
+                    presumed.add(alt)
+    best: tuple[int, int, int, int, str] | None = None
     for lid, L in state.locations.items():
-        if lid == c.loc:
+        if lid == c.loc or lid in taken:
             continue
         people = perception.present(state, lid, exclude=c.id)
         if any(danger.is_hostile(state, o, c.id) for o in people):
@@ -184,10 +224,10 @@ def _safe_place(state: WorldState, defs: Defs, c: Character, avoid: str | None =
         d = _dist(state, defs, c, lid)
         if d >= 1 << 20:
             continue
-        key = (0 if L.owner and L.owner in c.roles else 1, d, lid)
+        key = (1 if lid in presumed else 0, 0 if L.owner and L.owner in c.roles else 1, d, _tie(c.id, lid), lid)
         if best is None or key < best:
             best = key
-    return best[2] if best else None
+    return best[4] if best else None
 
 
 def _pick(state: WorldState, defs: Defs, c: Character, where: Any, roles: dict[str, str]) -> str | None:

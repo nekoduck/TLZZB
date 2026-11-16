@@ -138,6 +138,39 @@ def test_danger_levels(w: World) -> None:
     assert danger.danger(w.s, w.defs) == 3
 
 
+def test_danger_rises_as_a_lethal_deadline_nears(w: World) -> None:
+    """T3：身上到期致死的毒，期限不足一日 danger 至少 1，只剩两个时辰至少 2。"""
+    assert danger.danger(w.s, w.defs) == 0 and danger.lethal_deadline(w.s, w.c("player")) is None
+    w.fx([{"add_status": ["player", "poisoned_x", {"ticks": 3 * 96}]}])
+    st = w.status("player", "poisoned_x")
+    assert st is not None and st.until == w.s.tick + 3 * 96
+    assert danger.lethal_deadline(w.s, w.c("player")) == 3 * 96
+    assert danger.danger(w.s, w.defs) == 0  # 还有三日：不算险
+    st.until = w.s.tick + 96
+    assert danger.danger(w.s, w.defs) == 0  # 整一日
+    st.until = w.s.tick + 95
+    assert danger.danger(w.s, w.defs) == 1  # 不足一日
+    st.until = w.s.tick + 17
+    assert danger.danger(w.s, w.defs) == 1
+    st.until = w.s.tick + 16
+    assert danger.danger(w.s, w.defs) == 2  # 只剩两个时辰
+    st.until = w.s.tick + 2
+    assert danger.danger(w.s, w.defs) == 2  # 几刻之后就发作：原来这里是 0
+    # 别的带期限的状态不算；别人身上的毒不算玩家的险
+    st.kind = "alerted"
+    assert danger.danger(w.s, w.defs) == 0
+    w.fx([{"add_status": ["guest", "poisoned_x", {"ticks": 4}]}])
+    assert danger.danger(w.s, w.defs) == 0
+    # 与眼前的敌意取大：有人要取性命仍是 3；期限近而有人敌视取 2
+    st.kind = "poisoned_x"
+    st.until = w.s.tick + 4
+    w.fx([{"rel": ["guest", "girl", "affinity", -50]}])
+    assert danger.danger(w.s, w.defs) == 2
+    w.fx([{"rel": ["fighter", "player", "affinity", -50]}])
+    w.c("fighter").agenda.steps[0].do = {"verb": "attack", "target": "player", "intent": "kill"}
+    assert danger.danger(w.s, w.defs) == 3
+
+
 def test_danger_from_fighting_nearby(w: World) -> None:
     w.act("fighter", "attack", target="guest", intent="injure")
     assert danger.danger(w.s, w.defs) == 2
