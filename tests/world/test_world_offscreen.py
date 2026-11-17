@@ -206,7 +206,7 @@ async def test_false_premise_is_voided_before_setting_out(llm, world):
     assert before != "jianhu_hall"
     events = await offscreen.advance(state, defs, "sn_chief_b", 8)
     st = next(s for s in chief.agenda.steps if s.id == "t_far")
-    assert st.state == "pending"  # 头一次不成立：先原地等一个时辰（fix-regress：一时的空档不算数）
+    assert st.state == "pending"  # 头一次不成立：先原地等一个时辰（D-383：一时的空档不算数）
     timeflow.advance_time(state, defs, 8)
     events += await offscreen.advance(state, defs, "sn_chief_b", 8)
     assert chief.loc == before  # 没有动身

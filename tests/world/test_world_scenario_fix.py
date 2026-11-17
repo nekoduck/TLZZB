@@ -1,4 +1,4 @@
-"""分岔场景补上的几处世界层机制（docs/wip/scenario-fix.md），真实的 content/：
+"""分岔场景补上的几处世界层机制（docs/content_notes.md「分岔场景补的内容」），真实的 content/：
 
 - 掌门得知门人的私情（带 sect_scandal 标签的事实）→ 立即重新打算 → 「清理门户」压过「照旧」；
 - goals.yaml 的 fact_subject / threat_here 绑定方法，pressing / cooldown 两个规则键；
