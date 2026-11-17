@@ -82,3 +82,17 @@ def test_model_family() -> None:
     assert model_family('claude-opus-5-5') == 'opus'
     assert model_family('jev-1.14.0') == 'jev'
     assert model_family('gpt') == 'unknown'
+
+
+def test_claude_key_fallbacks(monkeypatch: pytest.MonkeyPatch) -> None:
+    s = Settings.model_validate({'claude': {'api_key_env': 'CK_MAIN', 'api_key_env_fallbacks': ['CK_ALT', 'CK_ALT2']}})
+    for name in ('CK_MAIN', 'CK_ALT', 'CK_ALT2'):
+        monkeypatch.delenv(name, raising=False)
+    assert s.claude_api_key() is None
+    monkeypatch.setenv('CK_ALT2', 'k2')
+    assert s.claude_api_key() == 'k2'
+    monkeypatch.setenv('CK_ALT', 'k1')
+    assert s.claude_api_key() == 'k1'
+    monkeypatch.setenv('CK_MAIN', 'k0')
+    assert s.claude_api_key() == 'k0'
+    assert 'k0' not in repr(s) and 'k1' not in repr(s)

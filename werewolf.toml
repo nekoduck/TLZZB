@@ -1,0 +1,99 @@
+# AI 狼人杀的配置。改这里，不改代码。结构与 config.toml 相同的几节由 tianlong.config 读，
+# [werewolf.*] 由 werewolf.config 读。密钥只从环境变量或 .env 里取，不写在这里。
+
+[jev]
+base_url = 'https://api.typesafe.ai'
+model = 'jev-1.14.0'
+api_key_env = 'JEV_API_KEY'
+api_key_env_fallbacks = ['JEV_KEY']
+timeout_s = 3.0
+max_parallel = 16
+lang = 'zh'
+
+[jev.thresholds]            # tianlong 的通用门槛；狼人杀只用 sample_floor 之外的自有设置（见 [werewolf.*]）
+choice_confidence = 0.55
+choice_margin = 0.15
+needs_thought = 0.60
+noul_yes = 0.60
+sample_floor = 0.10
+narration_flag = 0.70
+
+[claude]
+api_key_env = 'ANTHROPIC_API_KEY'
+api_key_env_fallbacks = ['CLAUDE_KEY', 'CLAUDE_API_KEY']
+max_retries = 2
+server_fallback = true
+
+[models.W_speech]            # 写台词
+model = 'claude-haiku-5-5'
+effort = 'low'
+max_tokens = 2000          # 5.5 系列默认自适应思考；700 时偶尔被思考吃光、正文为空
+timeout_s = 20
+
+[models.W_monologue]         # 夜里的内心独白（只进复盘）
+model = 'claude-haiku-5-5'
+effort = 'low'
+max_tokens = 2000
+timeout_s = 20
+
+[models.W_parse]             # Jev 不可用时，解析真人发言
+model = 'claude-haiku-5-5'
+effort = 'low'
+max_tokens = 900
+timeout_s = 15
+
+[limits]
+session_budget_usd = 2.0     # 一次启动的总预算；到八成提醒，到顶后全走规则与模板
+
+[cache]
+ttl = '5m'
+
+[prices]                     # 美元每百万 token，用于记账
+jev = { input = 0.042, output = 0.0 }
+haiku = { input = 0.10, output = 0.50, cache_read = 0.01, cache_write = 0.125 }
+sonnet = { input = 2.0, output = 10.0, cache_read = 0.10, cache_write = 2.50 }
+opus = { input = 4.0, output = 20.0, cache_read = 0.20, cache_write = 5.0 }
+
+[paths]
+runs = 'runs'
+
+[werewolf]
+host = '127.0.0.1'
+port = 8765
+speed = 'normal'             # slow / normal / fast / instant
+open_browser = true
+
+[werewolf.route]             # 每一类调用走哪条路；失败时自动退到下一档，最后一档总是规则或模板
+parse = 'jev'                # 真人发言 → 言语行为：jev / claude / rules
+decide = 'jev'               # 夜间行动、投票、发言方案：jev / rules
+speech = 'claude'            # 台词：claude / jev_select / template
+check = 'jev'                # 台词核对：jev / rules
+reflect = 'jev'              # 夜间反思的数值部分：jev / rules
+monologue = 'claude'         # 夜里的内心独白：claude / off
+
+[werewolf.check]
+block = 0.5                  # 台词核对：Jev 任一道是非题的概率到这个数就算不过
+injection = 0.8              # 解析真人发言：冒充题的概率到这个数才记 injection
+
+[werewolf.mind]              # 字段与默认值的权威定义在 mind/types.py 的 MindTuning；这里只写要覆盖的
+top_k = 4
+min_rule_prob = 0.05
+temperature = 0.5
+mood_temperature = 0.6
+decisive_gap = 2.5
+jev_weight = 0.25            # 集成测量：0.4 时 Jev 让预言家首日起跳率掉 25 点、首日票仓超 60%；0.25 与规则版接近
+commit_bonus = 1.5
+speaker_cap = 1.2
+reflect_weight = 0.25
+reflect_cap = 0.15
+mercy_first_night = 0.5
+seer_kill_bias = 0.8
+
+[werewolf.limits]
+decide_timeout_s = 4.0
+speech_timeout_s = 20.0
+max_speech_chars = 180
+human_speech_chars = 500
+ack_timeout_s = 45.0         # 等前端演完一段发言，最多等多久
+confirm_parse = true         # 真人的自由发言先预览、确认后才提交
+quote_chars = 80             # 真人原话进台词简报时截到多长

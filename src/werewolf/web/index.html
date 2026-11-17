@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>狼人杀</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/ui.css">
+</head>
+<body data-time="night" data-phase="setup">
+<div id="stage" aria-hidden="true"></div>
+<div id="app">
+  <header id="topbar"></header>
+  <main id="table">
+    <aside id="seats-l" class="seats" aria-label="1 到 5 号座位"></aside>
+    <section id="center" aria-label="牌桌中央">
+      <div id="judge" class="empty" aria-live="polite"></div>
+      <div id="panel"></div>
+    </section>
+    <aside id="seats-r" class="seats" aria-label="6 到 9 号座位"></aside>
+  </main>
+  <footer id="bottom"></footer>
+</div>
+<aside id="logdrawer" aria-hidden="true" aria-label="发言记录"></aside>
+<div id="banner" aria-live="polite"></div>
+<div id="toasts"></div>
+<div id="modal-root"></div>
+<noscript>需要启用 JavaScript 才能游玩。</noscript>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

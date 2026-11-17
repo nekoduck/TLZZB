@@ -12,6 +12,8 @@ dependencies = [
   "rich>=13.0",
   "prompt_toolkit>=3.0",
   "python-dotenv>=1.0",
+  "starlette>=0.40",
+  "uvicorn[standard]>=0.30",
 ]
 
 [project.optional-dependencies]
@@ -19,6 +21,7 @@ dev = ["pytest>=8", "pytest-asyncio>=0.24", "ruff>=0.6"]
 
 [project.scripts]
 tianlong = "tianlong.__main__:main"
+werewolf = "werewolf.__main__:main"
 
 [build-system]
 requires = ["setuptools>=69"]
@@ -27,14 +30,17 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+werewolf = ["web/**/*", "voice/data/*.yaml"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 markers = [
   "network: needs real API access (skipped by default)",
-  "slow: long-running (fuzz, baseline)",
+  "slow: long-running (fuzz, baseline, hundreds of self-play games, browser runs; skipped by default)",
 ]
-addopts = "-m 'not network'"
+addopts = "-m 'not network and not slow'"
 
 [tool.ruff]
 line-length = 110

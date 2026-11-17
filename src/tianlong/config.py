@@ -59,6 +59,7 @@ class RouteSettings(_Base):
 
 class ClaudeSettings(_Base):
     api_key_env: str = 'ANTHROPIC_API_KEY'
+    api_key_env_fallbacks: list[str] = Field(default_factory=list)
     max_retries: int = 2
     # 服务端拒答兜底（beta server-side-fallback-2026-07-01，fallbacks='default'）。
     # 不支持的模型上服务端照原模型跑，所以对 Haiku 也无害。批处理不能用。
@@ -154,8 +155,11 @@ class Settings(_Base):
         return None
 
     def claude_api_key(self) -> str | None:
-        value = os.environ.get(self.claude.api_key_env, '').strip()
-        return value or None
+        for name in [self.claude.api_key_env, *self.claude.api_key_env_fallbacks]:
+            value = os.environ.get(name, '').strip()
+            if value:
+                return value
+        return None
 
 
 def load_settings(path: str | Path = 'config.toml', *, env_file: str | Path | None = None) -> Settings:
