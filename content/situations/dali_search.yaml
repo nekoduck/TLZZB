@@ -1,0 +1,66 @@
+id: dali_search
+origin: canon
+title: '{guard}寻到了{heir}，请他回府'
+chronicle_open: '{guard}寻到了{heir}，请他回府'
+chronicle_close: '{guard}请{heir}回府的事有了结果'
+when:
+  all:
+    - {onstage: dali_guard_chief}
+    - {alive: dali_guard_chief}
+    - {alive: duan_yu}
+    - {onstage: duan_yu}
+    - {same_loc: [dali_guard_chief, duan_yu]}
+roles:
+  guard: dali_guard_chief
+  heir: duan_yu
+at: $guard
+scene: calm
+actions:
+  urge:
+    role: guard
+    lean: true
+    pre: {not: {flag: .urged}}
+    desc: '{guard}上前行礼，请{heir}回府'
+    effects:
+      - {set_flag: [.urged, true]}
+      - {learn: [$heir, F_dali_search, 1.0, told]}
+      - {emit: {actor: $guard, verb: urge, text: '{guard}上前行礼，说王府上下都在找他，请{heir}即刻回府'}}
+  go_home:
+    role: heir
+    pre: {all: [{flag: .urged}, {not: {status: [$heir, captive]}}]}
+    desc: '{heir}答应随{guard}回去'
+    effects:
+      - {set_flag: [.going, true]}
+      - {emit: {actor: $heir, verb: agree, text: '{heir}叹了口气，答应随{guard}回去'}}
+      - {leave: $heir}
+      - {leave: $guard}
+  refuse:
+    role: heir
+    lean: true
+    pre: {flag: .urged}
+    desc: '{heir}推说还有事未了，不肯走'
+    effects:
+      - {set_flag: [.refused, true]}
+      - {emit: {actor: $heir, verb: refuse, text: '{heir}推说还有事没了结，不肯就走'}}
+exit_when: {any: [{flag: .going}, {flag: .refused}, {not: {same_loc: [$guard, $heir]}}]}
+max_turns: 6
+offscreen:
+  - when: {any: [{status: [duan_yu, captive]}, {status: [duan_yu, poisoned_duanchang]}]}
+    effects:
+      - {learn: [$heir, F_dali_search, 1.0, told]}
+      - {emit: {actor: $guard, verb: urge, text: '{guard}找到了{heir}，见他身陷困境，留下来设法相救'}}
+      - {replan: $guard}
+  - when: true
+    effects:
+      - check:
+          kind: chance
+          who: $guard
+          chance: 60
+          ok:
+            - {emit: {actor: $guard, verb: escort, text: '{guard}找到{heir}，好说歹说，护送他回大理去了'}}
+            - {leave: $heir}
+            - {leave: $guard}
+          fail:
+            - {learn: [$heir, F_dali_search, 1.0, told]}
+            - {emit: {actor: $heir, verb: refuse, text: '{heir}不肯回去，{guard}只好留下来跟着他'}}
+paragraphs: []

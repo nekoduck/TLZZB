@@ -1,0 +1,33 @@
+id: gong_guangjie
+name: 龚光杰
+unknown_alias: 场中舞剑的青年
+tier: soul
+base_power: 2
+neili: 20
+arts: {wuliang_sword: 1}
+literacy: 1
+aptitude: 1
+luck: 5
+roles: [wuliang_disciple, wuliang_east]
+superior: zuo_zimu
+initiative: 5
+self_intro: 无量剑东宗的弟子，这一回代师门下场比剑。
+values: [骄横好胜, 受不得人笑, 在师父面前爱表现]
+drives: [clan_honor, get_stronger]
+voice:
+  habits: [说话冲，带着挑衅, 动不动就要人下场比划]
+  samples: []
+bottom_lines:
+  - text: 不当着众人求饶
+    blocks: [{verb: say, act: plead, when: {others_here: [self, 2]}}]
+choices:
+  - situation: 比剑得胜时被旁人笑了一声
+    did: 立刻转身逼问笑的人，要他下场比划，不肯就动手
+    para: null
+  - situation: 自己吃了亏，旁边有师长看着
+    did: 硬撑着不认输，回头再找补
+    para: null
+knows: [F_wuliang_two_sects, F_backhill_forbidden]
+rel:
+  zuo_zimu: {trust: 60, affinity: 40, fear: 30, regard: 3}
+agenda: gong_guangjie

@@ -1,0 +1,106 @@
+# 有人带着钟灵被扣的消息到了钟家正厅。报信人姓段（身份 'surname:段'）时谷主发作、夫人托付金盒；
+# 不姓段时夫人谢过来人，自己拿主意（重新打算）。
+id: wanjie_news
+origin: canon
+title: '{messenger}到钟家正厅报信'
+chronicle_open: '{messenger}到了⟦zhong_hall⟧，带来小姐被扣的消息'
+chronicle_close: '{messenger}报信的事有了结果'
+when:
+  all:
+    - {not: {flag: zhong_news_delivered}}
+    - {alive: gan_baobao}
+    - {at: [gan_baobao, zhong_hall]}
+    - {status: [zhong_ling, captive]}
+roles:
+  mistress: gan_baobao
+  master: zhong_wanchou
+  messenger:
+    pick:
+      where:
+        all:
+          - {knows: [$it, F_zhong_ling_held]}
+          - {not: {role: [$it, wanjie_family]}}
+          - {not: {role: [$it, wanjie_servant]}}
+at: zhong_hall
+scene: tense
+actions:
+  tell_news:
+    role: messenger
+    lean: true
+    pre: {not: {flag: .told}}
+    desc: '{messenger}把小姐被扣的消息说了'
+    effects:
+      - {set_flag: [.told, true]}
+      - {learn: [$mistress, F_zhong_ling_held, 1.0, told]}
+      - {schedule: [0, [{learn: [$master, F_zhong_ling_held, 1.0, told]}], {same_loc: [$master, $messenger]}]}
+      - {emit: {actor: $messenger, verb: tell, text: '{messenger}说起{mistress}的女儿被神农帮扣在营里，拿解药才肯放人'}}
+  show_shoe:
+    role: messenger
+    pre: {has: [$messenger, zhong_ling_shoe]}
+    desc: '{messenger}拿出那只绣鞋做凭据'
+    effects:
+      - {set_flag: [.proved, true]}
+      - {rel: [$mistress, $messenger, trust, 20]}
+      - {emit: {actor: $messenger, verb: show, text: '{messenger}拿出一只小小的绣鞋，{mistress}一见脸色就变了'}}
+  ask_name:
+    role: mistress
+    lean: true
+    pre: {all: [{flag: .told}, {not: {flag: .asked}}]}
+    desc: '{mistress}细问{messenger}的姓名来历'
+    effects:
+      - {set_flag: [.asked, true]}
+      - {emit: {actor: $mistress, verb: ask, text: '{mistress}一句接一句，细问{messenger}的姓名、家乡和来历'}}
+  rage_duan:
+    role: master
+    lean: true
+    loud: true
+    pre: {all: [{flag: .asked}, {not: {flag: .raged}}, {role: [$messenger, 'surname:段']}, {same_loc: [$master, $messenger]}]}
+    desc: '{master}听说来人姓段，当场发作'
+    effects:
+      - {set_flag: [.raged, true]}
+      - {rel: [$master, $messenger, affinity, -40]}
+      - {emit: {actor: $master, verb: rage, text: '{master}一听来人姓段，拍案大骂，要把{messenger}轰出谷去', loud: true, kinds: [{k: threaten, who: $messenger, by: $master}]}}
+  entrust_box:
+    role: mistress
+    lean: true
+    pre: {all: [{flag: .asked}, {role: [$messenger, 'surname:段']}, {has: [$mistress, gold_box]}]}
+    desc: '{mistress}把一只金盒托付给{messenger}，叫他去借快马'
+    effects: &entrust
+      - {give: [$mistress, $messenger, gold_box]}
+      - {learn: [$messenger, F_mu_lodging, 1.0, told]}
+      - {set_flag: [zhong_news_delivered, true]}
+      - {set_flag: [.entrusted, true]}
+      - {emit: {actor: $mistress, verb: entrust, text: '{mistress}背着丈夫把一只金盒塞给{messenger}，叮嘱他去大路边的人家借一匹快马，连夜赶路'}}
+  thank_and_send:
+    role: mistress
+    lean: true
+    pre: {all: [{flag: .asked}, {not: {role: [$messenger, 'surname:段']}}]}
+    desc: '{mistress}谢过{messenger}，自己另拿主意'
+    effects: &thank
+      - {set_flag: [zhong_news_delivered, true]}
+      - {set_flag: [.sent, true]}
+      - {rel: [$mistress, $messenger, affinity, 15]}
+      - {replan: $mistress}
+      - {replan: $master}
+      - {emit: {actor: $mistress, verb: thank, text: '{mistress}谢过{messenger}，转身去和丈夫商量救女儿的事'}}
+exit_when: {any: [{flag: .entrusted}, {flag: .sent}, {not: {same_loc: [$messenger, $mistress]}}]}
+max_turns: 8
+offscreen:
+  - when: {role: [$messenger, 'surname:段']}
+    effects:
+      - {learn: [$mistress, F_zhong_ling_held, 1.0, told]}
+      - {schedule: [0, [{learn: [$master, F_zhong_ling_held, 1.0, told]}, {rel: [$master, $messenger, affinity, -40]}, {emit: {actor: $master, verb: rage, text: '{master}听说来人姓段，拍案大骂，要把{messenger}轰出谷去', loud: true}}], {same_loc: [$master, $messenger]}]}
+      - {give: [$mistress, $messenger, gold_box]}
+      - {learn: [$messenger, F_mu_lodging, 1.0, told]}
+      - {set_flag: [zhong_news_delivered, true]}
+      - {emit: {actor: $mistress, verb: entrust, text: '{mistress}问明经过，背着丈夫把一只金盒托付给{messenger}，叮嘱他去借快马'}}
+  - when: true
+    effects:
+      - {learn: [$mistress, F_zhong_ling_held, 1.0, told]}
+      - {schedule: [0, [{learn: [$master, F_zhong_ling_held, 1.0, told]}], {same_loc: [$master, $messenger]}]}
+      - {set_flag: [zhong_news_delivered, true]}
+      - {rel: [$mistress, $messenger, affinity, 15]}
+      - {replan: $mistress}
+      - {replan: $master}
+      - {emit: {actor: $mistress, verb: thank, text: '{mistress}问明经过，谢过{messenger}，转身去和丈夫商量救女儿的事'}}
+paragraphs: []

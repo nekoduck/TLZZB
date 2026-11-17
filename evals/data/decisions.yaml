@@ -1,0 +1,1433 @@
+# 抉择集（方案 11.6「抉择集」：J2 与 C2 对原著做法的一致率）。格式见 evals/README.md 第 3 节。
+# 80 个抉择点，取自人物卡的 choices 与底线、各人开局的打算（agendas/），以及凭记忆排的前六回经过（docs/content_notes.md）。
+# 文字全部是自己写的。canon 是原著的做法；拿不准的标 confidence: low，并在 note 里写「待原文核对」。
+# para 留给管线 P3 拿到原文后补段落编号，现在一律为 null。
+# 测的是模型像不像这个人，不是要游戏照原著走。
+version: 1
+items:
+  # ================================================================ 段誉
+  - id: d01
+    char: duan_yu
+    setup:
+      - {set_flag: [bout_over, true]}
+    situation: 练武厅上比剑，场中的东宗弟子卖了个破绽，一剑逼得对手认输，满厅喝彩。你看得明白，那一招赢得并不光彩。
+    candidates:
+      - {id: a1, desc: 默不作声，低头喝茶, verb: wait}
+      - {id: a2, desc: 跟着众人拍手叫好}
+      - {id: a3, desc: 起身离席，到山门外透口气, verb: go, params: {exit: jianhu_gate}}
+      - {id: a4, desc: 忍不住失声笑了出来, verb: setpiece, params: {name: laugh}}
+      - {id: a5, desc: 向上首的掌门说破那一招是使诈, speech: {act: tell, to: [zuo_zimu]}}
+    canon: a4
+    confidence: high
+    source: card:duan_yu.choices[0]
+    para: null
+  - id: d02
+    char: duan_yu
+    setup:
+      - {set_flag: [bout_over, true]}
+      - {set_flag: [guest_laughed, true]}
+    situation: 你笑出了声，那得胜的弟子转过身来，指着你喝问笑什么，要你下场比划比划。
+    candidates:
+      - {id: a1, desc: 说自己不会武功，也不愿与人动手，却不肯认错, speech: {act: refuse, to: [gong_guangjie]}}
+      - {id: a2, desc: 拾起一柄剑下场应战, verb: attack, params: {target: gong_guangjie}}
+      - {id: a3, desc: 转身就往厅外走, verb: go, params: {exit: jianhu_gate}}
+      - {id: a4, desc: 求同来的茶商替自己说情, speech: {act: request, to: [ma_wude]}}
+      - {id: a5, desc: 拱手赔个不是, verb: setpiece, params: {name: apologize}}
+    canon: a1
+    confidence: high
+    source: card:duan_yu.choices[0]
+    para: null
+  - id: d03
+    char: duan_yu
+    setup:
+      - {set_flag: [bout_over, true]}
+      - {set_flag: [guest_laughed, true]}
+      - {set_flag: [slapped, true]}
+      - {injure: [duan_yu, 1, gong_guangjie]}
+      - {remove_status: [zhong_ling, hidden]}
+    situation: 你挨了一记耳光，脸上火辣辣的。梁上忽然有个少女笑出声来，替你取笑那打人的弟子。
+    candidates:
+      - {id: a1, desc: 扑上去跟那弟子拼命, verb: attack, params: {target: gong_guangjie}}
+      - {id: a2, desc: 劝梁上的少女快走，免得惹祸, speech: {act: warn, to: [zhong_ling]}}
+      - {id: a3, desc: 朝梁上的少女作揖道谢，同她搭话, verb: setpiece, params: {name: thank}}
+      - {id: a4, desc: 捂着脸一言不发, verb: wait}
+      - {id: a5, desc: 向上首的掌门告状, speech: {act: request, to: [zuo_zimu]}}
+    canon: a3
+    confidence: high
+    source: situation:beam_girl
+    para: null
+  - id: d04
+    char: duan_yu
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {learn: [duan_yu, F_shennong_siege, 1.0, told]}
+    situation: 有人来报，山下神农帮把无量山围了，扬言要动刀子。满厅的人都在议论怎么守。
+    candidates:
+      - {id: a1, desc: 留在剑湖宫客舍里等风头过去, verb: go, params: {exit: jianhu_back}}
+      - {id: a2, desc: 从后山小路自己溜下山去}
+      - {id: a3, desc: 请掌门派人护送自己下山, speech: {act: request, to: [zuo_zimu]}}
+      - {id: a4, desc: 留在厅上看两边怎么打, verb: wait}
+      - {id: a5, desc: 明知自己不会武功，也要下山去当面劝神农帮罢手, verb: go, params: {exit: jianhu_gate}}
+    canon: a5
+    confidence: high
+    source: card:duan_yu.choices[1]
+    para: null
+  - id: d05
+    char: duan_yu
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {move: [duan_yu, shennong_camp]}
+      - {learn: [duan_yu, F_shennong_siege, 1.0, told]}
+    situation: 你闯进神农帮营地，留山羊胡的帮主冷冷打量你，几个帮众围了上来。
+    candidates:
+      - {id: a1, desc: 夺过帮众的刀反抗, verb: attack, params: {target: sn_guard_1}}
+      - {id: a2, desc: 讲一番大道理，劝帮主罢兵, speech: {act: request, to: [sikong_xuan]}}
+      - {id: a3, desc: 一言不发，转身就走, verb: go, params: {exit: mountain_path}}
+      - {id: a4, desc: 跪下求帮主放自己走, speech: {act: plead, to: [sikong_xuan]}}
+      - {id: a5, desc: 报出自己的家世来压人, speech: {act: tell, to: [sikong_xuan], fact: F_duan_family}}
+    canon: a2
+    confidence: high
+    source: card:duan_yu.choices[1-2]
+    para: null
+  - id: d06
+    char: duan_yu
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {move: [duan_yu, shennong_camp]}
+      - {move: [zhong_ling, shennong_camp]}
+      - {remove_status: [zhong_ling, hidden]}
+      - {add_status: [duan_yu, captive, {source: sikong_xuan}]}
+      - {add_status: [zhong_ling, captive, {source: sikong_xuan}]}
+      - {add_status: [sikong_xuan, poisoned_diao, {ticks: 672, source: zhong_ling}]}
+      - {set_flag: [diao_bite_done, true]}
+    situation: 帮主被那少女的小貂咬了，把一包药粉推到你面前：服下它，七日内去万劫谷取回解药，再来换你的解药；那少女留下做人质。
+    candidates:
+      - {id: a1, desc: 宁死不服, verb: setpiece, params: {name: refuse}}
+      - {id: a2, desc: 假装服下，偷偷吐掉}
+      - {id: a3, desc: 求帮主放了那少女，由自己一人留下, speech: {act: request, to: [sikong_xuan]}}
+      - {id: a4, desc: 服下药粉，答应去万劫谷, verb: setpiece, params: {name: swallow}}
+      - {id: a5, desc: 趁乱夺路逃走, verb: flee, params: {exit: mountain_path}}
+    canon: a4
+    confidence: high
+    source: agenda:dy_errand_wanjie
+    para: null
+  - id: d07
+    char: duan_yu
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {move: [duan_yu, shennong_camp]}
+      - {move: [zhong_ling, shennong_camp]}
+      - {remove_status: [zhong_ling, hidden]}
+      - {add_status: [zhong_ling, captive, {source: sikong_xuan}]}
+      - {add_status: [duan_yu, poisoned_duanchang, {ticks: 672, source: sikong_xuan}]}
+      - {set_flag: [errand_sent, true]}
+      - {give: [zhong_ling, duan_yu, zhong_ling_shoe]}
+      - {learn: [duan_yu, F_route_wanjie, 1.0, told]}
+      - {learn: [duan_yu, F_zhong_ling_held, 1.0, saw]}
+    situation: 你服了毒，那少女把一只绣鞋塞给你，悄声说了去万劫谷的走法。帮众催你上路。
+    candidates:
+      - {id: a1, desc: 立刻动身，照她说的路去万劫谷, verb: go, params: {exit: back_trail}}
+      - {id: a2, desc: 赖在营里不走，陪着那少女, verb: wait}
+      - {id: a3, desc: 先求帮主给些盘缠, speech: {act: request, to: [sikong_xuan]}}
+      - {id: a4, desc: 先回剑湖宫找茶商商量, verb: go, params: {exit: mountain_path}}
+      - {id: a5, desc: 往大理方向回家去}
+    canon: a1
+    confidence: high
+    source: agenda:dy_errand_wanjie
+    para: null
+  - id: d08
+    char: duan_yu
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {move: [duan_yu, back_trail]}
+      - {move: [gan_guanghao, back_trail]}
+      - {move: [ge_guangpei, back_trail]}
+      - {add_status: [duan_yu, poisoned_duanchang, {ticks: 672, source: sikong_xuan}]}
+      - {learn: [duan_yu, F_lovers, 1.0, saw]}
+    situation: 后山小路上，你撞见一对剑派男女拉着手赶路。那男的脸色大变，拔剑朝你逼过来，要杀人灭口。
+    candidates:
+      - {id: a1, desc: 劝两人回去向师父认错, speech: {act: request, to: [gan_guanghao]}}
+      - {id: a2, desc: 躲进路边树丛, verb: hide, params: {feature: thicket}}
+      - {id: a3, desc: 转身没命地逃, verb: setpiece, params: {name: run}}
+      - {id: a4, desc: 站着不动，讲道理, speech: {act: tell, to: [gan_guanghao]}}
+      - {id: a5, desc: 赌咒发誓绝不说出去, verb: setpiece, params: {name: plead_silence}}
+    canon: a3
+    confidence: low
+    source: situation:caught_eloping
+    note: 段誉被追到崖边坠落是大致经过；他当时是先求饶还是直接跑，待原文核对。
+    para: null
+  - id: d09
+    char: duan_yu
+    setup:
+      - {move: [duan_yu, valley_floor]}
+      - {injure: [duan_yu, 2]}
+    situation: 你从崖上滚落，竟没摔死，落在四面陡壁的谷底湖边，浑身疼痛。
+    candidates:
+      - {id: a1, desc: 躺在湖边等人来救, verb: rest, params: {hours: 8}}
+      - {id: a2, desc: 拼命顺着崖壁往上爬, verb: go, params: {exit: cliff_edge}}
+      - {id: a3, desc: 放声大喊救命}
+      - {id: a4, desc: 沿着湖岸四处寻找出路, verb: search}
+    canon: a4
+    confidence: low
+    source: course:第二回前后
+    note: 他怎样找到石洞入口，待原文核对。
+    para: null
+  - id: d10
+    char: duan_yu
+    setup:
+      - {move: [duan_yu, valley_cave]}
+      - {learn: [duan_yu, 'exit:valley_floor:valley_cave', 1.0, saw]}
+      - {learn: [duan_yu, F_cave, 1.0, saw]}
+    situation: 石洞里立着一尊玉像，美得叫你挪不开眼。石壁上刻着几行字，叫见到的人对着玉像磕头。
+    candidates:
+      - {id: a1, desc: 拿起蒲团翻看, verb: setpiece, params: {name: search_cushion}}
+      - {id: a2, desc: 照石壁所刻，对着玉像一个接一个地磕头, verb: setpiece, params: {name: kowtow}}
+      - {id: a3, desc: 在洞里歇一夜再说, verb: rest, params: {hours: 8}}
+      - {id: a4, desc: 不理玉像，只顾找出口, verb: search}
+      - {id: a5, desc: 砸开玉像看看里面有什么}
+    canon: a2
+    confidence: high
+    source: situation:cave_find
+    para: null
+  - id: d11
+    char: duan_yu
+    setup:
+      - {move: [duan_yu, valley_cave]}
+      - {learn: [duan_yu, 'exit:valley_floor:valley_cave', 1.0, saw]}
+      - {give: [null, duan_yu, silk_scroll]}
+      - {learn: [duan_yu, F_scroll_contents, 1.0, saw]}
+      - {add_status: [duan_yu, poisoned_duanchang, {ticks: 672, source: sikong_xuan}]}
+    situation: 蒲团里掉出一卷帛书，上面画着步法和练功的图。你身上的毒还有几日期限。
+    candidates:
+      - {id: a1, desc: 把帛卷收好，赶路要紧, verb: go, params: {exit: valley_floor}}
+      - {id: a2, desc: 照着帛卷研读上面的步法, verb: study, params: {item: silk_scroll, art: lingbo}}
+      - {id: a3, desc: 先研读那门吸人内力的功夫, verb: study, params: {item: silk_scroll, art: beiming}}
+      - {id: a4, desc: 嫌是打人的功夫，把帛卷扔进湖里}
+    canon: a2
+    confidence: low
+    source: agenda:dy_study_scroll
+    note: 段誉在洞中学了多久、先学哪一门，待原文核对。
+    para: null
+  - id: d12
+    char: duan_yu
+    setup:
+      - {move: [duan_yu, zhong_hall]}
+      - {remove_status: [zhong_ling, hidden]}
+      - {move: [zhong_ling, shennong_camp]}
+      - {add_status: [zhong_ling, captive, {source: sikong_xuan}]}
+      - {learn: [duan_yu, F_zhong_ling_held, 1.0, saw]}
+      - {learn: [gan_baobao, F_zhong_ling_held, 1.0, told]}
+    situation: 钟夫人听你报完信，一句接一句地细问你姓甚名谁。她丈夫在旁边冷眼看着你。
+    candidates:
+      - {id: a1, desc: 如实说出自己姓段, speech: {act: tell, to: [gan_baobao]}}
+      - {id: a2, desc: 随口编个别的姓, speech: {act: lie, to: [gan_baobao]}}
+      - {id: a3, desc: 反问夫人为何追问姓名, speech: {act: ask, to: [gan_baobao]}}
+      - {id: a4, desc: 支吾着不肯说, verb: wait}
+    canon: a1
+    confidence: high
+    source: situation:wanjie_news
+    para: null
+  - id: d13
+    char: duan_yu
+    setup:
+      - {move: [duan_yu, mu_house]}
+      - {give: [gan_baobao, duan_yu, gold_box]}
+      - {learn: [duan_yu, F_mu_lodging, 1.0, told]}
+      - {add_status: [duan_yu, poisoned_duanchang, {ticks: 672, source: sikong_xuan}]}
+    situation: 照钟夫人的指点，你找到大路边这户人家。屋后拴着一匹黑马，一个黑衣蒙面的女子冷冷地看着你。
+    candidates:
+      - {id: a1, desc: 不借了，自己走着去, verb: go, params: {exit: highroad}}
+      - {id: a2, desc: 求她陪自己一道去救人, speech: {act: request, to: [mu_wanqing]}}
+      - {id: a3, desc: 说明来意，向她借马, speech: {act: request, to: [mu_wanqing]}}
+      - {id: a4, desc: 趁她不备牵了马就走, verb: steal, params: {item: black_rose, target: mu_wanqing}}
+      - {id: a5, desc: 把金盒押给她换马, verb: give, params: {item: gold_box, target: mu_wanqing}}
+    canon: a3
+    confidence: low
+    source: agenda:dy_borrow_horse
+    note: 黑玫瑰是借来的还是另有缘故，待原文核对。
+    para: null
+  - id: d14
+    char: duan_yu
+    setup:
+      - {move: [duan_yu, highroad]}
+      - {give: [mu_wanqing, duan_yu, black_rose]}
+      - {enter: [rui_popo, highroad]}
+      - {enter: [ping_popo, highroad]}
+      - {learn: [duan_yu, F_mu_hunted, 1.0, saw]}
+    situation: 你骑着黑马夜行，路边闪出一伙人拦住去路，喝问那黑衣女子在哪里。你这才知道有人要去杀她。
+    candidates:
+      - {id: a1, desc: 下马求饶, speech: {act: plead, to: [rui_popo]}}
+      - {id: a2, desc: 冲过去继续赶自己的路, verb: flee, params: {exit: out_dali}}
+      - {id: a3, desc: 把她的住处告诉来人，以求脱身, speech: {act: tell, to: [rui_popo], fact: F_mu_lodging}}
+      - {id: a4, desc: 钻进竹林躲起来, verb: hide, params: {feature: bamboo}}
+      - {id: a5, desc: 拨转马头，回去给她报信, verb: flee, params: {exit: mu_house}}
+    canon: a5
+    confidence: high
+    source: agenda:dy_warn_mu
+    note: 出口 out_dali 是图外，flee 不能走图外，这一项只作描述。
+    para: null
+  - id: d15
+    char: duan_yu
+    setup:
+      - {move: [duan_yu, mu_house]}
+      - {enter: [rui_popo, mu_house]}
+      - {enter: [ping_popo, mu_house]}
+      - {rel: [mu_wanqing, duan_yu, trust, 20]}
+    situation: 你报了信，追兵也到了。黑衣女子放箭杀开一条路，回头叫你跟上，往高崖那边退。
+    candidates:
+      - {id: a1, desc: 留下来劝两边罢手, speech: {act: request, to: [rui_popo]}}
+      - {id: a2, desc: 跟着她突围，退上高崖, verb: follow, params: {target: mu_wanqing}}
+      - {id: a3, desc: 独自骑马往别处逃}
+      - {id: a4, desc: 躲进屋后马棚, verb: hide, params: {feature: stable}}
+    canon: a2
+    confidence: low
+    source: agenda:dy_hold_crag
+    note: 突围的经过与去处，待原文核对。
+    para: null
+  - id: d16
+    char: duan_yu
+    setup:
+      - {move: [duan_yu, highroad]}
+      - {enter: [nanhai_eshen, highroad]}
+      - {add_status: [duan_yu, captive, {source: nanhai_eshen}]}
+      - {learn: [duan_yu, F_eshen_wants_heir, 1.0, told]}
+    situation: 一个大脑袋的凶人摸着你的后脑勺，大叫你根骨像他，非要你磕头拜师不可。
+    candidates:
+      - {id: a1, desc: 梗着脖子，说什么也不肯拜师, verb: setpiece, params: {name: refuse}}
+      - {id: a2, desc: 跟他讲一通道理，说自己不学打人的功夫, speech: {act: refuse, to: [nanhai_eshen]}}
+      - {id: a3, desc: 挣脱了拔腿就跑, verb: struggle}
+      - {id: a4, desc: 跪下磕头拜师, verb: setpiece, params: {name: kowtow}}
+    canon: a1
+    confidence: high
+    source: card:duan_yu.bottom_lines[2]
+    note: 「梗着脖子不肯」与「讲道理说不学打人的功夫」都是不肯；前者是情境动作，记为原著做法，后者也算像这个人（accept）。
+    accept: [a2]
+    para: null
+  # ================================================================ 钟灵
+  - id: d17
+    char: zhong_ling
+    setup:
+      - {set_flag: [bout_over, true]}
+      - {set_flag: [guest_laughed, true]}
+      - {set_flag: [slapped, true]}
+      - {injure: [duan_yu, 1, gong_guangjie]}
+    situation: 你躲在练武厅梁上看热闹。底下那个东宗弟子打了一个不会武功的书生一记耳光，满厅没人吭声。
+    candidates:
+      - {id: a1, desc: 在梁上出声，取笑那弟子欺负不会武功的人, verb: setpiece, params: {name: jeer}}
+      - {id: a2, desc: 接着躲着不出声, verb: wait}
+      - {id: a3, desc: 放小貂下去咬那弟子}
+      - {id: a4, desc: 跳下梁来劝架}
+      - {id: a5, desc: 悄悄从梁上溜走, verb: go, params: {exit: jianhu_back}}
+    canon: a1
+    confidence: high
+    source: card:zhong_ling.choices[1]
+    para: null
+  - id: d18
+    char: zhong_ling
+    setup:
+      - {set_flag: [bout_over, true]}
+      - {set_flag: [guest_laughed, true]}
+      - {set_flag: [slapped, true]}
+      - {injure: [duan_yu, 1, gong_guangjie]}
+      - {remove_status: [zhong_ling, hidden]}
+      - {set_flag: [beam_girl_done, true]}
+    situation: 你出了声，那打人的弟子仰头喝骂，要你下来说个明白。挨打的书生朝你作揖道谢。
+    candidates:
+      - {id: a1, desc: 放小貂扑那喝骂的弟子, verb: setpiece, params: {name: loose_diao}}
+      - {id: a2, desc: 向那弟子赔个不是, speech: {act: plead, to: [gong_guangjie]}}
+      - {id: a3, desc: 跳下梁来，挨着那书生说说笑笑, verb: setpiece, params: {name: befriend}}
+      - {id: a4, desc: 缩回梁上不理, verb: hide, params: {feature: beam}}
+      - {id: a5, desc: 报出自家爹爹的名头吓唬他, speech: {act: threaten, to: [gong_guangjie]}}
+    canon: a3
+    confidence: low
+    source: situation:beam_girl
+    note: 她下梁之前有没有放貂伤人，待原文核对。
+    accept: [a1]
+    para: null
+  - id: d19
+    char: zhong_ling
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {remove_status: [zhong_ling, hidden]}
+      - {rel: [zhong_ling, duan_yu, affinity, 25]}
+      - {learn: [zhong_ling, F_shennong_siege, 1.0, told]}
+    situation: 刚认下的书生朋友非要下山去跟神农帮讲道理。你劝了两句，他不听。
+    candidates:
+      - {id: a1, desc: 自己回万劫谷去}
+      - {id: a2, desc: 留在剑湖宫看热闹, verb: wait}
+      - {id: a3, desc: 硬拦着不许他去, verb: block, params: {target: duan_yu}}
+      - {id: a4, desc: 去求掌门派人跟着他, speech: {act: request, to: [zuo_zimu]}}
+      - {id: a5, desc: 拦不住，就跟着他一起去, verb: follow, params: {target: duan_yu}}
+    canon: a5
+    confidence: high
+    source: card:zhong_ling.choices[0]
+    para: null
+  - id: d20
+    char: zhong_ling
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {remove_status: [zhong_ling, hidden]}
+      - {move: [duan_yu, shennong_camp]}
+      - {move: [zhong_ling, shennong_camp]}
+      - {rel: [zhong_ling, duan_yu, affinity, 25]}
+      - {add_status: [duan_yu, captive, {source: sikong_xuan}]}
+    situation: 神农帮的帮主喝令拿下你那书生朋友，帮众已经扭住了他的胳膊。
+    candidates:
+      - {id: a1, desc: 乖乖站着不动, verb: wait}
+      - {id: a2, desc: 放出闪电貂去咬帮主}
+      - {id: a3, desc: 自己先逃出营去, verb: go, params: {exit: mountain_path}}
+      - {id: a4, desc: 报出自家来历, speech: {act: tell, to: [sikong_xuan], fact: F_zhong_ling_daughter}}
+      - {id: a5, desc: 哭着求帮主放人, speech: {act: plead, to: [sikong_xuan]}}
+    canon: a2
+    confidence: high
+    source: card:zhong_ling.choices[0]
+    para: null
+  - id: d21
+    char: zhong_ling
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {remove_status: [zhong_ling, hidden]}
+      - {move: [zhong_ling, shennong_camp]}
+      - {add_status: [zhong_ling, captive, {source: sikong_xuan}]}
+      - {add_status: [sikong_xuan, poisoned_diao, {ticks: 672, source: zhong_ling}]}
+      - {set_flag: [diao_bite_done, true]}
+    situation: 你被帮众扣住。帮主捂着被貂咬过的手腕，阴沉着脸逼问你那小兽的来历。
+    candidates:
+      - {id: a1, desc: 骗他说解药在剑湖宫, speech: {act: lie, to: [sikong_xuan]}}
+      - {id: a2, desc: 一声不吭, verb: wait}
+      - {id: a3, desc: 趁他不备想挣脱, verb: struggle}
+      - {id: a4, desc: 嘴硬，说这毒天下只有她爹解得了, speech: {act: tell, to: [sikong_xuan], fact: F_diao_antidote_father}}
+      - {id: a5, desc: 哭着求他放过自己, speech: {act: plead, to: [sikong_xuan]}}
+    canon: a4
+    confidence: high
+    source: card:zhong_ling.choices[2]
+    para: null
+  - id: d22
+    char: zhong_ling
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {remove_status: [zhong_ling, hidden]}
+      - {move: [duan_yu, shennong_camp]}
+      - {move: [zhong_ling, shennong_camp]}
+      - {add_status: [zhong_ling, captive, {source: sikong_xuan}]}
+      - {add_status: [duan_yu, poisoned_duanchang, {ticks: 672, source: sikong_xuan}]}
+      - {rel: [zhong_ling, duan_yu, affinity, 30]}
+    situation: 书生朋友被逼服了毒，要替帮主去万劫谷取解药，你留下做人质。他就要上路了。
+    candidates:
+      - {id: a1, desc: 什么也不说, verb: wait}
+      - {id: a2, desc: 叫他别管自己，赶紧逃命, speech: {act: request, to: [duan_yu]}}
+      - {id: a3, desc: 脱下一只绣鞋交给他，悄悄告诉他去万劫谷的走法, verb: setpiece, params: {name: tell_way}}
+      - {id: a4, desc: 求帮主改派别人去, speech: {act: request, to: [sikong_xuan]}}
+    canon: a3
+    confidence: high
+    source: situation:poison_errand
+    para: null
+  - id: d23
+    char: zhong_ling
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {remove_status: [zhong_ling, hidden]}
+      - {move: [duan_yu, shennong_camp]}
+      - {move: [zhong_ling, shennong_camp]}
+      - {add_status: [zhong_ling, captive, {source: sikong_xuan}]}
+      - {add_status: [duan_yu, poisoned_duanchang, {ticks: 672, source: sikong_xuan}]}
+      - {rel: [zhong_ling, duan_yu, affinity, 30]}
+    situation: 书生朋友要去万劫谷了。你知道爹爹恨透了姓段的人，而他偏偏姓段。
+    candidates:
+      - {id: a1, desc: 把娘年轻时的旧事告诉他}
+      - {id: a2, desc: 叮嘱他进了谷千万别说自己姓段, speech: {act: warn, to: [duan_yu], fact: F_valley_hates_duan}}
+      - {id: a3, desc: 劝他别去了, speech: {act: request, to: [duan_yu]}}
+      - {id: a4, desc: 什么也不提, verb: wait}
+    canon: a2
+    confidence: low
+    source: course:第一回前后
+    note: 钟灵是否叮嘱过他别提姓段，待原文核对。
+    para: null
+  - id: d24
+    char: zhong_ling
+    setup:
+      - {remove_status: [zhong_ling, hidden]}
+      - {move: [zhong_ling, shennong_camp]}
+      - {add_status: [zhong_ling, captive, {source: sikong_xuan}]}
+      - {set_flag: [errand_sent, true]}
+    situation: 你被关在营地木栅里，送信的人走了好几天还没回来。看守端着一碗饭过来。
+    candidates:
+      - {id: a1, desc: 老老实实待着，等人来救, verb: wait}
+      - {id: a2, desc: 趁看守开门想挣脱, verb: struggle}
+      - {id: a3, desc: 哭闹着要见帮主, speech: {act: request, to: [sn_guard_1]}}
+      - {id: a4, desc: 跟看守斗嘴取乐, speech: {act: taunt, to: [sn_guard_1]}}
+    canon: a1
+    confidence: low
+    source: agenda:zl_wait_rescue
+    note: 钟灵被扣期间做了什么，待原文核对。
+    para: null
+  - id: d25
+    char: zhong_ling
+    setup:
+      - {remove_status: [zhong_ling, hidden]}
+      - {move: [zhong_ling, shennong_camp]}
+      - {move: [duan_yu, shennong_camp]}
+      - {rel: [zhong_ling, duan_yu, affinity, 40]}
+    situation: 你刚被救出木栅，营里还乱着。书生朋友叫你快走。
+    candidates:
+      - {id: a1, desc: 回剑湖宫看热闹, verb: go, params: {exit: mountain_path}}
+      - {id: a2, desc: 留下来找帮主算账, verb: attack, params: {target: sikong_xuan}}
+      - {id: a3, desc: 跟着书生朋友走, verb: follow, params: {target: duan_yu}}
+      - {id: a4, desc: 回万劫谷去见娘}
+    canon: a4
+    confidence: low
+    source: agenda:zl_go_home
+    note: 获救之后她的去向，待原文核对。
+    para: null
+  - id: d26
+    char: zhong_ling
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {remove_status: [zhong_ling, hidden]}
+      - {move: [duan_yu, shennong_camp]}
+      - {move: [zhong_ling, shennong_camp]}
+      - {rel: [zhong_ling, duan_yu, affinity, 35]}
+      - {add_status: [duan_yu, captive, {source: sikong_xuan}]}
+      - {rel: [sn_guard_1, zhong_ling, affinity, -40]}
+    situation: 书生朋友被扣住了，帮众正朝你围过来。营地的口子还没人守，你一个人跑得掉。
+    candidates:
+      - {id: a1, desc: 躲到晾药架后面, verb: hide, params: {feature: herb_racks}}
+      - {id: a2, desc: 向帮众求饶, speech: {act: plead, to: [sn_guard_1]}}
+      - {id: a3, desc: 不走，留在他身边, verb: wait}
+      - {id: a4, desc: 一个人先逃出去, verb: flee, params: {exit: mountain_path}}
+    canon: a3
+    confidence: high
+    source: card:zhong_ling.bottom_lines[0]
+    para: null
+  - id: d27
+    char: zhong_ling
+    setup:
+      - {remove_status: [zhong_ling, hidden]}
+      - {rel: [zhong_ling, duan_yu, affinity, 25]}
+    situation: 一个外人笑嘻嘻地打听你爹娘年轻时的事，问你娘从前是不是认得一个姓段的。
+    candidates:
+      - {id: a1, desc: 放貂吓唬他}
+      - {id: a2, desc: 岔开话头，不说家里的私事, speech: {act: refuse, to: [ma_wude]}}
+      - {id: a3, desc: 编一段假话打发他, speech: {act: lie, to: [ma_wude]}}
+      - {id: a4, desc: 把听来的旧事一五一十说了}
+    canon: a2
+    confidence: high
+    source: card:zhong_ling.bottom_lines[1]
+    para: null
+  # ================================================================ 司空玄
+  - id: d28
+    char: sikong_xuan
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {move: [duan_yu, shennong_camp]}
+    situation: 一个不会武功的书生闯进营来，说是要劝你罢兵。帮众看着你等号令。
+    candidates:
+      - {id: a1, desc: 喝令帮众拿下他, verb: setpiece, params: {name: seize}}
+      - {id: a2, desc: 当场一掌打死他, verb: attack, params: {target: duan_yu, intent: kill}}
+      - {id: a3, desc: 好言招待，请他喝茶}
+      - {id: a4, desc: 听他说完就放他走, verb: setpiece, params: {name: let_go}}
+    canon: a1
+    confidence: high
+    source: agenda:sk_hold_camp
+    para: null
+  - id: d29
+    char: sikong_xuan
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {remove_status: [zhong_ling, hidden]}
+      - {move: [duan_yu, shennong_camp]}
+      - {move: [zhong_ling, shennong_camp]}
+      - {add_status: [duan_yu, captive, {source: sikong_xuan}]}
+      - {add_status: [zhong_ling, captive, {source: sikong_xuan}]}
+      - {add_status: [sikong_xuan, poisoned_diao, {ticks: 672, source: zhong_ling}]}
+      - {learn: [sikong_xuan, F_diao_venom, 1.0, told]}
+      - {learn: [sikong_xuan, F_diao_antidote_father, 1.0, told]}
+    situation: 你被那少女的小貂咬了一口，伤处发黑。她说这毒只有她爹解得了。你手里扣着她和那个书生。
+    candidates:
+      - {id: a1, desc: 杀了那少女泄愤, verb: attack, params: {target: zhong_ling, intent: kill}}
+      - {id: a2, desc: 放两人走，求他们送解药来, verb: release, params: {target: zhong_ling}}
+      - {id: a3, desc: 自己连夜赶去万劫谷}
+      - {id: a4, desc: 派帮众去万劫谷抢解药, speech: {act: order, to: [sn_chief_a]}}
+      - {id: a5, desc: 逼书生服下断肠散去万劫谷取解药，扣下少女做人质, verb: setpiece, params: {name: demand}}
+    canon: a5
+    confidence: high
+    source: card:sikong_xuan.choices[0]
+    para: null
+  - id: d30
+    char: sikong_xuan
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {enter: [envoy_lingjiu, shennong_camp]}
+    situation: 灵鹫宫的圣使到了营里，冷冷问你围山这么多日为何还没拿下后山。
+    candidates:
+      - {id: a1, desc: 据理力争，说剑湖宫太难打, speech: {act: tell, to: [envoy_lingjiu]}}
+      - {id: a2, desc: 翻脸动手, verb: attack, params: {target: envoy_lingjiu}}
+      - {id: a3, desc: 低声下气地请罪，把拖延的过错推到别人身上, verb: setpiece, params: {name: bow_b}}
+      - {id: a4, desc: 连夜带着帮众逃走, verb: go, params: {exit: back_trail}}
+    canon: a3
+    confidence: low
+    source: card:sikong_xuan.choices[1]
+    note: 做法照人物卡；圣使是否在这一段出场、怎样出场，待原文核对。
+    para: null
+  - id: d31
+    char: sikong_xuan
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {move: [mu_wanqing, shennong_camp]}
+      - {move: [duan_yu, shennong_camp]}
+      - {add_status: [duan_yu, poisoned_duanchang, {ticks: 672, source: sikong_xuan}]}
+      - {rel: [mu_wanqing, sikong_xuan, affinity, -50]}
+    situation: 一个黑衣蒙面的女子拿毒箭指着你，要你把断肠散的解药交给那个书生。
+    candidates:
+      - {id: a1, desc: 喝令帮众一拥而上, speech: {act: order, to: [sn_chief_a]}}
+      - {id: a2, desc: 交出解药, verb: give, params: {item: duanchang_antidote, target: duan_yu}}
+      - {id: a3, desc: 交一瓶假药糊弄过去}
+      - {id: a4, desc: 宁死不交, speech: {act: refuse, to: [mu_wanqing]}}
+    canon: a2
+    confidence: low
+    source: agenda:mw_cow_camp
+    note: 解药到手的经过（包括断肠散的真假），待原文核对。
+    para: null
+  - id: d32
+    char: sikong_xuan
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+    situation: 围山第二日，剑湖宫闭门不出，左掌门一句软话也不肯说。
+    candidates:
+      - {id: a1, desc: 继续围着，等他们服软, verb: wait}
+      - {id: a2, desc: 撤围回去}
+      - {id: a3, desc: 下令强攻剑湖宫}
+      - {id: a4, desc: 派人上山讲和, speech: {act: order, to: [sn_chief_a]}}
+    canon: a1
+    confidence: high
+    source: agenda:sk_besiege
+    para: null
+  - id: d33
+    char: sikong_xuan
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {set_flag: [errand_sent, true]}
+      - {add_status: [sikong_xuan, poisoned_diao, {ticks: 672, source: zhong_ling}]}
+      - {learn: [sikong_xuan, F_diao_antidote_father, 1.0, told]}
+    situation: 送信的书生走了三天还没回来，你伤处的毒一天比一天重。
+    candidates:
+      - {id: a1, desc: 亲自带人去万劫谷}
+      - {id: a2, desc: 丢下差事，独自逃命}
+      - {id: a3, desc: 拿那少女出气, verb: attack, params: {target: zhong_ling}}
+      - {id: a4, desc: 守在营里等人送回解药, verb: wait}
+    canon: a4
+    confidence: low
+    source: agenda:sk_await
+    note: 等待期间他做了什么、后来下场如何，待原文核对。
+    para: null
+  - id: d34
+    char: sikong_xuan
+    setup:
+      - {remove_status: [zhong_ling, hidden]}
+      - {move: [zhong_ling, shennong_camp]}
+      - {add_status: [zhong_ling, captive, {source: sikong_xuan}]}
+      - {add_status: [sikong_xuan, poisoned_diao, {ticks: 672, source: zhong_ling}]}
+      - {set_flag: [diao_bite_done, true]}
+    situation: 被扣的少女拍着手笑你，说你中了她的貂毒，活不过几日。帮众都听见了。
+    candidates:
+      - {id: a1, desc: 当场杀了她, verb: attack, params: {target: zhong_ling, intent: kill}}
+      - {id: a2, desc: 不理她, verb: wait}
+      - {id: a3, desc: 恼羞成怒，反手打她一掌, verb: setpiece, params: {name: slap_owner}}
+      - {id: a4, desc: 好言哄她, speech: {act: comfort, to: [zhong_ling]}}
+    canon: a3
+    confidence: low
+    source: situation:diao_bite
+    note: 待原文核对。
+    para: null
+  - id: d35
+    char: sikong_xuan
+    setup:
+      - {remove_status: [zhong_ling, hidden]}
+      - {move: [zhong_ling, shennong_camp]}
+      - {add_status: [zhong_ling, captive, {source: sikong_xuan}]}
+      - {add_status: [sikong_xuan, poisoned_diao, {ticks: 672, source: zhong_ling}]}
+      - {move: [ma_wude, shennong_camp]}
+    situation: 一个胖茶商来营里说情，请你看在他的薄面上把那少女放了，什么也没带来。
+    candidates:
+      - {id: a1, desc: 把他也扣下, verb: restrain, params: {target: ma_wude}}
+      - {id: a2, desc: 一口回绝，解药没到手不放人, speech: {act: refuse, to: [ma_wude]}}
+      - {id: a3, desc: 要他拿银子来赎, speech: {act: bargain, to: [ma_wude]}}
+      - {id: a4, desc: 卖他个面子放人, verb: release, params: {target: zhong_ling}}
+    canon: a2
+    confidence: high
+    source: card:sikong_xuan.bottom_lines[1]
+    para: null
+  - id: d36
+    char: sikong_xuan
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {enter: [envoy_lingjiu, shennong_camp]}
+    situation: 圣使传下号令：两派即刻罢手，听候发落。你围了这么多天，眼看就要得手。
+    candidates:
+      - {id: a1, desc: 立刻领命，传令撤围, speech: {act: agree, to: [envoy_lingjiu]}}
+      - {id: a2, desc: 当面顶撞，说再给三天就能拿下, speech: {act: refuse, to: [envoy_lingjiu]}}
+      - {id: a3, desc: 表面答应，暗中接着围, speech: {act: lie, to: [envoy_lingjiu]}}
+      - {id: a4, desc: 一言不发, verb: wait}
+    canon: a1
+    confidence: high
+    source: card:sikong_xuan.bottom_lines[0]
+    para: null
+  # ================================================================ 龚光杰
+  - id: d37
+    char: gong_guangjie
+    setup: []
+    situation: 你代师门下场比剑，对手剑招严密，一时僵持不下，满厅宾客都看着。
+    candidates:
+      - {id: a1, desc: 请师父换人上场, speech: {act: request, to: [zuo_zimu]}}
+      - {id: a2, desc: 规规矩矩拼到底, verb: wait}
+      - {id: a3, desc: 认输下场}
+      - {id: a4, desc: 卖个破绽，一剑逼对手认输, verb: setpiece, params: {name: feint_win}}
+    canon: a4
+    confidence: high
+    source: situation:bout_laugh
+    para: null
+  - id: d38
+    char: gong_guangjie
+    setup:
+      - {set_flag: [bout_over, true]}
+      - {set_flag: [guest_laughed, true]}
+    situation: 你刚赢下一场，宾客席上一个青衫书生却失声笑了出来。
+    candidates:
+      - {id: a1, desc: 拔剑就刺, verb: attack, params: {target: duan_yu, intent: kill}}
+      - {id: a2, desc: 请师父示下, speech: {act: ask, to: [zuo_zimu]}}
+      - {id: a3, desc: 转身逼问那书生笑什么，要他下场比划, speech: {act: taunt, to: [duan_yu]}}
+      - {id: a4, desc: 装作没听见, verb: wait}
+    canon: a3
+    confidence: high
+    source: card:gong_guangjie.choices[0]
+    para: null
+  - id: d39
+    char: gong_guangjie
+    setup:
+      - {set_flag: [bout_over, true]}
+      - {set_flag: [guest_laughed, true]}
+    situation: 那书生说自己不会武功，不肯下场，却也不肯认错。
+    candidates:
+      - {id: a1, desc: 把剑架在他脖子上逼他认错}
+      - {id: a2, desc: 一掌掴过去, verb: setpiece, params: {name: slap}}
+      - {id: a3, desc: 喝令他滚出大厅, speech: {act: order, to: [duan_yu]}}
+      - {id: a4, desc: 冷笑一声作罢, verb: wait}
+    canon: a2
+    confidence: high
+    source: card:gong_guangjie.choices[0]
+    para: null
+  - id: d40
+    char: gong_guangjie
+    setup:
+      - {set_flag: [bout_over, true]}
+      - {set_flag: [guest_laughed, true]}
+      - {set_flag: [slapped, true]}
+      - {injure: [duan_yu, 1, gong_guangjie]}
+      - {remove_status: [zhong_ling, hidden]}
+    situation: 梁上忽然传来少女的笑声，取笑你欺负不会武功的人。
+    candidates:
+      - {id: a1, desc: 仰头喝骂，要梁上的人下来, verb: setpiece, params: {name: threaten_beam}}
+      - {id: a2, desc: 跳上梁去抓人}
+      - {id: a3, desc: 当作没听见, verb: wait}
+      - {id: a4, desc: 掷剑去射她, verb: attack, params: {target: zhong_ling}}
+    canon: a1
+    confidence: low
+    source: situation:beam_girl
+    note: 龚光杰当时的反应，待原文核对。
+    para: null
+  - id: d41
+    char: gong_guangjie
+    setup:
+      - {set_flag: [bout_over, true]}
+      - {set_flag: [slapped, true]}
+      - {remove_status: [zhong_ling, hidden]}
+      - {injure: [gong_guangjie, 1, zhong_ling]}
+    situation: 你手背被梁上窜下的小兽咬了一口，师父和满厅宾客都看着你。
+    candidates:
+      - {id: a1, desc: 捂着手退出大厅, verb: go, params: {exit: jianhu_back}}
+      - {id: a2, desc: 当众向那少女讨饶, speech: {act: plead, to: [zhong_ling]}}
+      - {id: a3, desc: 跪下请师父做主, speech: {act: request, to: [zuo_zimu]}}
+      - {id: a4, desc: 咬牙硬撑，不肯认输, verb: wait}
+    canon: a4
+    confidence: high
+    source: card:gong_guangjie.choices[1]
+    para: null
+  - id: d42
+    char: gong_guangjie
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {learn: [gong_guangjie, F_shennong_siege, 1.0, told]}
+    situation: 山下被神农帮围了，师父传令各人守住要道。
+    candidates:
+      - {id: a1, desc: 劝师父讲和, speech: {act: request, to: [zuo_zimu]}}
+      - {id: a2, desc: 偷偷从后山溜走, verb: go, params: {exit: jianhu_back}}
+      - {id: a3, desc: 奉师命把守山门, verb: go, params: {exit: jianhu_gate}}
+      - {id: a4, desc: 独自冲下山去挑战}
+    canon: a3
+    confidence: low
+    source: agenda:gg_guard_gate
+    note: 待原文核对。
+    para: null
+  - id: d43
+    char: gong_guangjie
+    setup:
+      - {enter: [nanhai_eshen, jianhu_hall]}
+      - {injure: [gong_guangjie, 2, nanhai_eshen]}
+      - {rel: [nanhai_eshen, gong_guangjie, affinity, -40]}
+    situation: 一个凶人当着满厅的人把你打倒在地，问你服不服。
+    candidates:
+      - {id: a1, desc: 爬起来再拼, verb: attack, params: {target: nanhai_eshen}}
+      - {id: a2, desc: 咬着牙不吭声，死不求饶, verb: wait}
+      - {id: a3, desc: 喊师父救命, speech: {act: request, to: [zuo_zimu]}}
+      - {id: a4, desc: 连声讨饶, speech: {act: plead, to: [nanhai_eshen]}}
+    canon: a2
+    confidence: high
+    source: card:gong_guangjie.bottom_lines[0]
+    note: 不是原著里的具体场面，测的是底线。
+    para: null
+  # ================================================================ 左子穆
+  - id: d44
+    char: zuo_zimu
+    setup:
+      - {set_flag: [bout_over, true]}
+      - {set_flag: [guest_laughed, true]}
+    situation: 你的弟子刚赢下一场，宾客席上一个青衫书生笑出了声。弟子转头看你，像是在等你发话。
+    candidates:
+      - {id: a1, desc: 沉着脸不出声，由弟子去讨回面子, verb: wait}
+      - {id: a2, desc: 喝止弟子，不许他为难客人, speech: {act: order, to: [gong_guangjie]}}
+      - {id: a3, desc: 亲自下场教训那书生, verb: attack, params: {target: duan_yu}}
+      - {id: a4, desc: 向那书生赔个笑脸, speech: {act: greet, to: [duan_yu]}}
+    canon: a1
+    confidence: high
+    source: card:zuo_zimu.choices[0]
+    para: null
+  - id: d45
+    char: zuo_zimu
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {learn: [zuo_zimu, F_shennong_siege, 1.0, told]}
+    situation: 神农帮把山围了，扬言不让出后山谁也别想下山。弟子们乱成一团，等你拿主意。
+    candidates:
+      - {id: a1, desc: 弃了剑湖宫，从后山走, verb: go, params: {exit: jianhu_back}}
+      - {id: a2, desc: 亲自带人冲下山去, verb: go, params: {exit: jianhu_gate}}
+      - {id: a3, desc: 派人下山求和}
+      - {id: a4, desc: 闭门固守，派弟子把守要道, speech: {act: order, to: [gong_guangjie]}}
+    canon: a4
+    confidence: high
+    source: card:zuo_zimu.choices[1]
+    para: null
+  - id: d46
+    char: zuo_zimu
+    setup: []
+    situation: 一个外来的宾客当众求你收他入门，传他几招本门剑法。
+    candidates:
+      - {id: a1, desc: 要他先拿重礼来, speech: {act: bargain, to: [ma_wude]}}
+      - {id: a2, desc: 当场传他几招, verb: teach, params: {target: ma_wude, art: wuliang_sword}}
+      - {id: a3, desc: 婉言回绝，本门剑法不传外人, speech: {act: refuse, to: [ma_wude]}}
+      - {id: a4, desc: 冷笑不理, verb: wait}
+    canon: a3
+    confidence: high
+    source: card:zuo_zimu.bottom_lines[1]
+    para: null
+  - id: d47
+    char: zuo_zimu
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {move: [zuo_zimu, jianhu_gate]}
+      - {move: [sn_chief_a, jianhu_gate]}
+    situation: 神农帮的黑须头目站在山门外，要你让出后山，说帮主或许还能网开一面。
+    candidates:
+      - {id: a1, desc: 答应让出后山, speech: {act: agree, to: [sn_chief_a]}}
+      - {id: a2, desc: 断然回绝，叫他回去告诉帮主, speech: {act: refuse, to: [sn_chief_a]}}
+      - {id: a3, desc: 当场拿下那头目, verb: restrain, params: {target: sn_chief_a}}
+      - {id: a4, desc: 求对方宽限几日, speech: {act: plead, to: [sn_chief_a]}}
+    canon: a2
+    confidence: high
+    source: card:zuo_zimu.bottom_lines[0]
+    para: null
+  - id: d48
+    char: zuo_zimu
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {enter: [envoy_lingjiu, jianhu_hall]}
+    situation: 灵鹫宫的圣使到了厅上，亮出鹫鸟记号，命两派即刻罢手，听候发落。
+    candidates:
+      - {id: a1, desc: 躬身领命，不敢多说一句, verb: setpiece, params: {name: bow_a}}
+      - {id: a2, desc: 拔剑相向, verb: attack, params: {target: envoy_lingjiu}}
+      - {id: a3, desc: 托病不出, verb: go, params: {exit: jianhu_back}}
+      - {id: a4, desc: 当面抗辩，说是神农帮先动的手, speech: {act: tell, to: [envoy_lingjiu]}}
+    canon: a1
+    confidence: low
+    source: agenda:zz_receive_envoy
+    note: 圣使在这一段是否出场、左子穆怎样应对，待原文核对。
+    para: null
+  # ================================================================ 马五德
+  - id: d49
+    char: ma_wude
+    setup:
+      - {set_flag: [bout_over, true]}
+      - {set_flag: [guest_laughed, true]}
+    situation: 跟你一道上山的青衫书生在比剑时笑出了声，那得胜的弟子正冲他发作，满厅的人都看着你们这边。
+    candidates:
+      - {id: a1, desc: 挺身替书生出头, verb: block, params: {target: gong_guangjie}}
+      - {id: a2, desc: 当众数落那书生不懂规矩, speech: {act: insult, to: [duan_yu]}}
+      - {id: a3, desc: 拂袖离席, verb: go, params: {exit: jianhu_back}}
+      - {id: a4, desc: 打个哈哈圆场，撇清自己和他的干系, speech: {act: tell, to: [zuo_zimu]}}
+    canon: a4
+    confidence: high
+    source: card:ma_wude.choices[0]
+    para: null
+  - id: d50
+    char: ma_wude
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {learn: [ma_wude, F_shennong_siege, 1.0, told]}
+    situation: 山下被神农帮围住了，下山的路都被堵死。你带着伙计困在剑湖宫。
+    candidates:
+      - {id: a1, desc: 带着伙计冒险闯关下山, verb: go, params: {exit: jianhu_gate}}
+      - {id: a2, desc: 亲自去神农帮营里说情}
+      - {id: a3, desc: 躲进后院客舍，等风头过去, verb: go, params: {exit: jianhu_back}}
+      - {id: a4, desc: 帮无量剑守山门}
+    canon: a3
+    confidence: high
+    source: card:ma_wude.choices[1]
+    para: null
+  - id: d51
+    char: ma_wude
+    setup:
+      - {move: [ma_wude, jianhu_back]}
+      - {set_flag: [siege_began, true]}
+      - {set_flag: [siege_on, false]}
+      - {set_flag: [envoy_received, true]}
+    situation: 灵鹫宫来人发了话，山围解了，下山的路通了。
+    candidates:
+      - {id: a1, desc: 再住几日看看热闹, verb: wait}
+      - {id: a2, desc: 立刻带着伙计下山回家, verb: go, params: {exit: jianhu_hall}}
+      - {id: a3, desc: 去向左掌门辞行，讨些谢礼, speech: {act: request, to: [zuo_zimu]}}
+      - {id: a4, desc: 顺路去万劫谷做趟买卖}
+    canon: a2
+    confidence: low
+    source: agenda:ma_go_home
+    note: 马五德后来的去向，待原文核对。
+    para: null
+  - id: d52
+    char: ma_wude
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+    situation: 左掌门请在座宾客助拳，一同下山去会神农帮，目光落在你身上。
+    candidates:
+      - {id: a1, desc: 打着哈哈推说年老体衰，不去拼命, speech: {act: refuse, to: [zuo_zimu]}}
+      - {id: a2, desc: 开条件，要剑湖宫日后关照生意, speech: {act: bargain, to: [zuo_zimu]}}
+      - {id: a3, desc: 当场翻脸拂袖而去, verb: go, params: {exit: jianhu_back}}
+      - {id: a4, desc: 一口答应，抄起兵器就去, speech: {act: agree, to: [zuo_zimu]}}
+    canon: a1
+    confidence: high
+    source: card:ma_wude.bottom_lines[1]
+    para: null
+  - id: d53
+    char: ma_wude
+    setup: []
+    situation: 同席的人撺掇你几句，要你当众挖苦左掌门比剑使诈。
+    candidates:
+      - {id: a1, desc: 跟着骂几句, speech: {act: insult, to: [zuo_zimu]}}
+      - {id: a2, desc: 去向左掌门告发撺掇的人, speech: {act: tell, to: [zuo_zimu]}}
+      - {id: a3, desc: 照着挖苦几句, speech: {act: taunt, to: [zuo_zimu]}}
+      - {id: a4, desc: 笑着岔开，不肯当面得罪东道主, verb: wait}
+    canon: a4
+    confidence: high
+    source: card:ma_wude.bottom_lines[0]
+    para: null
+  # ================================================================ 甘宝宝
+  - id: d54
+    char: gan_baobao
+    setup:
+      - {remove_status: [zhong_ling, hidden]}
+      - {move: [zhong_ling, shennong_camp]}
+      - {add_status: [zhong_ling, captive, {source: sikong_xuan}]}
+      - {move: [duan_yu, zhong_hall]}
+      - {learn: [duan_yu, F_zhong_ling_held, 1.0, saw]}
+      - {learn: [gan_baobao, F_zhong_ling_held, 0.5, told:duan_yu]}
+    situation: 一个陌生的青年进了谷，说你女儿被神农帮扣下了，要拿解药去换。
+    candidates:
+      - {id: a1, desc: 立刻提剑赶去神农帮, verb: go, params: {exit: valley_gate}}
+      - {id: a2, desc: 不信，把来人赶出去, speech: {act: order, to: [duan_yu]}}
+      - {id: a3, desc: 先细细盘问来人的姓名来历, verb: setpiece, params: {name: ask_name}}
+      - {id: a4, desc: 叫丈夫来处置, speech: {act: request, to: [zhong_wanchou]}}
+    canon: a3
+    confidence: high
+    source: card:gan_baobao.choices[0]
+    para: null
+  - id: d55
+    char: gan_baobao
+    setup:
+      - {move: [duan_yu, zhong_hall]}
+      - {rel: [zhong_wanchou, duan_yu, affinity, -40]}
+    situation: 丈夫一听来客姓段，拍案大骂，要把人轰出谷去。来客是来报女儿消息的。
+    candidates:
+      - {id: a1, desc: 当场和丈夫翻脸, speech: {act: insult, to: [zhong_wanchou]}}
+      - {id: a2, desc: 好言劝住丈夫，背地里另想办法, speech: {act: comfort, to: [zhong_wanchou]}}
+      - {id: a3, desc: 自己先把来客赶走, speech: {act: order, to: [duan_yu]}}
+      - {id: a4, desc: 由着丈夫赶人, verb: wait}
+    canon: a2
+    confidence: high
+    source: card:gan_baobao.choices[1]
+    para: null
+  - id: d56
+    char: gan_baobao
+    setup:
+      - {remove_status: [zhong_ling, hidden]}
+      - {move: [zhong_ling, shennong_camp]}
+      - {add_status: [zhong_ling, captive, {source: sikong_xuan}]}
+      - {move: [duan_yu, zhong_hall]}
+      - {learn: [gan_baobao, F_zhong_ling_held, 1.0, told]}
+    situation: 报信的青年说自己姓段，年纪模样都叫你心头一震。丈夫刚被你劝出厅去。
+    candidates:
+      - {id: a1, desc: 背着丈夫把金盒托付给他，叮嘱他去借快马, verb: setpiece, params: {name: entrust_box}}
+      - {id: a2, desc: 谢过他，打发他走, verb: setpiece, params: {name: thank_and_send}}
+      - {id: a3, desc: 亲自跟他去神农帮, verb: follow, params: {target: duan_yu}}
+      - {id: a4, desc: 把他交给丈夫处置, speech: {act: request, to: [zhong_wanchou]}}
+    canon: a1
+    confidence: high
+    source: situation:wanjie_news
+    note: 金盒托付的用意属于上一辈的旧事，只记在甘宝宝的 knows 里。
+    para: null
+  - id: d57
+    char: gan_baobao
+    setup:
+      - {move: [ma_wude, zhong_hall]}
+    situation: 一个外客喝了几杯，笑问你年轻时是不是认得一个姓段的。
+    candidates:
+      - {id: a1, desc: 编个说法糊弄过去, speech: {act: lie, to: [ma_wude]}}
+      - {id: a2, desc: 叫丈夫把他赶出去, speech: {act: request, to: [zhong_wanchou]}}
+      - {id: a3, desc: 叹口气，把旧事说了, speech: {act: tell, to: [ma_wude], fact: F_gan_old_affair}}
+      - {id: a4, desc: 淡淡岔开，旧事一句不提, speech: {act: refuse, to: [ma_wude]}}
+    canon: a4
+    confidence: high
+    source: card:gan_baobao.bottom_lines[0]
+    para: null
+  # ================================================================ 钟万仇
+  - id: d58
+    char: zhong_wanchou
+    setup:
+      - {move: [duan_yu, zhong_hall]}
+    situation: 来报信的青年报出自己姓段。
+    candidates:
+      - {id: a1, desc: 以礼相待，问清来意, speech: {act: ask, to: [duan_yu]}}
+      - {id: a2, desc: 冷冷打发他走, speech: {act: order, to: [duan_yu]}}
+      - {id: a3, desc: 当场翻脸，要把他赶出谷去, verb: setpiece, params: {name: rage_duan}}
+      - {id: a4, desc: 一掌打死他, verb: attack, params: {target: duan_yu, intent: kill}}
+    canon: a3
+    confidence: high
+    source: card:zhong_wanchou.choices[0]
+    para: null
+  - id: d59
+    char: zhong_wanchou
+    setup: []
+    situation: 妻子收拾了包袱，说要独自出谷几日，不肯说去哪里。
+    candidates:
+      - {id: a1, desc: 好言相劝，陪她一道去, speech: {act: request, to: [gan_baobao]}}
+      - {id: a2, desc: 拦在门口不许她走，吵得全谷都听见, verb: block, params: {target: gan_baobao}}
+      - {id: a3, desc: 由她去, verb: wait}
+      - {id: a4, desc: 悄悄跟在她后面, verb: follow, params: {target: gan_baobao}}
+    canon: a2
+    confidence: high
+    source: card:zhong_wanchou.choices[1]
+    para: null
+  - id: d60
+    char: zhong_wanchou
+    setup:
+      - {move: [duan_yu, zhong_hall]}
+      - {injure: [duan_yu, 2]}
+    situation: 那个姓段的青年带着伤，求你给他一碗水、一点伤药。
+    candidates:
+      - {id: a1, desc: 一口回绝，叫他滚, speech: {act: refuse, to: [duan_yu]}}
+      - {id: a2, desc: 叫仆人给他送水, speech: {act: order, to: [wj_servant_1]}}
+      - {id: a3, desc: 趁他受伤一掌打死, verb: attack, params: {target: duan_yu, intent: kill}}
+      - {id: a4, desc: 给他包扎, verb: help, params: {target: duan_yu}}
+    canon: a1
+    confidence: high
+    source: card:zhong_wanchou.bottom_lines[1]
+    para: null
+  - id: d61
+    char: zhong_wanchou
+    setup:
+      - {remove_status: [zhong_ling, hidden]}
+      - {move: [zhong_ling, shennong_camp]}
+      - {add_status: [zhong_ling, captive, {source: sikong_xuan}]}
+      - {learn: [zhong_wanchou, F_zhong_ling_held, 1.0, told]}
+      - {learn: [gan_baobao, F_zhong_ling_held, 1.0, told]}
+    situation: 女儿被扣的消息传来，妻子要亲自出谷去救人。
+    candidates:
+      - {id: a1, desc: 陪她一道去, verb: follow, params: {target: gan_baobao}}
+      - {id: a2, desc: 自己一个人去神农帮拼命, verb: go, params: {exit: valley_gate}}
+      - {id: a3, desc: 让她去，自己守谷, verb: wait}
+      - {id: a4, desc: 拦着不许她出谷, verb: block, params: {target: gan_baobao}}
+    canon: a4
+    confidence: low
+    source: card:zhong_wanchou.choices[1]
+    note: 做法照人物卡；这件事在原著里是否这样发生，待原文核对。
+    para: null
+  # ================================================================ 木婉清
+  - id: d62
+    char: mu_wanqing
+    setup:
+      - {enter: [rui_popo, mu_house]}
+      - {enter: [ping_popo, mu_house]}
+      - {learn: [mu_wanqing, F_mu_hunted, 1.0, saw]}
+    situation: 追杀你的一伙人找上门来，把屋子围住了。对方人多。
+    candidates:
+      - {id: a1, desc: 闩门固守, verb: wait}
+      - {id: a2, desc: 开口求和, speech: {act: request, to: [rui_popo]}}
+      - {id: a3, desc: 不等对方站稳就先放箭，杀出一条路, verb: setpiece, params: {name: fight_off}}
+      - {id: a4, desc: 从后窗独自溜走, verb: go, params: {exit: highroad}}
+    canon: a3
+    confidence: high
+    source: card:mu_wanqing.choices[0]
+    para: null
+  - id: d63
+    char: mu_wanqing
+    setup:
+      - {move: [duan_yu, mu_house]}
+      - {learn: [mu_wanqing, F_mu_hunted, 1.0, told]}
+    situation: 借了你马的那个书生又折回来了，气喘吁吁地说路上有人埋伏，要杀你。
+    candidates:
+      - {id: a1, desc: 怕他泄露行踪，一箭杀了, verb: attack, params: {target: duan_yu, intent: kill}}
+      - {id: a2, desc: 嘴上骂他多事，却把他带在身边一起突围, verb: follow, params: {target: duan_yu}}
+      - {id: a3, desc: 不理他, verb: wait}
+      - {id: a4, desc: 叫他自己逃命去, speech: {act: order, to: [duan_yu]}}
+    canon: a2
+    confidence: high
+    source: card:mu_wanqing.choices[1]
+    note: 「骂他多事却带着他突围」的动作写成 follow 只是近似；要点是带着他一起走。
+    para: null
+  - id: d64
+    char: mu_wanqing
+    setup:
+      - {move: [duan_yu, mu_house]}
+      - {give: [gan_baobao, duan_yu, gold_box]}
+    situation: 一个陌生书生拿着钟夫人的话来，求你借马给他连夜赶路救人。
+    candidates:
+      - {id: a1, desc: 冷着脸把马借给他, verb: give, params: {item: black_rose, target: duan_yu}}
+      - {id: a2, desc: 要他拿金盒来换, speech: {act: bargain, to: [duan_yu]}}
+      - {id: a3, desc: 一箭射过去吓走他, verb: attack, params: {target: duan_yu}}
+      - {id: a4, desc: 一口回绝, speech: {act: refuse, to: [duan_yu]}}
+    canon: a1
+    confidence: low
+    source: agenda:dy_borrow_horse
+    note: 借马的经过，待原文核对。
+    para: null
+  - id: d65
+    char: mu_wanqing
+    setup:
+      - {move: [mu_wanqing, shennong_camp]}
+      - {move: [duan_yu, shennong_camp]}
+      - {add_status: [duan_yu, poisoned_duanchang, {ticks: 672, source: sikong_xuan}]}
+      - {rel: [mu_wanqing, duan_yu, trust, 30]}
+      - {rel: [mu_wanqing, duan_yu, affinity, 30]}
+    situation: 你陪那书生回到神农帮营地。他身上的断肠散还没解，帮主手里有解药。
+    candidates:
+      - {id: a1, desc: 低声下气地求药, speech: {act: request, to: [sikong_xuan]}}
+      - {id: a2, desc: 撇下他自己走, verb: go, params: {exit: mountain_path}}
+      - {id: a3, desc: 直接杀进营去, verb: attack, params: {target: sikong_xuan, intent: kill}}
+      - {id: a4, desc: 拿毒箭指着帮主，逼他交出解药, speech: {act: threaten, to: [sikong_xuan]}}
+    canon: a4
+    confidence: low
+    source: agenda:mw_cow_camp
+    note: 回无量山的经过，待原文核对。
+    para: null
+  - id: d66
+    char: mu_wanqing
+    setup:
+      - {move: [duan_yu, mu_house]}
+      - {rel: [mu_wanqing, duan_yu, trust, 30]}
+      - {rel: [mu_wanqing, duan_yu, affinity, 30]}
+    situation: 面纱落下，那书生看见了你的脸。你立过誓，头一个见你容貌的男子，你要么嫁他，要么杀他。
+    candidates:
+      - {id: a1, desc: 装作若无其事}
+      - {id: a2, desc: 一箭杀了他, verb: attack, params: {target: duan_yu, intent: kill}}
+      - {id: a3, desc: 认定了要嫁给他, speech: {act: tell, to: [duan_yu]}}
+      - {id: a4, desc: 一掌打晕他，转身就走, verb: attack, params: {target: duan_yu}}
+    canon: a3
+    confidence: low
+    source: card:mu_wanqing.values
+    note: 她当时的反应（先要杀还是当即认定），待原文核对。
+    para: null
+  - id: d67
+    char: mu_wanqing
+    setup:
+      - {move: [duan_yu, mu_house]}
+    situation: 那书生好奇地问你为什么总戴着面纱，是不是立过什么誓。
+    candidates:
+      - {id: a1, desc: 把誓言说给他听, speech: {act: tell, to: [duan_yu], fact: F_mu_oath}}
+      - {id: a2, desc: 冷笑一声不答, verb: wait}
+      - {id: a3, desc: 一鞭子抽过去, verb: attack, params: {target: duan_yu}}
+      - {id: a4, desc: 随口编个由头, speech: {act: lie, to: [duan_yu]}}
+    canon: a2
+    confidence: high
+    source: card:mu_wanqing.bottom_lines[1]
+    para: null
+  - id: d68
+    char: mu_wanqing
+    setup:
+      - {enter: [rui_popo, mu_house]}
+      - {enter: [ping_popo, mu_house]}
+      - {injure: [mu_wanqing, 2, rui_popo]}
+    situation: 你受了伤，被追兵堵在屋后。领头的老妇人说，跪下求饶就给你个痛快。
+    candidates:
+      - {id: a1, desc: 冷笑不答，伺机突围, verb: flee, params: {exit: highroad}}
+      - {id: a2, desc: 束手就擒, verb: wait}
+      - {id: a3, desc: 骗她们说幕后另有其人, speech: {act: lie, to: [rui_popo]}}
+      - {id: a4, desc: 跪下求饶, speech: {act: plead, to: [rui_popo]}}
+    canon: a1
+    confidence: high
+    source: card:mu_wanqing.bottom_lines[0]
+    para: null
+  - id: d69
+    char: mu_wanqing
+    setup:
+      - {move: [sn_chief_b, mu_house]}
+      - {rel: [sn_chief_b, mu_wanqing, affinity, -40]}
+    situation: 一个瘦高汉子提着刀闯到屋前，喝令你把那匹黑马交出来，不然就放火烧屋。
+    candidates:
+      - {id: a1, desc: 乖乖把马交出去, verb: give, params: {item: black_rose, target: sn_chief_b}}
+      - {id: a2, desc: 骑上马逃走, verb: go, params: {exit: highroad}}
+      - {id: a3, desc: 好言跟他商量, speech: {act: bargain, to: [sn_chief_b]}}
+      - {id: a4, desc: 一口回绝，抬手就是一箭, verb: attack, params: {target: sn_chief_b}}
+    canon: a4
+    confidence: high
+    source: card:mu_wanqing.values
+    note: 不是原著里的具体场面，测的是「吃软不吃硬、先下手为强」。
+    para: null
+  # ================================================================ 南海鳄神
+  - id: d70
+    char: nanhai_eshen
+    setup:
+      - {enter: [nanhai_eshen, highroad]}
+      - {move: [duan_yu, highroad]}
+    situation: 路上遇见一个青衫书生，你摸了摸他的后脑勺，根骨竟和你一模一样。
+    candidates:
+      - {id: a1, desc: 好言劝他拜师，不肯就算了, speech: {act: request, to: [duan_yu]}}
+      - {id: a2, desc: 一掌拍死他, verb: attack, params: {target: duan_yu, intent: kill}}
+      - {id: a3, desc: 非逼他拜师不可，不肯就扣住不放, verb: setpiece, params: {name: claim}}
+      - {id: a4, desc: 不理他，接着赶路, verb: go, params: {exit: ferry_bridge}}
+    canon: a3
+    confidence: high
+    source: card:nanhai_eshen.choices[0]
+    para: null
+  - id: d71
+    char: nanhai_eshen
+    setup:
+      - {enter: [nanhai_eshen, mountain_path]}
+      - {move: [sn_chief_b, mountain_path]}
+    situation: 一个帮派头目当着人面，把你在四大恶人里的排行说低了一位。
+    candidates:
+      - {id: a1, desc: 一言不发拧断他的脖子, verb: attack, params: {target: sn_chief_b, intent: kill}}
+      - {id: a2, desc: 暴跳如雷，非要他改口不可, speech: {act: threaten, to: [sn_chief_b]}}
+      - {id: a3, desc: 哈哈一笑不计较, verb: wait}
+      - {id: a4, desc: 默认了事}
+    canon: a2
+    confidence: high
+    source: card:nanhai_eshen.choices[1]
+    para: null
+  - id: d72
+    char: nanhai_eshen
+    setup:
+      - {enter: [nanhai_eshen, ferry_bridge]}
+      - {rel: [nanhai_eshen, merchant_1, affinity, -40]}
+    situation: 渡口一个挑担的客商挡了你的路，还嘟囔了一句。他手无缚鸡之力。
+    candidates:
+      - {id: a1, desc: 骂他一顿，一脚踢开了事, verb: push, params: {target: merchant_1}}
+      - {id: a2, desc: 抢了他的担子}
+      - {id: a3, desc: 绕开他走, verb: go, params: {exit: highroad}}
+      - {id: a4, desc: 一掌打死他, verb: attack, params: {target: merchant_1, intent: kill}}
+    canon: a1
+    confidence: high
+    source: card:nanhai_eshen.bottom_lines[0]
+    para: null
+  - id: d73
+    char: nanhai_eshen
+    setup:
+      - {enter: [nanhai_eshen, mu_house]}
+      - {move: [mu_wanqing, highroad]}
+    situation: 你找到那黑衣女子借住的人家，屋里空着，屋后马棚里蹄印还新。
+    candidates:
+      - {id: a1, desc: 放把火烧了屋子}
+      - {id: a2, desc: 循着蹄印追上大路, verb: go, params: {exit: highroad}}
+      - {id: a3, desc: 坐在门口等她回来, verb: wait}
+      - {id: a4, desc: 在屋里屋外翻找她的踪迹, verb: search}
+    canon: a4
+    confidence: low
+    source: agenda:ne_seek_mu
+    note: 南海鳄神找木婉清的经过，待原文核对。
+    accept: [a2]
+    para: null
+  - id: d74
+    char: nanhai_eshen
+    setup:
+      - {enter: [nanhai_eshen, highroad]}
+      - {move: [duan_yu, highroad]}
+    situation: 你先前当着人面许过那书生一句话，如今反悔对你更有利。
+    candidates:
+      - {id: a1, desc: 另找个由头推掉, speech: {act: refuse, to: [duan_yu]}}
+      - {id: a2, desc: 矢口否认说过那句话, speech: {act: lie, to: [duan_yu]}}
+      - {id: a3, desc: 说过的话不赖账，照旧守约, verb: wait}
+      - {id: a4, desc: 把那书生打一顿出气, verb: attack, params: {target: duan_yu}}
+    canon: a3
+    confidence: high
+    source: card:nanhai_eshen.bottom_lines[1]
+    para: null
+  # ================================================================ 有名角色
+  - id: d75
+    char: gan_guanghao
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {move: [gan_guanghao, back_trail]}
+      - {move: [ge_guangpei, back_trail]}
+      - {move: [duan_yu, back_trail]}
+    situation: 你带着意中人从后山小路私逃，迎面撞上一个青衫书生，他全看见了。
+    candidates:
+      - {id: a1, desc: 求他别说出去, speech: {act: request, to: [duan_yu]}}
+      - {id: a2, desc: 拔剑逼过去，要杀人灭口, verb: setpiece, params: {name: draw_on_witness}}
+      - {id: a3, desc: 拉着她掉头就跑, verb: go, params: {exit: ferry_bridge}}
+      - {id: a4, desc: 塞给他些银子封口}
+    canon: a2
+    confidence: high
+    source: agenda:gan_guanghao
+    para: null
+  - id: d76
+    char: ge_guangpei
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {move: [gan_guanghao, back_trail]}
+      - {move: [ge_guangpei, back_trail]}
+      - {move: [duan_yu, back_trail]}
+    situation: 师兄拔剑要去追杀撞见你们的书生，山下随时会有人上来。
+    candidates:
+      - {id: a1, desc: 拉着师兄的袖子，催他别耽搁, verb: setpiece, params: {name: urge_leave}}
+      - {id: a2, desc: 独自往山下跑, verb: go, params: {exit: ferry_bridge}}
+      - {id: a3, desc: 帮着师兄一起追, verb: follow, params: {target: gan_guanghao}}
+      - {id: a4, desc: 劝师兄放过那书生, speech: {act: request, to: [gan_guanghao]}}
+    canon: a1
+    confidence: low
+    source: situation:caught_eloping
+    note: 葛光佩当时的举动，待原文核对。
+    para: null
+  - id: d77
+    char: gan_guanghao
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+    situation: 山下被围，宫里乱成一团，没人顾得上看着你们。
+    candidates:
+      - {id: a1, desc: 再等几日看看, verb: wait}
+      - {id: a2, desc: 留下守山门, verb: go, params: {exit: jianhu_gate}}
+      - {id: a3, desc: 向师父坦白私情, speech: {act: tell, to: [zuo_zimu], fact: F_lovers}}
+      - {id: a4, desc: 趁乱溜到后山小路，与她会合, verb: go, params: {exit: jianhu_back}}
+    canon: a4
+    confidence: high
+    source: agenda:gan_guanghao
+    para: null
+  - id: d78
+    char: envoy_lingjiu
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {enter: [envoy_lingjiu, shennong_camp]}
+    situation: 你奉命来到无量山下，神农帮还在围山，后山一寸也没拿到。
+    candidates:
+      - {id: a1, desc: 先上山找无量剑问话, verb: go, params: {exit: mountain_path}}
+      - {id: a2, desc: 督促神农帮加紧攻山, speech: {act: order, to: [sikong_xuan]}}
+      - {id: a3, desc: 亮出鹫鸟记号，传令两派即刻罢手, verb: setpiece, params: {name: show_token}}
+      - {id: a4, desc: 一言不发，看他们怎么交代, verb: wait}
+    canon: a3
+    confidence: low
+    source: situation:envoy_arrival
+    note: 圣使的人数、衣着与是否在这一段出场，待原文核对。
+    para: null
+  - id: d79
+    char: rui_popo
+    setup:
+      - {enter: [rui_popo, highroad]}
+      - {enter: [ping_popo, highroad]}
+      - {move: [duan_yu, highroad]}
+      - {give: [mu_wanqing, duan_yu, black_rose]}
+    situation: 夜里大路上来了一个骑黑马的人，马是那黑衣女子的，人却是个书生。
+    candidates:
+      - {id: a1, desc: 一言不发先把他打下马, verb: attack, params: {target: duan_yu}}
+      - {id: a2, desc: 带人拦住去路，喝问那黑衣女子在哪里, verb: setpiece, params: {name: block_road}}
+      - {id: a3, desc: 不理他，接着赶路, verb: wait}
+      - {id: a4, desc: 放他过去，暗中跟着, verb: follow, params: {target: duan_yu}}
+    canon: a2
+    confidence: low
+    source: situation:ambush_mu
+    note: 来敌的身份与截路的经过，待原文核对。
+    para: null
+  - id: d80
+    char: duan_yu
+    setup:
+      - {move: [duan_yu, zhong_hall]}
+      - {rel: [zhong_wanchou, duan_yu, affinity, -40]}
+    situation: 谷主拍着桌子喝令你立刻滚出谷去，从此不许再提他女儿一个字。
+    candidates:
+      - {id: a1, desc: 不肯服软，讲了一通道理，却不还手, speech: {act: refuse, to: [zhong_wanchou]}}
+      - {id: a2, desc: 唯唯诺诺，转身就走, verb: go, params: {exit: valley_gate}}
+      - {id: a3, desc: 抄起案上的香炉砸过去, verb: attack, params: {target: zhong_wanchou}}
+      - {id: a4, desc: 跪下求他别赶自己走, speech: {act: plead, to: [zhong_wanchou]}}
+    canon: a1
+    confidence: high
+    source: card:duan_yu.choices[2]
+    para: null

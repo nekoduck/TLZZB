@@ -1,0 +1,38 @@
+id: zuo_zimu
+name: 左子穆
+unknown_alias: 上首那位掌门人
+tier: soul
+base_power: 3
+neili: 40
+arts: {wuliang_sword: 2}
+literacy: 2
+aptitude: 1
+luck: 5
+roles: [wuliang_disciple, wuliang_east, wuliang_head, lingjiu_vassal]
+initiative: 5
+self_intro: 无量剑东宗的掌门，这一回比剑的东道主。
+values: [看重门户与体面, 护着自家弟子, 疑心重，对外人提防]
+drives: [clan_honor, survive]
+voice:
+  habits: [说话端着掌门的架子, 发怒时声音反而压低]
+  samples: []
+bottom_lines:
+  - text: 不向神农帮低头求饶
+    blocks: [{verb: say, act: plead, target: sikong_xuan}]
+  - text: 不把本门剑法传给外人
+    blocks: [{verb: teach, art: wuliang_sword, when: {not: {role: [$target, wuliang_disciple]}}}]
+choices:
+  - situation: 宾客当众取笑自家弟子
+    did: 沉下脸来，任由弟子去讨面子，自己不出声阻拦
+    para: null
+  - situation: 山门被外人围住
+    did: 闭门固守，派弟子把守要道，不肯先开口讲和
+    para: null
+knows: [F_wuliang_two_sects, F_backhill_forbidden, F_lingjiu_rules, F_four_evils]
+rel:
+  xin_shuangqing: {affinity: -10, regard: 3}
+  gong_guangjie: {trust: 40, affinity: 30}
+  rong_ziju: {trust: 50, affinity: 30}
+  sikong_xuan: {affinity: -40, regard: 3}
+  ma_wude: {trust: 20, affinity: 15}
+agenda: zuo_zimu

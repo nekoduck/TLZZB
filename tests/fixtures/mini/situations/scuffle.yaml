@@ -1,0 +1,16 @@
+id: scuffle
+origin: generic
+at: hall
+roles:
+  a: {pick: {where: {role: [$it, hall_sect]}}}
+  b: {pick: {where: {not: {role: [$it, hall_sect]}}}}
+scene: calm
+actions:
+  shove:
+    role: a
+    lean: true
+    effects:
+      - {set_flag: [.done, true]}
+      - {emit: {actor: $a, verb: shove, text: '{a}推了{b}一把'}}
+exit_when: {flag: .done}
+max_turns: 3

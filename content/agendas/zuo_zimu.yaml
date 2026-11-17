@@ -1,0 +1,30 @@
+goal: 赢下比剑，守住剑湖宫与本门的体面
+steps:
+  - id: zz_host_bout
+    text: 坐镇练武厅主持比剑
+    at: jianhu_hall
+    do: {verb: wait}
+    pre: {not: {status: [self, captive]}}
+    takes: 16
+    deadline: 64
+  - id: zz_defend
+    text: 山门被围，闭门固守
+    at: jianhu_gate
+    do: {verb: wait}
+    pre: {flag: siege_on}
+    start: 48
+    takes: 40
+  - id: zz_receive_envoy
+    text: 圣使到了，回练武厅恭候
+    at: jianhu_hall
+    do: {verb: wait}
+    pre: {all: [{onstage: envoy_lingjiu}, {alive: envoy_lingjiu}]}
+    start: 232
+    deadline: 520
+    takes: 40
+  - id: zz_keep_house
+    text: 料理门中的事
+    at: jianhu_hall
+    do: {verb: wait}
+    pre: {not: {status: [self, captive]}}
+    takes: 192

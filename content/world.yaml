@@ -1,0 +1,52 @@
+# 世界规则（docs/CONTENT_FORMAT.md）。数值照方案 6.6 的种子。
+background: 北宋年间，大理国境内的无量山、澜沧江与万劫谷一带，江湖门派与山野人家杂处。
+calendar: {ticks_per_hour: 8, hours_per_day: 12, start_tick: 32}
+request:
+  weights:                      # 方案 6.6 的 W 表
+    trivial: {hostile: 20, stranger: 50, familiar: 70, trusted: 90}
+    effort:  {hostile: 0,  stranger: 30, familiar: 50, trusted: 80}
+    costly:  {hostile: -20, stranger: 10, familiar: 30, trusted: 60}
+    risky:   {hostile: -40, stranger: 0,  familiar: 20, trusted: 50}
+    betray:  {hostile: -60, stranger: -30, familiar: -10, trusted: 20}
+  may: 60
+  conditional: 40
+  labels: {trivial: 举手之劳, effort: 费事, costly: 有损己利, risky: 冒险, betray: 违背所属}
+  bands: {hostile: [-100, -30], stranger: [-30, 20], familiar: [20, 60], trusted: [60, 100]}
+  close_roles: [same_sect, master_disciple, master_servant]   # 至少抬到 familiar 的身份关系
+  # 哪些身份算「同门、同一家」（两人都有其中同一个才算）。来客、马帮、差使这类临时身份不在内。
+  sect_roles: [wuliang_disciple, wuliang_east, wuliang_west, shennong_member, wanjie_family, wanjie_servant,
+               four_evils, wang_household, dali_guard]
+# 门派之间的敌对：between 两种身份的人互为对头（内核的敌意判断、请求的关系档、谓词 enemies 都认）；
+# while 写一个旗标名，旗标为真的时候才算。身份没了、旗标落了，敌对也就没了。有私交（好感不低于 30）的不在此列。
+enmity:
+  - {between: [shennong_member, wuliang_disciple], while: siege_on}   # 围山期间，神农帮与无量剑是对头
+# 与所求有关的大事（8.3）：有这种所求的人新近相信了带这种标签的事实，就立即重新打算。
+concerns:
+  clan_honor: [sect_scandal]        # 门里出了丑事，看重门户的人坐不住
+salience: {death: 10, harmed: 9, rescue: 8, promise: 7, exposed: 7, insult: 6, learn_key: 6, gift: 5, talk: 3, pass: 1}
+# 身份与状态在界面、纪事里的说法。role:<身份> 是一个名词短语（「成了……」「是……」都读得通），
+# 只在说玩家自己的身份时用，所以写平白的字，不写 ⟦id⟧。状态的说法用在「身上的……到某时就要发作」里。
+# 与专名表里的词同名的身份（wuliang_east、wuliang_west）不另写：界面会退回去查专名表。
+labels:
+  role:jianhu_guest: 剑湖宫的来客
+  role:ma_caravan_hand: 马帮的伙计
+  role:ma_caravan_master: 马帮的锅头
+  role:wuliang_disciple: 无量剑的弟子
+  role:wuliang_head: 无量剑一宗的掌门
+  role:shennong_member: 神农帮的人
+  role:shennong_head: 神农帮的帮主
+  role:shennong_errand: 替神农帮取药的人
+  role:errand_volunteer: 自告奋勇去取药的人
+  role:lingjiu_vassal: 听命于灵鹫宫的人
+  role:lingjiu_envoy: 灵鹫宫的使者
+  role:wanjie_family: 万劫谷主人家的人
+  role:wanjie_master: 万劫谷的谷主
+  role:wanjie_servant: 万劫谷的下人
+  role:mu_quarry: 被人追杀的人
+  role:wang_household: 远道来寻仇的家仆
+  role:four_evils: 四大恶人里的人
+  role:dali_guard: 镇南王府的护卫
+  role:herb_gatherer: 采药的山民
+  role:merchant: 过路的行商
+  poisoned_duanchang: ⟦duanchang_san⟧的毒
+  poisoned_diao: 貂毒

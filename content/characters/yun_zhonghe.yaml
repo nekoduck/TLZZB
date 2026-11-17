@@ -1,0 +1,33 @@
+# 有名角色的简卡（方案 5.4 末条）。
+id: yun_zhonghe
+name: 云中鹤
+unknown_alias: 一个瘦长如竹竿的人
+tier: named
+base_power: 5
+neili: 70
+arts: {}
+literacy: 1
+aptitude: 1
+luck: 5
+roles:
+- four_evils
+self_intro: 四大恶人里排最末的一个，轻功极好，为人下流。
+values:
+- 好色贪婪
+- 欺软怕硬
+drives:
+- greed
+- survive
+voice:
+  habits:
+  - 说话阴阳怪气
+  samples: []
+bottom_lines: []
+knows:
+- F_eshen_wants_heir
+- F_four_evils
+rel:
+  nanhai_eshen:
+    affinity: -20
+    regard: 5
+agenda: yun_zhonghe

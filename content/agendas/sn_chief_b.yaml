@@ -1,0 +1,4 @@
+goal: 替帮主守住下山的路卡
+steps:
+  - {id: sb_checkpoint, text: 带人守着下山石径的路卡, at: mountain_path, do: {verb: wait}, pre: {alive: sikong_xuan}, takes: 192}
+  - {id: sb_back_to_camp, text: 回营听令, at: shennong_camp, do: {verb: wait}, pre: {alive: sikong_xuan}, takes: 96}

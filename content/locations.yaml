@@ -1,0 +1,306 @@
+# 地点（方案 5.1、9.3）。cost 以刻计，8 刻一个时辰。路程是种子，以原文的时间线索为准。
+# 隐藏出口由加载器生成事实 exit:<from>:<to>；景物的 reveals 可以列它。
+
+jianhu_hall:
+  name: 剑湖宫·练武厅
+  unknown_alias: 一座大厅
+  terrain: -5
+  owner: wuliang_disciple
+  desc:
+    day: 厅里宽敞，青砖地扫得发亮，上首摆着几张太师椅，两边坐满了宾客，场子正中留出一片空地。
+    dusk: 天光从高窗斜进来，渐渐暗了，有人在廊下点起灯笼，厅里人声低了许多。
+    night: 厅里只剩几盏油灯，梁柱的影子投在地上，一动不动。
+  loud_to: [jianhu_gate, jianhu_back]
+  exits:
+    - {to: jianhu_gate, cost: 2}
+    - {to: jianhu_back, cost: 2}
+  features:
+    beam: {name: 厅顶横梁, desc: 粗大的横梁架在半空，上面积着灰，底下的人很少抬头去看。, cover: 25}
+    seats: {name: 宾客席, desc: 一排靠背椅，椅边小几上放着茶盏和果碟。, cover: 5}
+    sword_rack: {name: 兵器架, desc: 墙边立着一排长剑，剑鞘磨得发亮。}
+
+jianhu_gate:
+  name: 剑湖宫·前院山门
+  unknown_alias: 一座山门
+  terrain: 0
+  owner: wuliang_disciple
+  desc:
+    day: 山门两扇厚木门敞着，门外石阶一路往下伸进林子，院里种着几棵老柏。
+    dusk: 柏树的影子拉得老长，石阶上的风一阵比一阵凉。
+    night: 门已上闩，门楼下挂着一盏灯，照得见几级石阶，再往下黑沉沉的。
+  loud_to: [jianhu_hall, mountain_path]
+  exits:
+    - {to: jianhu_hall, cost: 2}
+    - {to: mountain_path, cost: 6}
+  features:
+    gate_tower: {name: 门楼, desc: 门楼不高，上头能望见山下一段石径。, cover: 10}
+    old_cypress: {name: 院中老柏, desc: 几棵老柏树干粗得要两人合抱。, cover: 15}
+
+jianhu_back:
+  name: 剑湖宫·后院
+  unknown_alias: 一处后院
+  terrain: 5
+  owner: wuliang_disciple
+  desc:
+    day: 后院比前头冷清，一排客舍，一间柴房，墙角堆着劈好的柴，后墙开着一扇小门。
+    dusk: 客舍里有人走动，炊烟从厨下升起来，带着柴火味。
+    night: 客舍的窗纸透着灯光，柴房黑着，后墙外的林子沙沙作响。
+  loud_to: [jianhu_hall, back_trail]
+  exits:
+    - {to: jianhu_hall, cost: 2}
+    - {to: back_trail, cost: 4}
+  features:
+    woodshed: {name: 柴房, desc: 柴房的门板厚实，外头有道铁扣，能从外面锁上，里头关得住人。, cover: 20}
+    guest_rooms: {name: 客舍, desc: 几间给客人歇脚的屋子，收拾得还算干净。, cover: 10}
+    back_door: {name: 后墙小门, desc: 一扇窄小的木门，通往山后的小路。}
+
+mountain_path:
+  name: 下山石径
+  unknown_alias: 一条下山的石径
+  terrain: 0
+  desc:
+    day: 石径顺着山势盘下去，一边是林子，一边是陡坡，路面被人踩得光滑。
+    dusk: 林子里的鸟叫得乱，石径上的光一截明一截暗。
+    night: 石径看不清了，只听得见脚下碎石滚落的声音。
+  loud_to: [jianhu_gate, shennong_camp]
+  exits:
+    - {to: jianhu_gate, cost: 6}
+    - {to: shennong_camp, cost: 6}
+    - {to: crag_foot, cost: 24}
+    - {to: out_east, cost: 24, edge: true}
+  features:
+    checkpoint: {name: 路卡, desc: 路当中横着几根木头，拦出一个只容一人过的口子。, cover: 5}
+    roadside_brush: {name: 路边灌木, desc: 半人高的灌木丛，蹲下去就不大看得见。, cover: 20}
+
+shennong_camp:
+  name: 神农帮营地
+  unknown_alias: 一片营地
+  terrain: -5
+  owner: shennong_member
+  desc:
+    day: 山坳里扎着十几顶帐篷，空地上晾着成捆的草药，空气里一股苦涩的药味。
+    dusk: 营里生起几堆火，药罐咕嘟咕嘟地响，有人在火边磨刀。
+    night: 火堆压成了暗红的炭，帐篷之间有人提着灯来回走动。
+  loud_to: [mountain_path, back_trail]
+  exits:
+    - {to: mountain_path, cost: 6}
+    - {to: back_trail, cost: 8}
+  features:
+    chief_tent: {name: 当中的大帐, desc: 最大的一顶帐篷，门帘厚，门口总有人守着。, cover: 10}
+    pen: {name: 木栅围起的角落, desc: 营地一角用木栅围出一块，栅门上挂着锁，看样子是关人的地方。}
+    herb_racks: {name: 晾药架, desc: 一排木架上晾着各色草药，有几样叶子颜色怪得很。, reveals: [], cover: 10}
+
+back_trail:
+  name: 后山小径
+  unknown_alias: 一条僻静的小路
+  terrain: 5
+  desc:
+    day: 小路在乱石和树丛间绕来绕去，少有人走，路边的草长得齐腰。
+    dusk: 树影交错，风从崖那边吹过来，带着潮气。
+    night: 小路几乎看不见，只能摸着树干一步步挪。
+  loud_to: [jianhu_back, cliff_edge, shennong_camp]
+  exits:
+    - {to: jianhu_back, cost: 4}
+    - {to: shennong_camp, cost: 8}
+    - {to: cliff_edge, cost: 6}
+    - {to: ferry_bridge, cost: 40}
+  features:
+    thicket: {name: 路边树丛, desc: 一片密匝匝的树丛，钻进去外头就瞧不见了。, cover: 25}
+    fork: {name: 岔路口, desc: 小路在这里分开，一条往崖边去，一条往山下江边去。}
+
+cliff_edge:
+  name: 断崖
+  unknown_alias: 一处断崖
+  terrain: -10
+  handholds: true
+  desc:
+    day: 崖边风大，往下看云气翻涌，看不见底，崖壁上斜生着几棵小树。
+    dusk: 崖下的雾变成了灰紫色，风里有水声，像是很深的地方有湖。
+    night: 崖边一团漆黑，只听见风从下面往上灌。
+  loud_to: [back_trail]
+  exits:
+    - {to: back_trail, cost: 6}
+    - {to: valley_floor, cost: 4, check: descend}
+  features:
+    pine: {name: 崖边老松, desc: 一株老松斜伸出崖外，根扎在石缝里，拴得住绳子。, cover: 5}
+    rock_lip: {name: 崖口的岩石, desc: 崖口的石头有些松动，踩上去要小心。}
+
+valley_floor:
+  name: 谷底湖畔
+  unknown_alias: 崖下的一处山谷
+  terrain: 0
+  desc:
+    day: 四面是陡壁，谷底一片湖水绿得发暗，岸边长满了藤萝和野花，静得只听见水响。
+    dusk: 湖面起了薄雾，崖顶的天只剩窄窄一条。
+    night: 湖水黑沉沉的，偶尔有鱼跃出水面的声响。
+  loud_to: []
+  exits:
+    - {to: cliff_edge, cost: 16, check: climb}
+    - {to: valley_cave, cost: 2, hidden: true}
+    - {to: ferry_bridge, cost: 24, hidden: true}
+  features:
+    vine_curtain: {name: 湖边垂藤, desc: 湖西岸的崖壁上垂着厚厚一层藤萝，风吹过时，后面像是空的。, reveals: ['exit:valley_floor:valley_cave'], cover: 20}
+    stream_gap: {name: 出水的豁口, desc: 湖水从东头一道石缝里流出去，缝边有一条勉强能落脚的石棱。, reveals: ['exit:valley_floor:ferry_bridge']}
+    lake: {name: 湖水, desc: 湖水清冷，看得见水底的卵石。}
+
+valley_cave:
+  name: 谷底石洞
+  unknown_alias: 一个石洞
+  terrain: -5
+  desc:
+    day: 洞里有天光从石缝漏进来，正中立着一尊白玉雕的女子像，衣袂像是随时要飘起来，像前放着一个蒲团。
+    dusk: 洞里暗了，玉像却仿佛自己发着微光。
+    night: 洞里伸手不见五指，只有水滴落在石上的声音。
+  loud_to: [valley_floor]
+  exits:
+    - {to: valley_floor, cost: 2}
+  features:
+    jade_statue: {name: 玉像, desc: 玉像雕得栩栩如生，眼珠像是会转，看久了叫人心里发慌。, reveals: [F_cave]}
+    cushion: {name: 蒲团, desc: 玉像前的蒲团已经旧了，边角磨损，里头像是塞着什么。, contains: [silk_scroll]}
+    wall_carving: {name: 石壁刻字, desc: 石壁上刻着几行字，笔画很深。, pre: {stat: [self, literacy, '>=', 2]}, reveals: [F_cave]}
+
+ferry_bridge:
+  name: 澜沧江畔·善人渡
+  unknown_alias: 江边的一处渡口
+  terrain: 0
+  desc:
+    day: 大江在这里收窄，一道铁索桥横过江面，桥板随风轻轻晃，桥头立着一块旧石碑。
+    dusk: 江水的声音更响了，铁索在暮色里泛着冷光。
+    night: 江面一片漆黑，只听得见水声和铁索吱呀吱呀地响。
+  loud_to: [pine_wood, highroad]
+  exits:
+    - {to: back_trail, cost: 40}
+    - {to: pine_wood, cost: 8}
+    - {to: highroad, cost: 8}
+  features:
+    iron_bridge: {name: 铁索桥, desc: 几根粗铁链拉过江去，上面铺着木板，走在上头脚下发软。}
+    stele: {name: 桥头石碑, desc: 一块风化了的石碑，刻着渡口的名字。, pre: {stat: [self, literacy, '>=', 1]}}
+
+pine_wood:
+  name: 万劫谷外松林
+  unknown_alias: 一片松林
+  terrain: 10
+  desc:
+    day: 松林又密又深，地上铺着厚厚的松针，走几步就辨不清方向。
+    dusk: 林子里暗得早，松涛一阵阵地压过来。
+    night: 林子里黑得什么也看不见，只有松针在脚下咯吱作响。
+  loud_to: [ferry_bridge, valley_gate]
+  exits:
+    - {to: ferry_bridge, cost: 8}
+    - {to: valley_gate, cost: 8, hidden: true}
+  features:
+    marked_trees: {name: 刻了记号的松树, desc: 有几棵松树的树皮上削出了小小的记号，不细看根本瞧不出来。, reveals: ['exit:pine_wood:valley_gate']}
+
+valley_gate:
+  name: 万劫谷·谷口
+  unknown_alias: 一处谷口
+  terrain: 5
+  owner: wanjie_family
+  desc:
+    day: 谷口夹在两道山壁中间，一株大树挡在路上，树干上钉着块木牌，写着不许外人擅入的话。
+    dusk: 谷口的风呜呜作响，木牌上的字看不太清了。
+    night: 谷口黑着，大树的影子张牙舞爪。
+  loud_to: [pine_wood, zhong_hall]
+  exits:
+    - {to: pine_wood, cost: 8}
+    - {to: zhong_hall, cost: 2}
+  features:
+    knock_tree: {name: 谷口大树, desc: 大树的树干上有一处被敲得发亮的地方，旁边挂着一柄小锤。, reveals: [F_gate_knock], contains: [gate_hammer]}
+    warning_board: {name: 木牌, desc: 木牌上的字写得凶，大意是外人进谷没有好下场。, pre: {stat: [self, literacy, '>=', 1]}, reveals: [F_valley_hates_duan]}
+
+zhong_hall:
+  name: 钟家正厅
+  unknown_alias: 谷里的一座厅堂
+  terrain: 0
+  owner: wanjie_family
+  desc:
+    day: 厅堂陈设简朴，收拾得一尘不染，墙上挂着一张弓，案上供着香炉。
+    dusk: 仆人点起了灯，厅里飘着淡淡的檀香味。
+    night: 厅里只留一盏灯，内院那边偶尔传来说话声。
+  loud_to: [valley_gate, zhong_inner]
+  exits:
+    - {to: valley_gate, cost: 2}
+    - {to: zhong_inner, cost: 1}
+  features:
+    side_screen: {name: 屏风, desc: 一架绘着山水的屏风，后头能站一个人。, cover: 15}
+    altar_table: {name: 供案, desc: 案上一只铜香炉，香灰积了半炉。}
+
+zhong_inner:
+  name: 钟家内院
+  unknown_alias: 一处内院
+  terrain: -5
+  owner: wanjie_family
+  desc:
+    day: 内院种着些花木，廊下有一间药房，门虚掩着，飘出草药的气味。
+    dusk: 廊下的灯笼亮了，花影映在窗纸上。
+    night: 院里静悄悄的，药房的门关着。
+  loud_to: [zhong_hall]
+  exits:
+    - {to: zhong_hall, cost: 1}
+  features:
+    medicine_cabinet: {name: 药柜, desc: 药房里一架药柜，几十个小抽屉，每个都贴着签子。, pre: {stat: [self, literacy, '>=', 1]}, contains: [diao_antidote]}
+    garden: {name: 花木丛, desc: 几丛花木修剪得齐整，蹲在后面不易被瞧见。, cover: 15}
+
+mu_house:
+  name: 木婉清的住处
+  unknown_alias: 路边一户人家
+  terrain: 0
+  desc:
+    day: 几间木屋靠着山脚，屋后拴马的地方有一片踩烂的泥地，门窗都关得严实。
+    dusk: 屋里没点灯，屋后的马偶尔打个响鼻。
+    night: 木屋黑着，四下只有虫鸣。
+  loud_to: [highroad]
+  exits:
+    - {to: highroad, cost: 8}
+  features:
+    stable: {name: 屋后马棚, desc: 一个简陋的马棚，地上的蹄印又深又乱。, cover: 10}
+    shutters: {name: 紧闭的窗子, desc: 窗子从里头闩着，缝里黑漆漆的。}
+
+highroad:
+  name: 大路
+  unknown_alias: 一条大路
+  terrain: 5
+  desc:
+    day: 大路沿着江岸往南伸去，两旁是稻田和竹林，偶尔有挑担子的人走过。
+    dusk: 路上没了行人，竹林里起了雾。
+    night: 大路上黑沉沉的，竹林里像是藏着什么。
+  loud_to: [mu_house, ferry_bridge, crag_foot]
+  exits:
+    - {to: ferry_bridge, cost: 8}
+    - {to: mu_house, cost: 8}
+    - {to: crag_foot, cost: 16}
+    - {to: out_dali, cost: 24, edge: true}
+  features:
+    bamboo: {name: 路边竹林, desc: 一大片竹林挨着路，竹子密得插不进手。, cover: 25}
+
+crag_foot:
+  name: 高崖下
+  unknown_alias: 一座高崖底下
+  terrain: 0
+  desc:
+    day: 一座孤崖拔地而起，崖下乱石成堆，石缝间积着一汪冷水，四下长满青苔。
+    dusk: 崖影罩下来，冷水潭边冒着白气。
+    night: 崖下伸手不见五指，潭水那边偶尔响起古怪的咕咕声。
+  loud_to: [high_crag, highroad]
+  exits:
+    - {to: highroad, cost: 16}
+    - {to: mountain_path, cost: 24}
+    - {to: high_crag, cost: 6}
+  features:
+    cold_pool: {name: 冷水潭, desc: 一汪冷水，水色发暗，潭边的石头上有些细碎的爪痕。, contains: [mangu_zhuha]}
+    boulders: {name: 乱石堆, desc: 大石头横七竖八地堆着，缝隙里藏得下人。, cover: 20}
+
+high_crag:
+  name: 高崖
+  unknown_alias: 一处高崖顶上
+  terrain: 20
+  desc:
+    day: 崖顶不大，只有一条窄路上来，四面临空，下头的动静看得一清二楚。
+    dusk: 崖顶风紧，远处的江像一条灰带子。
+    night: 崖顶冷得刺骨，星星低得像要掉下来。
+  loud_to: [crag_foot]
+  exits:
+    - {to: crag_foot, cost: 6}
+  features:
+    narrow_path: {name: 上崖的窄路, desc: 窄路只容一人，守在上头一个人就能挡住一群。, cover: 10}
+    rock_shelf: {name: 崖顶石棚, desc: 一块突出的大石底下能避风雨。, cover: 15}

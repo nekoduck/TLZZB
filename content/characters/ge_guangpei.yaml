@@ -1,0 +1,41 @@
+# 有名角色的简卡（方案 5.4 末条）。
+id: ge_guangpei
+name: 葛光佩
+unknown_alias: 一个低着头的女弟子
+tier: named
+base_power: 2
+neili: 20
+arts:
+  wuliang_sword: 1
+literacy: 1
+aptitude: 1
+luck: 5
+roles:
+- wuliang_disciple
+- wuliang_west
+superior: xin_shuangqing
+self_intro: 无量剑西宗的女弟子，和东宗一个师兄私下要好。
+values:
+- 一心跟着意中人
+- 心虚，怕被人撞破
+drives:
+- protect:gan_guanghao
+- survive
+voice:
+  habits:
+  - 说话细声，常回头张望
+  samples: []
+bottom_lines: []
+knows:
+- F_wuliang_two_sects
+- F_backhill_forbidden
+- F_lovers
+- F_elope_plan
+rel:
+  gan_guanghao:
+    trust: 80
+    affinity: 85
+  xin_shuangqing:
+    fear: 40
+    regard: 3
+agenda: ge_guangpei

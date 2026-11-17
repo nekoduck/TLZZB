@@ -1,0 +1,148 @@
+# 知识边界集（方案 11.5「知识边界」）。格式见 evals/README.md 第 7 节。
+# 十个有魂角色各 10 个问题，问他开局时不该知道的事，包括原著的后文。由玩家当面问（言语行为 ask）。
+# 断言：他这一回合说出的事实（speech.fact_refs，以及叙述里他那句台词）全部来自 may_use 与这一局里的见闻；
+# forbidden 里的事实不得出现；forbidden_desc 写的是事实库里没有的后文，供人工或 C 模型判读台词。
+# scene 指 evals/data/scenes.yaml 里的场景（玩家与这个人在一处）。
+# may_use 就是他开局时相信的事实（置信度不低于 0.6），测试会对照搭好场景后的状态核对。
+version: 1
+items:
+  - char: duan_yu
+    scene: hall
+    may_use: [F_duan_family, F_duan_no_kungfu, F_duan_runaway, F_wuliang_two_sects]
+    questions:
+      - {id: k001, q: 段公子，剑湖宫里哪两个弟子私下相好？, forbidden: [F_lovers, F_elope_plan]}
+      - {id: k002, q: 山下那伙神农帮是奉了谁的号令来的？, forbidden: [F_shennong_orders, F_lingjiu_rules]}
+      - {id: k003, q: 你可知道后山断崖底下有什么？, forbidden: [F_cave, F_scroll_contents], forbidden_desc: [谷底石洞里的玉像与帛卷（后文）]}
+      - {id: k004, q: 梁上那个小姑娘是谁家的孩子？, forbidden: [F_zhong_ling_daughter]}
+      - {id: k005, q: 去万劫谷该怎么走？, forbidden: [F_route_wanjie, F_gate_knock, 'exit:pine_wood:valley_gate']}
+      - {id: k006, q: 你听说过一种踩着卦位走的步法吗？, forbidden: [F_scroll_contents], forbidden_desc: [他日后会学到这门步法（后文）]}
+      - {id: k007, q: 那小姑娘养的小貂咬人有毒吗？, forbidden: [F_diao_venom, F_diao_antidote_father]}
+      - {id: k008, q: 你家里派人出来找你了吗？, forbidden: [F_dali_search], forbidden_desc: [王府的人几时到、是谁（后文）]}
+      - {id: k009, q: 大路边那个黑衣蒙面的女子是什么来历？, forbidden: [F_mu_lodging, F_mu_oath, F_mu_hunted]}
+      - {id: k010, q: 你家跟江那边的钟家有什么渊源？, forbidden: [F_gan_old_affair], forbidden_desc: [段家与钟家上一辈的恩怨（后文）]}
+  - char: zhong_ling
+    scene: hall_girl
+    may_use: [F_diao_antidote_father, F_diao_venom, F_gate_knock, F_route_wanjie, F_valley_hates_duan, F_wuliang_two_sects, F_zhong_ling_daughter, 'exit:pine_wood:valley_gate']
+    questions:
+      - {id: k011, q: 小姑娘，你娘年轻时认得一个姓段的人吗？, forbidden: [F_gan_old_affair]}
+      - {id: k012, q: 你家那只金盒里装着什么？, forbidden: [F_zhong_ling_birth]}
+      - {id: k013, q: 你知道那位段公子是什么出身吗？, forbidden: [F_duan_family, F_duan_runaway]}
+      - {id: k014, q: 你爹把貂毒的解药收在哪儿？, forbidden: [F_diao_antidote_cabinet]}
+      - {id: k015, q: 神农帮为什么要抢剑湖宫的后山？, forbidden: [F_shennong_orders, F_lingjiu_rules]}
+      - {id: k016, q: 后山崖底下有什么好玩的？, forbidden: [F_cave, F_scroll_contents]}
+      - {id: k017, q: 你会不会被神农帮抓去？, forbidden: [F_zhong_ling_held], forbidden_desc: [她日后被扣在神农帮营地（后文）]}
+      - {id: k018, q: 剑湖宫哪两个弟子要偷偷私奔？, forbidden: [F_lovers, F_elope_plan]}
+      - {id: k019, q: 你真是钟谷主亲生的吗？, forbidden: [], forbidden_desc: [她真正的身世（后文）]}
+      - {id: k020, q: 灵鹫宫的圣使什么时候到？, forbidden: [F_envoy_due]}
+  - char: sikong_xuan
+    scene: camp_visit
+    may_use: [F_duanchang_antidote_sikong, F_envoy_due, F_four_evils, F_lingjiu_rules, F_shennong_orders, F_shennong_siege, F_wuliang_two_sects]
+    questions:
+      - {id: k021, q: 帮主，有一种灰毛小貂的毒要怎么解？, forbidden: [F_diao_venom, F_diao_antidote_father, F_diao_antidote_cabinet]}
+      - {id: k022, q: 剑湖宫梁上藏着的那个小姑娘是谁家的？, forbidden: [F_zhong_ling_daughter]}
+      - {id: k023, q: 去万劫谷该怎么走？, forbidden: [F_route_wanjie, F_gate_knock, 'exit:pine_wood:valley_gate']}
+      - {id: k024, q: 剑湖宫后山崖下藏着什么宝贝？, forbidden: [F_cave, F_scroll_contents]}
+      - {id: k025, q: 那个青衫段公子是什么来头？, forbidden: [F_duan_family]}
+      - {id: k026, q: 无量剑里哪两个弟子要私奔？, forbidden: [F_lovers, F_elope_plan]}
+      - {id: k027, q: 帮主，你日后会落得个什么下场？, forbidden: [], forbidden_desc: [他后来的结局（后文，待原文核对）]}
+      - {id: k028, q: 南海鳄神为什么到这一带来？, forbidden: [F_eshen_disciple_killed, F_eshen_wants_heir]}
+      - {id: k029, q: 大路边那个黑衣女子住在谁家？, forbidden: [F_mu_lodging]}
+      - {id: k030, q: 帮主，你这几天会不会被什么东西咬伤？, forbidden: [], forbidden_desc: [他日后被闪电貂咬伤（后文）]}
+  - char: zuo_zimu
+    scene: hall
+    may_use: [F_backhill_forbidden, F_four_evils, F_lingjiu_rules, F_wuliang_two_sects]
+    questions:
+      - {id: k031, q: 左掌门，干光豪和葛光佩之间可有什么事？, forbidden: [F_lovers, F_elope_plan]}
+      - {id: k032, q: 山下神农帮这回是奉了谁的命令来的？, forbidden: [F_shennong_orders]}
+      - {id: k033, q: 灵鹫宫的圣使是不是近日要来？, forbidden: [F_envoy_due]}
+      - {id: k034, q: 后山断崖底下有什么？, forbidden: [F_cave, F_scroll_contents]}
+      - {id: k035, q: 那位段公子是什么来历？, forbidden: [F_duan_family, F_duan_runaway]}
+      - {id: k036, q: 厅梁上藏着的是谁？, forbidden: [F_zhong_ling_daughter], forbidden_desc: [梁上藏着人这件事本身]}
+      - {id: k037, q: 神农帮帮主身上带着什么药？, forbidden: [F_duanchang_antidote_sikong]}
+      - {id: k038, q: 这回围山，最后是谁吃亏？, forbidden: [], forbidden_desc: [比剑与围山后来的结局（后文）]}
+      - {id: k039, q: 江那边万劫谷的谷主最恨什么人？, forbidden: [F_valley_hates_duan]}
+      - {id: k040, q: 南海鳄神在找什么人？, forbidden: [F_eshen_wants_heir, F_eshen_disciple_killed]}
+  - char: gong_guangjie
+    scene: hall
+    may_use: [F_backhill_forbidden, F_wuliang_two_sects]
+    questions:
+      - {id: k041, q: 龚师兄，神农帮为什么要围咱们的山？, forbidden: [F_shennong_siege, F_shennong_orders]}
+      - {id: k042, q: 无量剑上头还有谁管着？, forbidden: [F_lingjiu_rules]}
+      - {id: k043, q: 干师兄平日和谁走得最近？, forbidden: [F_lovers]}
+      - {id: k044, q: 那青衫书生到底会不会武功？, forbidden: [F_duan_no_kungfu]}
+      - {id: k045, q: 那书生是什么出身？, forbidden: [F_duan_family]}
+      - {id: k046, q: 梁上那小姑娘的小貂有毒吗？, forbidden: [F_diao_venom]}
+      - {id: k047, q: 后山崖下面有什么？, forbidden: [F_cave]}
+      - {id: k048, q: 四大恶人是些什么人物？, forbidden: [F_four_evils]}
+      - {id: k049, q: 待会儿你会不会被谁咬上一口？, forbidden: [], forbidden_desc: [他日后的遭遇（后文）]}
+      - {id: k050, q: 万劫谷在哪儿，怎么走？, forbidden: [F_route_wanjie]}
+  - char: ma_wude
+    scene: hall
+    may_use: [F_four_evils, F_tea_gift, F_wuliang_two_sects]
+    questions:
+      - {id: k051, q: 东家，段公子到底是什么来头？, forbidden: [F_duan_family, F_duan_runaway]}
+      - {id: k052, q: 东家，山下神农帮背后是谁撑腰？, forbidden: [F_shennong_orders, F_lingjiu_rules]}
+      - {id: k053, q: 无量剑有没有弟子要私奔？, forbidden: [F_lovers, F_elope_plan]}
+      - {id: k054, q: 去万劫谷怎么走？, forbidden: [F_route_wanjie]}
+      - {id: k055, q: 那种小貂咬了人，解药在谁手里？, forbidden: [F_diao_antidote_father]}
+      - {id: k056, q: 后山崖下面有什么？, forbidden: [F_cave]}
+      - {id: k057, q: 灵鹫宫的圣使什么时候来？, forbidden: [F_envoy_due]}
+      - {id: k058, q: 咱们这趟到最后能平安下山吗？, forbidden: [], forbidden_desc: [围山之后的事（后文）]}
+      - {id: k059, q: 大路边那户人家住的是谁？, forbidden: [F_mu_lodging]}
+      - {id: k060, q: 段公子家里有人出来找他吗？, forbidden: [F_dali_search]}
+  - char: gan_baobao
+    scene: zhong_hall_visit
+    may_use: [F_diao_antidote_cabinet, F_diao_antidote_father, F_diao_venom, F_gan_old_affair, F_gate_knock, F_mu_lodging, F_route_wanjie, F_valley_hates_duan, F_wuliang_two_sects, F_zhong_ling_birth, F_zhong_ling_daughter, 'exit:pine_wood:valley_gate']
+    questions:
+      - {id: k061, q: 夫人，令嫒此刻在哪里？, forbidden: [F_zhong_ling_held], forbidden_desc: [女儿正躲在剑湖宫梁上、随后的遭遇]}
+      - {id: k062, q: 山下神农帮奉的是谁的令？, forbidden: [F_shennong_orders]}
+      - {id: k063, q: 剑湖宫有对师兄妹要私奔，您听说了吗？, forbidden: [F_lovers, F_elope_plan]}
+      - {id: k064, q: 那个姓段的书生是什么出身？, forbidden: [F_duan_family]}
+      - {id: k065, q: 无量山后山崖底有什么？, forbidden: [F_cave, F_scroll_contents]}
+      - {id: k066, q: 有人在追杀木姑娘吗？, forbidden: [F_mu_hunted], forbidden_desc: [来敌的来历]}
+      - {id: k067, q: 南海鳄神的徒弟是怎么死的？, forbidden: [F_eshen_disciple_killed]}
+      - {id: k068, q: 断肠散的解药在谁手里？, forbidden: [F_duanchang_antidote_sikong]}
+      - {id: k069, q: 木姑娘立过什么誓？, forbidden: [F_mu_oath]}
+      - {id: k070, q: 令嫒日后会嫁给谁？, forbidden: [], forbidden_desc: [后文的事]}
+  - char: zhong_wanchou
+    scene: zhong_hall_visit
+    may_use: [F_diao_antidote_cabinet, F_diao_antidote_father, F_diao_venom, F_gan_old_affair, F_gate_knock, F_route_wanjie, F_valley_hates_duan, F_wuliang_two_sects, F_zhong_ling_daughter, 'exit:pine_wood:valley_gate']
+    questions:
+      - {id: k071, q: 谷主，夫人那只金盒里装着什么？, forbidden: [F_zhong_ling_birth]}
+      - {id: k072, q: 大路边那户人家住着谁？, forbidden: [F_mu_lodging]}
+      - {id: k073, q: 令嫒这会儿在剑湖宫做什么？, forbidden: [F_zhong_ling_held], forbidden_desc: [她偷跑出谷以后的事]}
+      - {id: k074, q: 神农帮背后是谁？, forbidden: [F_shennong_orders, F_lingjiu_rules]}
+      - {id: k075, q: 剑湖宫后山崖下有什么？, forbidden: [F_cave]}
+      - {id: k076, q: 那姓段的书生是镇南王府的人吗？, forbidden: [F_duan_family]}
+      - {id: k077, q: 四大恶人是些什么人？, forbidden: [F_four_evils]}
+      - {id: k078, q: 有人要杀那黑衣姑娘吗？, forbidden: [F_mu_hunted]}
+      - {id: k079, q: 灵鹫宫的圣使什么时候到？, forbidden: [F_envoy_due]}
+      - {id: k080, q: 钟姑娘到底是谁的女儿？, forbidden: [], forbidden_desc: [钟灵真正的身世（后文）]}
+  - char: mu_wanqing
+    scene: mu_house
+    may_use: [F_eshen_disciple_killed, F_four_evils, F_mu_hunted, F_mu_lodging, F_mu_oath, F_wuliang_two_sects]
+    questions:
+      - {id: k081, q: 姑娘，钟夫人年轻时有什么旧事？, forbidden: [F_gan_old_affair]}
+      - {id: k082, q: 姑娘，你可知道自己的亲生父亲是谁？, forbidden: [], forbidden_desc: [她的身世（后文）]}
+      - {id: k083, q: 那个青衫书生是什么出身？, forbidden: [F_duan_family]}
+      - {id: k084, q: 去万劫谷怎么走？, forbidden: [F_route_wanjie, F_gate_knock]}
+      - {id: k085, q: 貂毒的解药收在哪儿？, forbidden: [F_diao_antidote_father, F_diao_antidote_cabinet]}
+      - {id: k086, q: 神农帮为什么要围无量山？, forbidden: [F_shennong_siege, F_shennong_orders]}
+      - {id: k087, q: 无量山后山崖下有什么？, forbidden: [F_cave]}
+      - {id: k088, q: 南海鳄神想收个什么样的徒弟？, forbidden: [F_eshen_wants_heir]}
+      - {id: k089, q: 追你的那伙人是谁派来的？, forbidden: [], forbidden_desc: [幕后主使的身份（待原文核对）]}
+      - {id: k090, q: 姑娘日后会嫁给谁？, forbidden: [], forbidden_desc: [后文的事]}
+  - char: nanhai_eshen
+    scene: highroad_eshen
+    may_use: [F_eshen_disciple_killed, F_eshen_wants_heir, F_four_evils]
+    questions:
+      - {id: k091, q: 前辈，那个青衫书生是什么出身？, forbidden: [F_duan_family]}
+      - {id: k092, q: 杀你徒弟的那个女子住在哪儿？, forbidden: [F_mu_lodging]}
+      - {id: k093, q: 神农帮奉了谁的令围山？, forbidden: [F_shennong_orders]}
+      - {id: k094, q: 无量剑分几宗，几年比一回剑？, forbidden: [F_wuliang_two_sects]}
+      - {id: k095, q: 无量山后山崖下有什么？, forbidden: [F_cave, F_scroll_contents]}
+      - {id: k096, q: 前辈，你最后收到徒弟了没有？, forbidden: [], forbidden_desc: [后文里收徒的结局]}
+      - {id: k097, q: 那黑衣女子立过什么誓？, forbidden: [F_mu_oath]}
+      - {id: k098, q: 去万劫谷怎么走？, forbidden: [F_route_wanjie]}
+      - {id: k099, q: 一种灰毛小貂的毒有没有解？, forbidden: [F_diao_venom, F_diao_antidote_father]}
+      - {id: k100, q: 灵鹫宫的人什么时候到？, forbidden: [F_envoy_due]}

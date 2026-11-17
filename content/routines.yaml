@@ -1,0 +1,59 @@
+# 路人的「条件 → 动作」表（方案 7.6 末段、9.4）。路人不调模型，按这张表行动。
+# 每个名字一张表，自上而下取第一条 when 成立、而且此刻做得到的；一条都不成立就等。
+# 格式与特殊对象（nearest_outsider、nearest_hostile、nearest_injured、injured_ally、nearest_person、superior、
+# 出口 away、fact: gossip）的含义见 src/tianlong/minds/routines.py 开头的说明。
+# setpiece 的 names 按先后取第一个此刻可做、刚才又没做过的情境动作；不写 names 就取标 lean 的。
+# once_per：同一个对象在这么多刻之内不重复这一条。
+
+shennong_guard:                      # 神农帮帮众
+  - when: {flag: siege_on}
+    do: {verb: setpiece, names: [question, seize]}
+  - do: {verb: setpiece, names: [question, drive_off, feed, interrogate, give_up, glare]}
+  - do: {verb: setpiece}
+  - do: {verb: block, target: nearest_hostile}
+  - do: {verb: help, target: injured_ally}
+    once_per: 8
+  - do: {verb: say, act: ask, to: nearest_outsider, gist: 喝问来人是谁、来做什么, stance: cold}
+    once_per: 96
+  - do: {verb: wait}
+
+wuliang_disciple:                    # 无量剑的弟子
+  - do: {verb: setpiece, names: [question, let_pass, feed, chat, ask_news, give_up, talk]}
+  - do: {verb: setpiece}
+  - do: {verb: help, target: injured_ally}
+    once_per: 8
+  - do: {verb: block, target: nearest_hostile}
+  - when: {not: {flag: [bout_running, true]}}
+    do: {verb: say, act: ask, to: nearest_outsider, gist: 问来客是哪一路的朋友、上山有何贵干, stance: plain}
+    once_per: 96
+  - do: {verb: wait}
+
+wanjie_servant:                      # 万劫谷的仆役，不大开口；来人照规矩敲过树（admit 的前提）就放行，否则赶走
+  - do: {verb: setpiece, names: [question, admit, drive_off, feed, tend]}
+  - do: {verb: setpiece}
+  - do: {verb: help, target: injured_ally}
+    once_per: 8
+  - do: {verb: block, target: nearest_hostile}
+  - do: {verb: examine, target: nearest_outsider}
+    once_per: 96
+  - do: {verb: wait}
+
+herb_gatherer:                       # 采药的山民
+  - do: {verb: setpiece}
+  - do: {verb: flee, exit: away}
+  - do: {verb: help, target: nearest_injured}
+    once_per: 16
+  - do: {verb: say, act: greet, to: nearest_outsider, gist: 招呼一声，问是不是走岔了路, stance: warm}
+    once_per: 96
+  - do: {verb: say, act: tell, to: nearest_person, fact: gossip, gist: 说起山里近来的传闻}
+    once_per: 96
+  - do: {verb: wait}
+
+merchant:                            # 赶路的客商
+  - do: {verb: setpiece}
+  - do: {verb: flee, exit: away}
+  - do: {verb: say, act: greet, to: nearest_outsider, gist: 拱手招呼，问前头的路好不好走, stance: warm}
+    once_per: 96
+  - do: {verb: say, act: tell, to: nearest_person, fact: gossip, gist: 说起路上听来的消息}
+    once_per: 96
+  - do: {verb: wait}

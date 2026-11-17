@@ -1,0 +1,36 @@
+id: nanhai_eshen
+name: 南海鳄神
+unknown_alias: 一个大脑袋的怪人
+tier: soul
+base_power: 5
+neili: 80
+arts: {}
+literacy: 1
+aptitude: 1
+luck: 5
+roles: [four_evils]
+initiative: 7
+self_intro: 四大恶人中的一个，凶名远扬，却死守自己定下的规矩，最恨被人排错了座次。
+values: [凶狠粗暴，杀人不眨眼, 极重自己的规矩，说一不二, 计较辈分名次, 一心想收个像样的徒弟]
+drives: [clan_honor, 'grudge:mu_wanqing', curiosity]
+voice:
+  habits: [自称老子，满口粗话, 说急了就要动手]
+  samples: []
+bottom_lines:
+  - text: 不杀无力还手的人
+    blocks: [{verb: attack, act: kill, when: {stat: [$target, power, '<=', 0]}}]
+  - text: 说过的话不赖账
+    blocks: [{verb: say, act: lie}]
+choices:
+  - situation: 遇见一个根骨极像自己的年轻人
+    did: 非逼他拜师不可，对方不肯就扣住不放
+    para: null
+  - situation: 有人当面揭他的排名
+    did: 暴跳如雷，非要人改口不可
+    para: null
+knows: [F_eshen_disciple_killed, F_eshen_wants_heir, F_four_evils]
+rel:
+  mu_wanqing: {affinity: -60}
+  ye_erniang: {trust: 10, affinity: -10, fear: 20, regard: 5}
+  yun_zhonghe: {affinity: -30, regard: 5}
+agenda: nanhai_eshen

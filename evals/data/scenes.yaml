@@ -1,0 +1,259 @@
+# 评测用的场景库（方案 11.5、11.6）。格式见 evals/README.md 第 1 节。
+# 每个场景 = 开局状态（content/opening.yaml）+ setup 效果，用 kernel.effects.apply_effects(source='rule') 搭出来。
+# loc 是搭好之后玩家所在的地点；present 是此刻和玩家在一处、与本场景相关的人（看得见的），只用于校验与给模型的场景概况。
+version: 1
+scenes:
+  hall: {loc: jianhu_hall, present: [duan_yu, ma_wude, zuo_zimu, xin_shuangqing, gong_guangjie, rong_ziju, wu_guangsheng], setup: []}
+  hall_slap:
+    loc: jianhu_hall
+    present: [duan_yu, ma_wude, zuo_zimu, gong_guangjie]
+    setup:
+      - {set_flag: [bout_over, true]}
+      - {set_flag: [guest_laughed, true]}
+      - {set_flag: [slapped, true]}
+      - {injure: [duan_yu, 1, gong_guangjie]}
+  hall_beam:
+    loc: jianhu_hall
+    present: [duan_yu, zhong_ling, gong_guangjie, zuo_zimu, ma_wude]
+    setup:
+      - {set_flag: [bout_over, true]}
+      - {set_flag: [guest_laughed, true]}
+      - {set_flag: [slapped, true]}
+      - {injure: [duan_yu, 1, gong_guangjie]}
+      - {remove_status: [zhong_ling, hidden]}
+      - {set_flag: [beam_girl_done, true]}
+      - {rel: [zhong_ling, duan_yu, affinity, 25]}
+      - {rel: [duan_yu, zhong_ling, affinity, 25]}
+  hall_envoy:
+    loc: jianhu_hall
+    present: [envoy_lingjiu, zuo_zimu, xin_shuangqing]
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {enter: [envoy_lingjiu, jianhu_hall]}
+  back_siege:
+    loc: jianhu_back
+    present: [ma_wude, wu_guangsheng, wl_disciple_3]
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {learn: [player, F_shennong_siege, 1.0, told]}
+      - {move: [player, jianhu_back]}
+      - {move: [ma_wude, jianhu_back]}
+      - {move: [wu_guangsheng, jianhu_back]}
+  back_injured:
+    loc: jianhu_back
+    present: [duan_yu, ma_wude]
+    setup:
+      - {move: [player, jianhu_back]}
+      - {move: [ma_wude, jianhu_back]}
+      - {move: [duan_yu, jianhu_back]}
+      - {injure: [duan_yu, 2, gong_guangjie]}
+  gate_siege:
+    loc: jianhu_gate
+    present: [gong_guangjie, wl_disciple_1, sn_chief_a]
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {learn: [player, F_shennong_siege, 1.0, told]}
+      - {move: [player, jianhu_gate]}
+      - {move: [gong_guangjie, jianhu_gate]}
+      - {move: [sn_chief_a, jianhu_gate]}
+  path_checkpoint:
+    loc: mountain_path
+    present: [sn_chief_b, sn_guard_3, sn_guard_4]
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {move: [player, mountain_path]}
+  path_hostile:
+    loc: mountain_path
+    present: [sn_chief_b, sn_guard_3, sn_guard_4]
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {move: [player, mountain_path]}
+      - {rel: [sn_chief_b, player, affinity, -50]}
+      - {rel: [sn_guard_3, player, affinity, -50]}
+  path_eshen:
+    loc: mountain_path
+    present: [nanhai_eshen, sn_chief_b]
+    setup:
+      - {move: [player, mountain_path]}
+      - {enter: [nanhai_eshen, mountain_path]}
+  camp_captive:
+    loc: shennong_camp
+    present: [sikong_xuan, sn_chief_a, sn_guard_1, duan_yu, zhong_ling]
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {move: [player, shennong_camp]}
+      - {move: [duan_yu, shennong_camp]}
+      - {move: [zhong_ling, shennong_camp]}
+      - {remove_status: [zhong_ling, hidden]}
+      - {add_status: [player, captive, {source: sikong_xuan}]}
+      - {add_status: [duan_yu, captive, {source: sikong_xuan}]}
+      - {add_status: [zhong_ling, captive, {source: sikong_xuan}]}
+      - {learn: [player, F_shennong_siege, 1.0, told]}
+  camp_bitten:
+    loc: shennong_camp
+    present: [sikong_xuan, sn_chief_a, duan_yu, zhong_ling]
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {move: [player, shennong_camp]}
+      - {move: [duan_yu, shennong_camp]}
+      - {move: [zhong_ling, shennong_camp]}
+      - {remove_status: [zhong_ling, hidden]}
+      - {add_status: [player, vetted, {ticks: 96}]}
+      - {add_status: [duan_yu, captive, {source: sikong_xuan}]}
+      - {add_status: [zhong_ling, captive, {source: sikong_xuan}]}
+      - {add_status: [sikong_xuan, poisoned_diao, {ticks: 672, source: zhong_ling}]}
+      - {set_flag: [diao_bite_done, true]}
+      - {learn: [sikong_xuan, F_diao_venom, 1.0, told]}
+      - {learn: [sikong_xuan, F_diao_antidote_father, 1.0, told]}
+      - {learn: [player, F_shennong_siege, 1.0, told]}
+      - {learn: [player, F_diao_antidote_father, 1.0, told]}
+  camp_visit:
+    loc: shennong_camp
+    present: [sikong_xuan, sn_chief_a, sn_guard_1, sn_guard_2]
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {move: [player, shennong_camp]}
+      - {add_status: [player, vetted, {ticks: 96}]}
+      - {learn: [player, F_shennong_siege, 1.0, told]}
+  camp_intruder:
+    loc: shennong_camp
+    present: [sikong_xuan, sn_chief_a]
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {move: [player, shennong_camp]}
+      - {open: [camp_capture, shennong_camp, {chief: sikong_xuan, intruder: player}]}
+  trail_lovers:
+    loc: back_trail
+    present: [gan_guanghao, ge_guangpei]
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {move: [player, back_trail]}
+      - {move: [gan_guanghao, back_trail]}
+      - {move: [ge_guangpei, back_trail]}
+  cliff: {loc: cliff_edge, present: [], setup: [{move: [player, cliff_edge]}]}
+  valley_floor: {loc: valley_floor, present: [], setup: [{move: [player, valley_floor]}, {injure: [player, 1]}]}
+  cave:
+    loc: valley_cave
+    present: []
+    setup:
+      - {move: [player, valley_cave]}
+      - {learn: [player, 'exit:valley_floor:valley_cave', 1.0, saw]}
+      - {open: [cave_find, valley_cave, {finder: player}]}
+  cave_scroll:
+    loc: valley_cave
+    present: []
+    setup:
+      - {move: [player, valley_cave]}
+      - {learn: [player, 'exit:valley_floor:valley_cave', 1.0, saw]}
+      - {give: [null, player, silk_scroll]}
+  ferry: {loc: ferry_bridge, present: [merchant_1], setup: [{move: [player, ferry_bridge]}]}
+  pine:
+    loc: pine_wood
+    present: [herb_gatherer_1]
+    setup:
+      - {move: [player, pine_wood]}
+      - {learn: [player, F_route_wanjie, 1.0, told]}
+  gate_wanjie:
+    loc: valley_gate
+    present: [jin_xier]
+    setup:
+      - {move: [player, valley_gate]}
+      - {learn: [player, 'exit:pine_wood:valley_gate', 1.0, told]}
+      - {learn: [player, F_route_wanjie, 1.0, told]}
+  zhong_news:
+    loc: zhong_hall
+    present: [gan_baobao, zhong_wanchou, wj_servant_1]
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {remove_status: [zhong_ling, hidden]}
+      - {move: [zhong_ling, shennong_camp]}
+      - {add_status: [zhong_ling, captive, {source: sikong_xuan}]}
+      - {give: [zhong_ling, player, zhong_ling_shoe]}
+      - {learn: [player, F_zhong_ling_held, 1.0, saw]}
+      - {learn: [player, F_route_wanjie, 1.0, told]}
+      - {learn: [player, 'exit:pine_wood:valley_gate', 1.0, told]}
+      - {move: [player, zhong_hall]}
+  zhong_inner: {loc: zhong_inner, present: [], setup: [{move: [player, zhong_inner]}]}
+  mu_house: {loc: mu_house, present: [mu_wanqing], setup: [{move: [player, mu_house]}]}
+  highroad_ambush:
+    loc: highroad
+    present: [rui_popo, ping_popo]
+    setup:
+      - {move: [player, highroad]}
+      - {enter: [rui_popo, highroad]}
+      - {enter: [ping_popo, highroad]}
+      - {rel: [rui_popo, player, affinity, -40]}
+  crag_foot:
+    loc: crag_foot
+    present: []
+    setup:
+      - {move: [player, crag_foot]}
+      - {open: [zhuha, crag_foot, {finder: player}]}
+  hall_gift:
+    loc: jianhu_hall
+    present: [zuo_zimu, ma_wude, duan_yu]
+    setup:
+      - {give: [player, zuo_zimu, tea_sample]}
+  back_chopper:
+    loc: jianhu_back
+    present: [ma_wude, wu_guangsheng, wl_disciple_3]
+    setup:
+      - {set_flag: [bout_running, false]}
+      - {set_flag: [siege_on, true]}
+      - {set_flag: [siege_began, true]}
+      - {learn: [player, F_shennong_siege, 1.0, told]}
+      - {move: [player, jianhu_back]}
+      - {move: [ma_wude, jianhu_back]}
+      - {move: [wu_guangsheng, jianhu_back]}
+      - {spawn: [chopper, jianhu_back]}
+  cave_found:
+    loc: valley_cave
+    present: []
+    setup:
+      - {move: [player, valley_cave]}
+      - {learn: [player, 'exit:valley_floor:valley_cave', 1.0, saw]}
+      - {spawn: [silk_scroll, valley_cave]}
+  zhong_inner_open:
+    loc: zhong_inner
+    present: []
+    setup:
+      - {move: [player, zhong_inner]}
+      - {spawn: [diao_antidote, zhong_inner]}
+  zhong_hall_visit:
+    loc: zhong_hall
+    present: [gan_baobao, zhong_wanchou, wj_servant_1]
+    setup:
+      - {move: [player, zhong_hall]}
+  highroad_eshen:
+    loc: highroad
+    present: [nanhai_eshen]
+    setup:
+      - {move: [player, highroad]}
+      - {enter: [nanhai_eshen, highroad]}
+  hall_girl:
+    loc: jianhu_hall
+    present: [zhong_ling, duan_yu, ma_wude]
+    setup:
+      - {remove_status: [zhong_ling, hidden]}

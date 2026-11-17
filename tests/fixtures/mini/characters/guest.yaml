@@ -1,0 +1,18 @@
+name: 白逸
+unknown_alias: 青衫书生
+tier: soul
+base_power: 0
+literacy: 3
+aptitude: 2
+luck: 20
+roles: [traveler]
+self_intro: 路过的读书人，爱笑。
+values: [好奇, 心软]
+drives: [curiosity]
+bottom_lines:
+  - text: 不对人动手
+    blocks: [{verb: attack}]
+  - text: 不说家里的事
+    blocks: [{verb: say, act: tell, fact_tag: guest_private}]
+rel: {player: {trust: 20, affinity: 20}}
+agenda: guest

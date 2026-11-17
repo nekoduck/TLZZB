@@ -1,0 +1,38 @@
+# 有名角色的简卡（方案 5.4 末条）。
+id: yu_guangbiao
+name: 郁光标
+unknown_alias: 一个粗壮的剑派弟子
+tier: named
+base_power: 2
+neili: 20
+arts:
+  wuliang_sword: 1
+literacy: 1
+aptitude: 1
+luck: 5
+roles:
+- wuliang_disciple
+- wuliang_east
+superior: zuo_zimu
+self_intro: 无量剑东宗的弟子，奉命看守后院。
+values:
+- 听师父的话
+- 对外人凶
+drives:
+- obey:zuo_zimu
+- clan_honor
+voice:
+  habits:
+  - 开口就喝问
+  samples: []
+bottom_lines: []
+knows:
+- F_wuliang_two_sects
+- F_backhill_forbidden
+rel:
+  zuo_zimu:
+    trust: 50
+    affinity: 30
+    fear: 20
+    regard: 3
+agenda: yu_guangbiao

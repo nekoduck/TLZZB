@@ -1,0 +1,47 @@
+goal: 躲过追杀，活下去
+steps:
+  - id: mw_lie_low
+    text: 守在住处，避开追杀她的人
+    at: mu_house
+    do: {verb: wait}
+    pre: {not: {status: [self, captive]}}
+    takes: 176
+    deadline: 400
+  - id: mw_breakout
+    text: 仇家找上门来，杀出去退上高崖
+    at: high_crag
+    do: {verb: wait}
+    pre: {all: [{alive: rui_popo}, {onstage: rui_popo}, {not: {status: [self, captive]}}]}
+    takes: 48
+  - id: mw_cow_camp
+    text: 陪报信的人回无量山，逼神农帮交出解药
+    at: shennong_camp
+    do: {verb: say, act: threaten, to: sikong_xuan}
+    pre:                                        # 那人还中着毒、就在身边，帮主还在，她也得认这份报信的情
+      all:
+        - {status: [duan_yu, poisoned_duanchang]}
+        - {alive: sikong_xuan}
+        - {at: [sikong_xuan, shennong_camp]}
+        - {has: [sikong_xuan, duanchang_antidote]}
+        - {same_loc: [self, duan_yu]}
+        - {any: [{rel: [self, duan_yu, trust, '>=', 10]}, {rel: [self, duan_yu, affinity, '>=', 10]}]}
+    start: 300
+    takes: 2
+    offscreen:
+      - check:
+          kind: chance
+          who: self
+          chance: 75
+          ok:
+            - {give: [sikong_xuan, duan_yu, duanchang_antidote]}
+            - {set_flag: [camp_cowed, true]}
+            - {add_status: [duan_yu, camp_pass, {ticks: 96}]}
+            - {rel: [sikong_xuan, self, fear, 30]}
+            - {emit: {actor: self, verb: threaten, text: '{self}拿毒箭指着⟦sikong_xuan⟧，逼他交出了⟦duanchang_antidote⟧', kinds: [{k: threaten, who: sikong_xuan, by: self}]}}
+          fail:
+            - {emit: {actor: self, verb: threaten, text: '{self}与⟦sikong_xuan⟧僵持了一阵，没能逼出解药', kinds: [{k: threaten, who: sikong_xuan, by: self}]}}
+  - id: mw_move_on
+    text: 了结之后另寻去处
+    do: {verb: wait}
+    pre: {not: {status: [self, captive]}}
+    takes: 96

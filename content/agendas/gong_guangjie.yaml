@@ -1,0 +1,33 @@
+goal: 在比剑中取胜，给师门挣脸
+steps:
+  - id: gg_bout
+    text: 下场比剑
+    at: jianhu_hall
+    do: {verb: wait}
+    pre: {not: {status: [self, captive]}}
+    takes: 8
+    deadline: 48
+  - id: gg_save_face
+    text: 有人取笑，就要讨回面子
+    at: jianhu_hall
+    do: {verb: say, act: taunt, to: duan_yu}
+    pre:
+      all:
+        - {flag: guest_laughed}
+        - {not: {flag: apologized}}
+        - {same_loc: [self, duan_yu]}
+    takes: 1
+    deadline: 96
+  - id: gg_guard_gate
+    text: 奉师命把守山门
+    at: jianhu_gate
+    do: {verb: wait}
+    pre: {flag: siege_on}
+    start: 56
+    takes: 96
+  - id: gg_idle
+    text: 在门中练剑
+    at: jianhu_back
+    do: {verb: wait}
+    pre: {not: {status: [self, captive]}}
+    takes: 96

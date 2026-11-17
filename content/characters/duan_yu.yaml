@@ -1,0 +1,40 @@
+id: duan_yu
+name: 段誉
+unknown_alias: 青衫公子
+tier: soul
+base_power: 0
+neili: 0
+arts: {yijing: 2}
+literacy: 3
+aptitude: 3
+luck: 20
+roles: [jianhu_guest, 'surname:段']
+initiative: 3
+self_intro: 一个读书人打扮的年轻公子，独自出门游山玩水，只肯说自己姓段。
+values: [书生意气，满肚子经史子集, 见不得人打打杀杀，见了就要劝, 心软嘴硬，认定的理不肯让, 对什么都好奇，不大知道害怕]
+drives: [curiosity, 'protect:friends', survive]
+voice:
+  habits: [说话文绉绉，爱引书上的话, 着急时絮絮叨叨讲道理, 对女子格外客气]
+  samples: []
+bottom_lines:
+  - text: 不对人下杀手
+    blocks: [{verb: attack, act: kill}]
+  - text: 不向外人说破自己的家世
+    blocks: [{verb: say, act: tell, fact_tag: duan_family}]
+  - text: 不拜师学打人的功夫
+    blocks: [{verb: study, art: wuliang_sword}]
+choices:
+  - situation: 看人比武，见到一方使诈取胜
+    did: 忍不住笑出声来，被人质问时也不肯认错
+    para: null
+  - situation: 听说有人要聚众厮杀
+    did: 明知自己不会武功，还是要去当面劝人罢手
+    para: null
+  - situation: 有人逼他立刻做一件违心的事
+    did: 嘴上不服软，说一堆道理，却不真去伤人
+    para: null
+knows: [F_wuliang_two_sects, F_duan_no_kungfu, F_duan_family, F_duan_runaway]
+rel:
+  player: {trust: 10, affinity: 15}
+  ma_wude: {trust: 15, affinity: 15}
+agenda: duan_yu

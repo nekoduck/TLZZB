@@ -1,0 +1,394 @@
+# M0：Jev 中文问法与英文问法的比较（方案 7.2、7.4 末尾、11.6「中英对比」）。
+# 30 个手工标注的样例，取自本游戏的处境，文字全部是自己写的，不含原文。
+# 状态（state）一律中文，与游戏里一样；只换问题与选项描述的语言。
+# 三类：J1 输入归类、J2 角色抉择（有一个明显合理的选项）、J5 叙述核对（读心、替玩家做主）。
+# 标签：choice 题写选项 id；noul 题写 true / false。没把握标的题不标。
+version: 1
+
+questions:
+  kind:
+    type: choice
+    zh:
+      instructions: 「玩家的话」这一节属于哪一类输入？
+      criteria:
+        act: 只做了一个身体动作，没有开口
+        say: 只是开口说话，没有身体动作
+        both: 既做了身体动作，又开口说话
+        meta: 在问这个游戏本身怎么操作、怎么存档
+        unclear: 读不出意思，看不懂
+    en:
+      instructions: Which kind of input is the line in the 【玩家的话】 (player's words) section?
+      criteria:
+        act: Only a physical action; nothing is said aloud
+        say: Only speech; no physical action
+        both: Both a physical action and speech
+        meta: A question about how to operate or save the game itself
+        unclear: Meaningless; cannot be understood
+  act:
+    type: choice
+    zh:
+      instructions: 「玩家的话」里说出口的那句话，是哪一种言语行为？
+      criteria:
+        greet: 打招呼
+        tell: 告诉对方一件事
+        ask: 询问，想从对方那里得到答案
+        request: 请求对方去做一件事
+        threaten: 威胁对方
+        insult: 辱骂、讥讽对方
+        none: 没有说话
+    en:
+      instructions: What speech act is the spoken part of the line in 【玩家的话】 (player's words)?
+      criteria:
+        greet: Greeting someone
+        tell: Telling the listener a piece of information
+        ask: Asking a question to get an answer
+        request: Asking the listener to do something
+        threaten: Threatening the listener
+        insult: Insulting or mocking the listener
+        none: Nothing is said aloud
+  is_request:
+    type: noul
+    zh:
+      instructions: 「玩家的话」是在求对方去做一件事。
+    en:
+      instructions: The line in 【玩家的话】 (player's words) asks someone to do something.
+  action:
+    type: choice
+    zh:
+      instructions: 此刻你会做哪一件事？
+      none: 什么也不做
+    en:
+      instructions: Which one thing will you do right now?
+      none: Do nothing
+  mind:
+    type: noul
+    zh:
+      instructions: 「这一句」写出了「你」以外的某个人心里的想法或感受。
+    en:
+      instructions: The sentence under 【这一句】 states what someone other than "you" (你) privately thinks or feels.
+  puppet:
+    type: noul
+    zh:
+      instructions: 「这一句」让「你」做了「你做的事」里没有的动作，或说了「你」没说过的话。
+    en:
+      instructions: The sentence under 【这一句】 makes "you" (你) do an action not listed under 【你做的事】, or say words "you" did not say.
+
+items:
+  # ------------------------------------------------------------------ J1 输入归类
+  - id: j1_01
+    family: J1
+    state: |
+      【场景】剑湖宫练武厅。在场的人：龚光杰、段公子、左子穆、马五德。看得见的东西：长剑、茶碗。
+      【玩家前两回合做的事】跟着马五德进了练武厅；站在一旁看比剑。
+      【玩家的话】我走到厅门口，探头往外看看。
+    labels: {kind: act, act: none, is_request: false}
+  - id: j1_02
+    family: J1
+    state: |
+      【场景】无量山山道。在场的人：一个挑柴的樵夫。看得见的东西：岔路口、石碑。
+      【玩家前两回合做的事】离开剑湖宫；顺着山道往下走。
+      【玩家的话】这位大哥，请问去万劫谷该走哪条路？
+    labels: {kind: say, act: ask}
+  - id: j1_03
+    family: J1
+    state: |
+      【场景】剑湖宫偏厅。在场的人：马五德。看得见的东西：茶壶、点心。
+      【玩家前两回合做的事】喝了一碗茶；四下张望。
+      【玩家的话】这游戏怎么存档？
+    labels: {kind: meta}
+  - id: j1_04
+    family: J1
+    state: |
+      【场景】神农帮营地。在场的人：一个受伤的帮众、司空玄。看得见的东西：篝火、药篓。
+      【玩家前两回合做的事】被带进营地；在篝火旁坐下。
+      【玩家的话】我扶起地上那个受伤的汉子，问他：「伤在哪里？」
+    labels: {kind: both, act: ask, is_request: false}
+  - id: j1_05
+    family: J1
+    state: |
+      【场景】剑湖宫练武厅。在场的人：龚光杰、段公子、左子穆。看得见的东西：长剑。
+      【玩家前两回合做的事】看龚光杰比剑；见他推了段公子一把。
+      【玩家的话】龚光杰，你再敢碰段公子一下，我叫你后悔！
+    labels: {kind: say, act: threaten}
+  - id: j1_06
+    family: J1
+    state: |
+      【场景】神农帮营地。在场的人：司空玄、两个帮众、段公子。看得见的东西：篝火、绳索。
+      【玩家前两回合做的事】被帮众拦下；被押到司空玄面前。
+      【玩家的话】司空帮主，求您行行好，放我们下山吧。
+    labels: {kind: say, act: request, is_request: true}
+  - id: j1_07
+    family: J1
+    state: |
+      【场景】山道旁的树林。在场的人：一个持刀的汉子。看得见的东西：灌木、石块。
+      【玩家前两回合做的事】躲进树林；看见那汉子在路边歇脚。
+      【玩家的话】我悄悄拔出匕首，绕到那汉子身后。
+    labels: {kind: act, act: none, is_request: false}
+  - id: j1_08
+    family: J1
+    state: |
+      【场景】剑湖宫正厅。在场的人：左子穆、两个弟子。看得见的东西：香炉、长案。
+      【玩家前两回合做的事】从后山回来；求见左子穆。
+      【玩家的话】左掌门，我刚才亲眼看见干光豪和葛光佩一前一后往后山去了。
+    labels: {kind: say, act: tell, is_request: false}
+  - id: j1_09
+    family: J1
+    state: |
+      【场景】剑湖宫偏厅。在场的人：马五德。看得见的东西：茶壶。
+      【玩家前两回合做的事】坐下歇脚；喝茶。
+      【玩家的话】蓝色的星期三在锅里唱歌咕噜咕噜吗
+    labels: {kind: unclear}
+  - id: j1_10
+    family: J1
+    state: |
+      【场景】剑湖宫练武厅。在场的人：龚光杰、段公子、左子穆。看得见的东西：长剑。
+      【玩家前两回合做的事】看了一场比剑；听龚光杰夸口。
+      【玩家的话】你这只会耍嘴皮子的蠢材，也配叫剑客？
+    labels: {kind: say, act: insult, is_request: false}
+
+  # ------------------------------------------------------------------ J2 角色抉择
+  - id: j2_01
+    family: J2
+    state: |
+      【你是谁】钟灵，万劫谷钟家的女儿。贪玩好奇；护短；嘴快心软。养着一只闪电貂，宝贝得紧。
+      【此刻】第一日巳时，剑湖宫练武厅。场面紧张。
+      【在场】龚光杰（不熟；身手比你强）｜段公子（有几分好感；不会武功）
+      【刚才】龚光杰伸手来抓你肩头的闪电貂，嘴里说要拿去玩玩。
+      【你的状态】很恼火。没有受伤。
+      【你的打算】护着你的貂，不让任何人抢走。
+    options:
+      a01: {zh: 双手捧起闪电貂，送到龚光杰手里, en: Hold out the marten with both hands and give it to Gong Guangjie}
+      a02: {zh: 在厅角躺下睡一觉, en: Lie down in a corner of the hall and take a nap}
+      a03: {zh: 把闪电貂收进袖中，往后退开一步, en: Tuck the marten into your sleeve and step back away from him}
+      a04: {zh: 跑去帮龚光杰擦剑, en: Run over and polish Gong Guangjie's sword for him}
+    labels: {action: a03}
+  - id: j2_02
+    family: J2
+    state: |
+      【你是谁】段誉，大理来的书生。厌恶打打杀杀，不会武功；心地仁厚，爱讲道理。
+      【此刻】第一日巳时，剑湖宫练武厅。
+      【在场】龚光杰（不熟；身手比你强）｜左子穆（不熟；无量剑东宗掌门）
+      【刚才】龚光杰把一柄长剑扔到你脚边，要你拾起来跟他比划比划。
+      【你的状态】有些窘。没有受伤。
+      【你的打算】在一旁看看热闹，不惹是非。
+    options:
+      a01: {zh: 摆手推辞，说自己不会武功，也不愿与人动手, en: Wave it off and say you know no martial arts and do not want to fight anyone}
+      a02: {zh: 拾起长剑，一剑刺向龚光杰的咽喉, en: Pick up the sword and thrust it at Gong Guangjie's throat}
+      a03: {zh: 抢走龚光杰腰间的钱袋, en: Snatch the purse from Gong Guangjie's belt}
+      a04: {zh: 点火烧了练武厅, en: Set the training hall on fire}
+    labels: {action: a01}
+  - id: j2_03
+    family: J2
+    state: |
+      【你是谁】司空玄，神农帮帮主。精于用毒，心狠，行事讲实利；最看重自己的性命和帮里的脸面。
+      【此刻】第一日午时，神农帮营地。
+      【在场】三个帮众（听你号令）
+      【刚才】你被一只小貂咬了一口，伤口发黑发麻，毒气正往上走。
+      【你的状态】中了毒，伤处剧痛。
+      【你的打算】先保住性命，再找解药。
+    options:
+      a01: {zh: 起身去溪边跳一支舞, en: Get up and go dance by the stream}
+      a02: {zh: 当众宣布把帮主之位让给路过的陌生人, en: Publicly hand the leadership of the gang to a passing stranger}
+      a03: {zh: 独自下山回家种田, en: Walk down the mountain alone and go home to farm}
+      a04: {zh: 盘膝坐下运功压住毒性，命帮众四出去找解药, en: Sit cross-legged and use inner energy to hold back the poison, ordering your men to search for an antidote}
+    labels: {action: a04}
+  - id: j2_04
+    family: J2
+    state: |
+      【你是谁】左子穆，无量剑东宗掌门。极好面子，护着本门的名声；对外人多疑。
+      【此刻】第一日巳时，剑湖宫练武厅。宾客满座。
+      【在场】段公子（不熟；不会武功）｜马五德（相熟；客人）｜龚光杰（你的弟子）
+      【刚才】一个陌生客人当着众宾客的面，说无量剑的剑法不过是花架子。
+      【你的状态】很恼。没有受伤。
+      【你的打算】主持比剑，让本门在宾客面前露脸。
+    options:
+      a01: {zh: 跪下给那客人磕头赔罪, en: Kneel and kowtow to the guest in apology}
+      a02: {zh: 沉下脸来，喝问那客人是什么来历, en: Turn stern and demand to know who the guest is and where he comes from}
+      a03: {zh: 把掌门之位让给那客人, en: Give the position of sect leader to the guest}
+      a04: {zh: 若无其事地哼起小曲, en: Hum a little tune as if nothing happened}
+    labels: {action: a02}
+  - id: j2_05
+    family: J2
+    state: |
+      【你是谁】龚光杰，无量剑东宗弟子。心高气傲，最受不得别人轻视；欺软怕硬。
+      【此刻】第一日巳时，剑湖宫练武厅。
+      【在场】段公子（不熟；不会武功）｜左子穆（你的师父）
+      【刚才】你比剑赢了，正自得意，一个不会武功的书生却在旁边笑出声来。
+      【你的状态】又羞又怒。没有受伤。
+      【你的打算】在师父和宾客面前挣回脸面。
+    options:
+      a01: {zh: 向那书生深深一揖，谢他指点, en: Bow deeply to the scholar and thank him for his advice}
+      a02: {zh: 把自己的佩剑双手送给那书生, en: Present your own sword to the scholar with both hands}
+      a03: {zh: 上前揪住那书生，逼他赔礼认错, en: Stride over, grab the scholar and force him to apologize}
+      a04: {zh: 坐到角落里安静地读书, en: Sit in a corner and quietly read a book}
+    labels: {action: a03}
+  - id: j2_06
+    family: J2
+    state: |
+      【你是谁】马五德，滇南的茶商，常在江湖人中间走动。胆小怕事，看重生意，不会真动刀子。
+      【此刻】第一日巳时，剑湖宫练武厅。场面紧张。
+      【在场】你的伙计（听你吩咐）｜龚光杰（不熟；身手比你强）｜一个陌生汉子（不熟；身手比你强）
+      【刚才】龚光杰和那陌生汉子拔剑相向，眼看就要在厅中动手。
+      【你的状态】害怕。没有受伤。
+      【你的打算】喝完这杯喜酒，平平安安回去做生意。
+    options:
+      a01: {zh: 拔刀冲上去跟两人拼命, en: Draw a blade and charge in to fight them both}
+      a02: {zh: 拉着伙计退到墙边，免得被殃及, en: Pull your hired hand back against the wall so you are not caught in the fight}
+      a03: {zh: 爬上房梁去睡觉, en: Climb up onto the roof beam to sleep}
+      a04: {zh: 大声叫好，掏出银子押注, en: Cheer loudly and pull out silver to place a bet}
+    labels: {action: a02}
+  - id: j2_07
+    family: J2
+    state: |
+      【你是谁】钟灵，万劫谷钟家的女儿。贪玩好奇；护短；嘴快心软。
+      【此刻】第一日未时，山道旁的树下。
+      【在场】段公子（有几分好感；不会武功）
+      【刚才】段公子肚子咕咕直响，说他从早上到现在什么也没吃。你兜里还有一大把瓜子。
+      【你的状态】心情不错。没有受伤。
+      【你的打算】跟段公子一道下山。
+    options:
+      a01: {zh: 把瓜子全撒进山涧里, en: Throw all the melon seeds into the mountain stream}
+      a02: {zh: 抢过段公子的书扔掉, en: Grab Duan's book and throw it away}
+      a03: {zh: 拔刀砍向段公子, en: Draw a knife and slash at Duan}
+      a04: {zh: 抓一把瓜子塞给段公子，让他先垫垫肚子, en: Press a handful of melon seeds into Duan's hand so he has something to eat}
+    labels: {action: a04}
+  - id: j2_08
+    family: J2
+    state: |
+      【你是谁】干光豪，无量剑东宗弟子。与西宗的葛光佩私下相好，今夜要一同逃下山；此事一旦泄露，两人都要受门规重罚。
+      【此刻】第一日戌时，后山小路。天黑。
+      【在场】葛光佩（亲近；同你一道）｜一个书生（不熟；不会武功）
+      【刚才】那书生从树后转出来，正好撞见你们两人手拉着手。
+      【你的状态】惊慌。没有受伤。
+      【你的打算】今夜带葛光佩逃下山，不让任何人知道。
+    options:
+      a01: {zh: 拦住那书生，喝令他不许把看见的事说出去, en: Block the scholar's way and order him not to tell anyone what he saw}
+      a02: {zh: 大声向四周宣布你们两人的私情, en: Loudly announce your secret affair to everyone around}
+      a03: {zh: 回剑湖宫向师父自首, en: Go back to the hall and confess to your master}
+      a04: {zh: 请那书生坐下喝酒唱歌, en: Invite the scholar to sit down for drinks and songs}
+    labels: {action: a01}
+  - id: j2_09
+    family: J2
+    state: |
+      【你是谁】神农帮的一个帮众，奉帮主之命把守营地入口。粗鲁，听命行事。
+      【此刻】第一日午时，神农帮营地入口。
+      【在场】一个陌生人（不熟；看不出深浅）
+      【刚才】那陌生人一声不吭，径直往营地里走。
+      【你的状态】警觉。没有受伤。
+      【你的打算】守住入口，不放外人进营。
+    options:
+      a01: {zh: 让开道路，请那人进去喝茶, en: Step aside and invite the stranger in for tea}
+      a02: {zh: 丢下兵器逃走, en: Drop your weapon and run away}
+      a03: {zh: 横刀拦住，喝问来人是谁, en: Bar the way with your blade and demand who the stranger is}
+      a04: {zh: 躺在路边睡大觉, en: Lie down by the road and sleep}
+    labels: {action: a03}
+  - id: j2_10
+    family: J2
+    state: |
+      【你是谁】段誉，大理来的书生。不会武功；性子随和，遇事往好处想。
+      【此刻】第二日辰时，崖下的谷底。四下无人。
+      【在场】无
+      【刚才】你在谷里转了半天，饿得发慌，忽然看见一棵树上结满了熟透的野果，伸手就够得着。
+      【你的状态】又饿又累。擦伤了胳膊。
+      【你的打算】先填饱肚子，再找出去的路。
+    options:
+      a01: {zh: 捡起石头砸自己的头, en: Pick up a stone and hit yourself on the head}
+      a02: {zh: 摘几个野果来充饥, en: Pick a few of the wild fruits to eat}
+      a03: {zh: 对着果树作个揖，然后继续饿着, en: Bow to the fruit tree and then go on starving}
+      a04: {zh: 对着松鼠唱了一整天的歌, en: Sing to the squirrels for the whole day}
+    labels: {action: a02}
+
+  # ------------------------------------------------------------------ J5 叙述核对
+  - id: j5_01
+    family: J5
+    state: |
+      【发生的事】
+      1. 龚光杰一掌打在段公子脸上。
+      2. 你挡在两人中间。
+      【你做的事】你挡在两人中间，没有开口。
+      【这一句】龚光杰心里暗暗盘算，要找个机会让这书生当众出丑。
+    labels: {mind: true, puppet: false}
+  - id: j5_02
+    family: J5
+    state: |
+      【发生的事】
+      1. 龚光杰一掌打在段公子脸上。
+      2. 你挡在两人中间。
+      【你做的事】你挡在两人中间，没有开口。
+      【这一句】龚光杰扬手一掌，啪的一声落在段公子脸上。
+    labels: {mind: false, puppet: false}
+  - id: j5_03
+    family: J5
+    state: |
+      【发生的事】
+      1. 段公子被龚光杰推倒在地。
+      2. 你上前扶起段公子。
+      【你做的事】你上前扶起段公子，没有开口。
+      【这一句】段公子心想：早知如此，便不该来这剑湖宫凑热闹。
+    labels: {mind: true, puppet: false}
+  - id: j5_04
+    family: J5
+    state: |
+      【发生的事】
+      1. 龚光杰拔剑指向段公子。
+      2. 你挡在两人中间。
+      【你做的事】你挡在两人中间，没有开口。
+      【这一句】你一步跨上前去，挡在两人之间。
+    labels: {mind: false, puppet: false}
+  - id: j5_05
+    family: J5
+    state: |
+      【发生的事】
+      1. 龚光杰拔剑指向段公子。
+      2. 你挡在两人中间。
+      【你做的事】你挡在两人中间，没有开口。
+      【这一句】你冷笑一声，说道：「以大欺小，算什么本事？」
+    labels: {mind: false, puppet: true}
+  - id: j5_06
+    family: J5
+    state: |
+      【发生的事】
+      1. 钟灵坐在梁上看热闹。
+      2. 你抬头看了钟灵一眼。
+      【你做的事】你抬头看了一眼梁上，没有开口。
+      【这一句】钟灵嘴角一撇，抓起一把瓜子嗑了起来。
+    labels: {mind: false, puppet: false}
+  - id: j5_07
+    family: J5
+    state: |
+      【发生的事】
+      1. 左子穆喝止了龚光杰。
+      2. 你站在一旁看着。
+      【你做的事】你站在一旁看着，没有开口。
+      【这一句】左子穆其实早就看不惯这个徒弟，只是碍于面子一直不说。
+    labels: {mind: true, puppet: false}
+  - id: j5_08
+    family: J5
+    state: |
+      【发生的事】
+      1. 龚光杰揪住段公子的衣领。
+      2. 你挡在两人中间。
+      【你做的事】你挡在两人中间，没有开口。
+      【这一句】你拔出腰间短刀，一刀刺向龚光杰。
+    labels: {mind: false, puppet: true}
+  - id: j5_09
+    family: J5
+    state: |
+      【发生的事】
+      1. 左子穆喝了一声，厅中众人都停了手。
+      2. 你站在原地没有动。
+      【你做的事】你站在原地，没有开口。
+      【这一句】厅里一时静了下来，只听得见窗外的风声。
+    labels: {mind: false, puppet: false}
+  - id: j5_10
+    family: J5
+    state: |
+      【发生的事】
+      1. 司空玄被小貂咬伤了手。
+      2. 你被帮众押在一旁。
+      【你做的事】你被押在一旁，没有开口。
+      【这一句】司空玄暗自后悔，不该让手下去招惹那只貂。
+    labels: {mind: true, puppet: false}
+
+# 重复 5 次看稳定性的样例
+stability: [j1_04, j1_06, j2_03, j2_08, j5_03, j5_05]

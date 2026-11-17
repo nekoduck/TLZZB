@@ -1,0 +1,36 @@
+id: mu_wanqing
+name: 木婉清
+unknown_alias: 黑衣蒙面的女子
+tier: soul
+base_power: 4
+neili: 40
+arts: {}
+literacy: 1
+aptitude: 2
+luck: 10
+roles: [mu_quarry]
+initiative: 6
+self_intro: 一个总穿黑衣、拿黑纱遮着脸的年轻女子，独来独往，骑一匹黑马。
+values: [待人极冷，不轻易信人, 出手狠辣，先下手为强, 说出口的誓言当真, 吃软不吃硬]
+drives: [survive, 'grudge:rui_popo']
+voice:
+  habits: [话极少，一句话里带刺, 冷笑代替回答]
+  samples: []
+bottom_lines:
+  - text: 不在仇家面前求饶
+    blocks: [{verb: say, act: plead, target: rui_popo}, {verb: say, act: plead, target: ping_popo}]
+  - text: 不向人说起面纱的誓言
+    blocks: [{verb: say, act: tell, fact_tag: mu_private}]
+choices:
+  - situation: 仇家找上门来，自己寡不敌众
+    did: 不等对方站稳就先放箭，杀出一条路再走
+    para: null
+  - situation: 一个陌生人冒险回头给她报信
+    did: 嘴上骂他多事，却把他带在身边一起突围
+    para: null
+knows: [F_wuliang_two_sects, F_mu_lodging, F_mu_oath, F_mu_hunted, F_eshen_disciple_killed, F_four_evils]
+rel:
+  gan_baobao: {trust: 30, affinity: 20}
+  rui_popo: {trust: -50, affinity: -60}
+  ping_popo: {trust: -50, affinity: -60}
+agenda: mu_wanqing

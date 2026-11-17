@@ -1,0 +1,21 @@
+goal: 女儿平安；旧事不让人知道
+steps:
+  - id: gb_home
+    text: 在家里等女儿回来
+    at: zhong_hall
+    do: {verb: wait}
+    pre: {not: {status: [self, captive]}}
+    takes: 200
+  - id: gb_hear_news
+    text: 得了女儿被扣的消息，守在厅上等回音
+    at: zhong_hall
+    do: {verb: wait}
+    pre: {all: [{knows: [self, F_zhong_ling_held]}, {alive: zhong_ling}]}
+    deadline: 480
+    takes: 96
+  - id: gb_wait_daughter
+    text: 等女儿平安回来
+    at: zhong_hall
+    do: {verb: wait}
+    pre: {alive: zhong_ling}
+    takes: 240

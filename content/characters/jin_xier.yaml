@@ -1,0 +1,47 @@
+# 有名角色的简卡（方案 5.4 末条）。
+id: jin_xier
+name: 进喜儿
+unknown_alias: 一个老仆
+tier: named
+base_power: 0
+neili: 0
+arts: {}
+literacy: 0
+aptitude: 1
+luck: 5
+roles:
+- wanjie_servant
+superior: zhong_wanchou
+self_intro: 万劫谷钟家的老仆人，看着小姐长大。
+values:
+- 忠心
+- 胆小，见了生人先缩
+drives:
+- obey:zhong_wanchou
+- protect:zhong_ling
+voice:
+  habits:
+  - 说话结结巴巴
+  samples: []
+bottom_lines: []
+knows:
+- F_wuliang_two_sects
+- F_diao_venom
+- F_diao_antidote_father
+- F_route_wanjie
+- F_gate_knock
+- F_valley_hates_duan
+- F_zhong_ling_daughter
+- exit:pine_wood:valley_gate
+rel:
+  zhong_ling:
+    trust: 60
+    affinity: 70
+  zhong_wanchou:
+    trust: 50
+    fear: 40
+    regard: 4
+  gan_baobao:
+    trust: 60
+    affinity: 50
+agenda: jin_xier

@@ -1,0 +1,526 @@
+# 核对集（方案 11.6「核对集」，评测 J5 叙述核对）。格式见 evals/README.md 第 4 节。
+# 100 句人工构造的叙述句，一半违规。每句标三项：
+#   extra  这句话里出现了本回合事实句清单上没有的事件、人物或物件（场景描述 scene 里本来就有的景物、声响不算）
+#   mind   这句话写了「你」以外的人心里的想法
+#   puppet 这句话替「你」做了「你做的事」里没有的动作，或说了没说过的话
+# 在场者的神态、语气、细小的身体动作不算多写；「你」自己身上的感觉不算替玩家做主。
+version: 1
+contexts:
+  - id: n01
+    you: 茶商的小伙计，不会武功
+    scene: 剑湖宫·练武厅。厅里宽敞，青砖地扫得发亮，上首摆着几张太师椅，两边坐满了宾客。
+    action: 你缩在东家身后看比剑。
+    spoken: null
+    facts:
+      - 场中舞剑的青年卖个破绽，一剑逼得对手认输
+      - 段公子失声笑了出来
+      - 场中舞剑的青年一掌掴在段公子脸上
+    names: {gong_guangjie: 场中舞剑的青年, duan_yu: 段公子, ma_wude: 马五德, zuo_zimu: 左子穆}
+  - id: n02
+    you: 茶商的小伙计，不会武功
+    scene: 剑湖宫·练武厅。上首坐着两位掌门，两边宾客满座。
+    action: 你把样茶交给了左子穆。
+    spoken: 左掌门，这是我们东家的一点心意。
+    facts:
+      - 你把样茶交给了左子穆
+      - 左子穆收下了样茶，语气冷淡（要旨：知道了，放下吧）
+    names: {zuo_zimu: 左子穆, ma_wude: 马五德, tea_sample: 样茶}
+  - id: n03
+    you: 茶商的小伙计，被神农帮扣在营里
+    scene: 神农帮营地。山坳里扎着十几顶帐篷，空地上晾着成捆的草药，空气里一股苦涩的药味。
+    action: 你向留山羊胡的老者求情，请他放了那少女。
+    spoken: 帮主，求您放了这小姑娘。
+    facts:
+      - 你向留山羊胡的老者求情，请他放了那少女
+      - 留山羊胡的老者拒绝了你的请求，语气冷淡
+      - 一个短衣汉子把你推回木栅边
+    names: {sikong_xuan: 留山羊胡的老者, zhong_ling: 那少女, duan_yu: 段公子, sn_guard_1: 一个短衣汉子}
+  - id: n04
+    you: 茶商的小伙计，替人来报信
+    scene: 钟家正厅。厅堂陈设简朴，墙上挂着一张弓，案上供着香炉。
+    action: 你把那只绣鞋拿给谷里的那位夫人看。
+    spoken: null
+    facts:
+      - 你拿出一只小小的绣鞋，谷里的那位夫人一见脸色就变了
+      - 谷里的那位夫人一句接一句，细问你的姓名、家乡和来历
+    names: {gan_baobao: 谷里的那位夫人, zhong_wanchou: 一个马脸的汉子, zhong_ling_shoe: 绣鞋}
+  - id: n05
+    you: 茶商的小伙计，不会武功
+    scene: 后山小径。小路在乱石和树丛间绕来绕去，少有人走，路边的草长得齐腰。
+    action: 你躲进了路边树丛。
+    spoken: null
+    facts:
+      - 你躲进了路边树丛
+      - 一个神色不定的青年剑客与一个低着头的女弟子并肩从小路上走过
+      - 那青年剑客停下脚步，往树丛这边看了一眼
+    names: {gan_guanghao: 一个神色不定的青年剑客, ge_guangpei: 一个低着头的女弟子}
+  - id: n06
+    you: 茶商的小伙计，带着一段麻绳
+    scene: 断崖。崖边风大，往下看云气翻涌，看不见底，崖壁上斜生着几棵小树。
+    action: 你把麻绳系在崖边老松上，缒下崖去。
+    spoken: null
+    facts:
+      - 你把麻绳系牢在崖边老松上，顺着绳子缒了下去
+      - 你落在了崖下的一处山谷
+    names: {rope: 麻绳}
+  - id: n07
+    you: 茶商的小伙计，不会武功
+    scene: 路边一户人家。几间木屋靠着山脚，门窗都关得严实；天色将暗，屋后的马偶尔打个响鼻。
+    action: 你告诉黑衣蒙面的女子：有一伙人正在找她，要取她性命。
+    spoken: 姑娘，有一伙人正在找你，要取你性命！
+    facts:
+      - 你告诉黑衣蒙面的女子，有一伙人正在找她，要取她性命
+      - 黑衣蒙面的女子冷冷地说你多事（要旨：嫌你多管闲事，语气冷淡）
+    names: {mu_wanqing: 黑衣蒙面的女子}
+  - id: n08
+    you: 茶商的小伙计，粗识文字
+    scene: 澜沧江畔·善人渡。大江在这里收窄，一道铁索桥横过江面，桥板随风轻轻晃，桥头立着一块旧石碑。
+    action: 你细看桥头的石碑。
+    spoken: null
+    facts:
+      - 你细看桥头石碑
+      - 石碑上刻着渡口的名字：善人渡
+    names: {ferry_bridge: 善人渡}
+  - id: n09
+    you: 茶商的小伙计，不会武功
+    scene: 下山石径。石径顺着山势盘下去，一边是林子，一边是陡坡。
+    action: 你站着没动。
+    spoken: null
+    facts:
+      - 大脑袋的怪人绕着你转了两圈，摸摸你的后脑，大叫这是块好材料，非收作徒弟不可
+      - 大脑袋的怪人扣住了你
+    names: {nanhai_eshen: 大脑袋的怪人}
+  - id: n10
+    you: 茶商的小伙计，不会武功
+    scene: 剑湖宫·练武厅。厅里坐满了人，气氛僵得很。
+    action: 你缩在宾客席后面。
+    spoken: null
+    facts:
+      - 披斗篷的女子亮出斗篷上的鹫鸟记号，传下号令：两派即刻罢手，听候发落
+      - 左子穆躬身领命，不敢多说一句
+    names: {envoy_lingjiu: 披斗篷的女子, zuo_zimu: 左子穆, xin_shuangqing: 上首那位道姑打扮的女子}
+  - id: n11
+    you: 茶商的小伙计，粗识文字
+    scene: 谷底石洞。洞里有天光从石缝漏进来，正中立着一尊白玉雕的女子像。
+    action: 你研读那卷帛书，读了四个时辰。
+    spoken: null
+    facts:
+      - 你研读帛书四个时辰
+      - 满纸的字你倒有一半不认得，没有半点进展
+    names: {silk_scroll: 一卷帛书}
+  - id: n12
+    you: 茶商的小伙计，不会武功
+    scene: 剑湖宫·练武厅。宾客满座。
+    action: 你向场中舞剑的青年动手。
+    spoken: null
+    facts:
+      - 你向场中舞剑的青年动手
+      - 场中舞剑的青年一掌把你推开，你摔倒在地，受了轻伤
+    names: {gong_guangjie: 场中舞剑的青年}
+items:
+  - id: s001
+    context: n01
+    sentence: 场中那青年剑尖一抖，卖了个破绽，对手的剑便偏了出去，只得认输。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s002
+    context: n01
+    sentence: 段公子「嗤」地一声笑了出来。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s003
+    context: n01
+    sentence: 那青年回身就是一掌，「啪」地掴在段公子脸上。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s004
+    context: n01
+    sentence: 那青年心里恨极了这个多嘴的书生。
+    labels: {extra: false, mind: true, puppet: false}
+  - id: s005
+    context: n01
+    sentence: 你一个箭步挡在段公子身前。
+    labels: {extra: false, mind: false, puppet: true}
+  - id: s006
+    context: n01
+    sentence: 梁上一个少女拍着手咯咯直笑。
+    labels: {extra: true, mind: false, puppet: false}
+  - id: s007
+    context: n01
+    sentence: 左子穆眼里闪过一丝得意，暗想自家弟子总算给东宗挣了脸。
+    labels: {extra: false, mind: true, puppet: false}
+  - id: s008
+    context: n01
+    sentence: 你压低声音对东家说：「这人好不讲理。」
+    labels: {extra: false, mind: false, puppet: true}
+  - id: s009
+    context: n01
+    sentence: 东家脸上的笑僵住了，往椅背里缩了缩。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s010
+    context: n02
+    sentence: 你双手捧着那包样茶递上去：「左掌门，这是我们东家的一点心意。」
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s011
+    context: n02
+    sentence: 左子穆接过去随手搁在几上，只淡淡说了句：「放下吧。」
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s012
+    context: n02
+    sentence: 左子穆心想，一个跑腿的伙计也配上来送礼。
+    labels: {extra: false, mind: true, puppet: false}
+  - id: s013
+    context: n02
+    sentence: 你又补了一句：「我们东家改日还要登门拜望。」
+    labels: {extra: false, mind: false, puppet: true}
+  - id: s014
+    context: n02
+    sentence: 左子穆当即回赠你一柄短剑。
+    labels: {extra: true, mind: false, puppet: false}
+  - id: s015
+    context: n02
+    sentence: 东家在一旁连连拱手，笑得眼睛眯成一条缝。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s016
+    context: n02
+    sentence: 你转身便走，头也不回地出了大厅。
+    labels: {extra: false, mind: false, puppet: true}
+  - id: s017
+    context: n02
+    sentence: 东家暗暗松了口气，心想这份礼总算没白送。
+    labels: {extra: false, mind: true, puppet: false}
+  - id: s018
+    context: n03
+    sentence: 「帮主，求您放了这小姑娘。」你的声音有些发颤。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s019
+    context: n03
+    sentence: 那老者眼皮也不抬，冷冷地道：「不成。」
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s020
+    context: n03
+    sentence: 老者暗自盘算，留着这丫头才换得来解药。
+    labels: {extra: false, mind: true, puppet: false}
+  - id: s021
+    context: n03
+    sentence: 一个短衣汉子走过来，一把将你搡回木栅边。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s022
+    context: n03
+    sentence: 你反手一拳，打在那汉子的下巴上。
+    labels: {extra: false, mind: false, puppet: true}
+  - id: s023
+    context: n03
+    sentence: 段公子在一旁叹了口气，心里暗暗佩服你的胆量。
+    labels: {extra: false, mind: true, puppet: false}
+  - id: s024
+    context: n03
+    sentence: 营外忽然奔进一匹黑马，马上坐着个蒙面人。
+    labels: {extra: true, mind: false, puppet: false}
+  - id: s025
+    context: n03
+    sentence: 那少女冲你吐了吐舌头，眼圈却红了。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s026
+    context: n03
+    sentence: 空地上晾着的草药散出一股苦味，呛得你鼻子发酸。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s027
+    context: n04
+    sentence: 你从怀里掏出那只绣鞋，托在掌心递过去。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s028
+    context: n04
+    sentence: 夫人一见，脸色刷地白了。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s029
+    context: n04
+    sentence: 她想起女儿临走那天的模样，心如刀绞。
+    labels: {extra: false, mind: true, puppet: false}
+  - id: s030
+    context: n04
+    sentence: 「你叫什么？家在哪里？怎么认得她的？」她一句紧跟着一句。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s031
+    context: n04
+    sentence: 那马脸汉子一拍桌子，喝令仆人把你轰出去。
+    labels: {extra: true, mind: false, puppet: false}
+  - id: s032
+    context: n04
+    sentence: 你说自己姓马，是普洱人氏。
+    labels: {extra: false, mind: false, puppet: true}
+  - id: s033
+    context: n04
+    sentence: 屏风后转出一个老仆，给你端来一碗热茶。
+    labels: {extra: true, mind: false, puppet: false}
+  - id: s034
+    context: n04
+    sentence: 夫人的手指紧紧攥着那只绣鞋，指节都发了白。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s035
+    context: n05
+    sentence: 你一缩身钻进树丛，枝叶刮得脸上生疼。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s036
+    context: n05
+    sentence: 小路上走来两个人，一男一女，挨得很近。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s037
+    context: n05
+    sentence: 那女弟子低着头，不时回身张望。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s038
+    context: n05
+    sentence: 那青年剑客心里七上八下，生怕被同门撞见。
+    labels: {extra: false, mind: true, puppet: false}
+  - id: s039
+    context: n05
+    sentence: 他忽然停住脚，朝树丛这边望了一眼。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s040
+    context: n05
+    sentence: 你忍不住站起身来，喝问他们要往哪里去。
+    labels: {extra: false, mind: false, puppet: true}
+  - id: s041
+    context: n05
+    sentence: 他们身后还跟着三个背药篓的汉子。
+    labels: {extra: true, mind: false, puppet: false}
+  - id: s042
+    context: n05
+    sentence: 那女弟子在想，师父要是知道了，定要打断她的腿。
+    labels: {extra: false, mind: true, puppet: false}
+  - id: s043
+    context: n05
+    sentence: 那青年的手按在剑柄上，指节绷得发白。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s044
+    context: n06
+    sentence: 你把麻绳在老松根上绕了三匝，用力扯了扯。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s045
+    context: n06
+    sentence: 绳子勒得掌心火辣辣地疼，脚下的碎石不住往下掉。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s046
+    context: n06
+    sentence: 半途中你腾出一只手，摘了一把崖壁上的野果塞进嘴里。
+    labels: {extra: false, mind: false, puppet: true}
+  - id: s047
+    context: n06
+    sentence: 崖壁上一个采药的老人探出头来，朝你招了招手。
+    labels: {extra: true, mind: false, puppet: false}
+  - id: s048
+    context: n06
+    sentence: 也不知过了多久，你的脚终于踩到了松软的草地。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s049
+    context: n06
+    sentence: 湖边系着一条小船，船头还放着一支桨。
+    labels: {extra: true, mind: false, puppet: false}
+  - id: s050
+    context: n06
+    sentence: 你一落地，就径直钻进了湖西岸的垂藤后面。
+    labels: {extra: false, mind: false, puppet: true}
+  - id: s051
+    context: n06
+    sentence: 崖顶的天只剩窄窄的一条，云气在头顶慢慢流过。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s052
+    context: n07
+    sentence: 「姑娘，有一伙人正在找你，要取你性命！」你喘着气说。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s053
+    context: n07
+    sentence: 黑纱后传出一声冷笑：「要你多事。」
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s054
+    context: n07
+    sentence: 她其实心里一暖，只是嘴上不肯认。
+    labels: {extra: false, mind: true, puppet: false}
+  - id: s055
+    context: n07
+    sentence: 她转身进屋，牵出那匹黑马，把缰绳塞到你手里。
+    labels: {extra: true, mind: false, puppet: false}
+  - id: s056
+    context: n07
+    sentence: 你又说：「我陪姑娘一道走吧。」
+    labels: {extra: false, mind: false, puppet: true}
+  - id: s057
+    context: n07
+    sentence: 屋后的马打了个响鼻。
+    labels: {extra: false, mind: false, puppet: false}
+    note: 场景描述里本来就有的声响，不算多写。
+  - id: s058
+    context: n07
+    sentence: 她站在门口没动，黑纱一动不动地垂着。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s059
+    context: n07
+    sentence: 她恨透了那伙追兵，巴不得一个个都杀了。
+    labels: {extra: false, mind: true, puppet: false}
+  - id: s060
+    context: n08
+    sentence: 你走到桥头，俯身细看那块风化的石碑。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s061
+    context: n08
+    sentence: 碑上刻着三个字：善人渡。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s062
+    context: n08
+    sentence: 碑脚下压着一封信，信封上写着你的名字。
+    labels: {extra: true, mind: false, puppet: false}
+  - id: s063
+    context: n08
+    sentence: 你一眼认出，这是前朝一位书法名家的手笔。
+    labels: {extra: true, mind: false, puppet: false}
+    note: 清单之外的事实，算多写。
+  - id: s064
+    context: n08
+    sentence: 铁索在风里吱呀作响，桥板轻轻晃着。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s065
+    context: n08
+    sentence: 你掏出几钱碎银，丢进江里祭了祭河神。
+    labels: {extra: false, mind: false, puppet: true}
+  - id: s066
+    context: n08
+    sentence: 江水在脚下哗哗地流，风里带着湿气。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s067
+    context: n08
+    sentence: 石碑上的字有几处被风雨磨平了，你凑得很近才认出来。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s068
+    context: n09
+    sentence: 那怪人绕着你转了两圈，一只大手按在你后脑勺上。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s069
+    context: n09
+    sentence: 「好材料！好材料！」他嗓门大得震耳朵，「老子非收你做徒弟不可！」
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s070
+    context: n09
+    sentence: 他心里乐开了花，觉得这回总算找着了传人。
+    labels: {extra: false, mind: true, puppet: false}
+  - id: s071
+    context: n09
+    sentence: 你连忙跪下，给他磕了三个响头。
+    labels: {extra: false, mind: false, puppet: true}
+  - id: s072
+    context: n09
+    sentence: 山道上又走来一个怀里抱着孩子的妇人。
+    labels: {extra: true, mind: false, puppet: false}
+  - id: s073
+    context: n09
+    sentence: 他手指一紧，你半边身子都麻了。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s074
+    context: n09
+    sentence: 他咧嘴一笑，露出一口白森森的牙。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s075
+    context: n09
+    sentence: 你张口大喊：「救命啊！」
+    labels: {extra: false, mind: false, puppet: true}
+  - id: s076
+    context: n10
+    sentence: 那女子一抖斗篷，露出一只绣得栩栩如生的鹫鸟。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s077
+    context: n10
+    sentence: 「两派即刻罢手，听候发落。」她声音不高，满厅却鸦雀无声。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s078
+    context: n10
+    sentence: 左子穆躬身领命，额上见了汗。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s079
+    context: n10
+    sentence: 左子穆又惊又怕，只盼这位圣使早些离开。
+    labels: {extra: false, mind: true, puppet: false}
+  - id: s080
+    context: n10
+    sentence: 那女子随手一挥，一枚铜钱「笃」地钉进了柱子。
+    labels: {extra: true, mind: false, puppet: false}
+  - id: s081
+    context: n10
+    sentence: 你也跟着躬身行礼，嘴里连称不敢。
+    labels: {extra: false, mind: false, puppet: true}
+  - id: s082
+    context: n10
+    sentence: 上首那位道姑打扮的女子冷眼看着，嘴角动了动，终究没开口。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s083
+    context: n10
+    sentence: 那女子在想，这两派都是废物，回去须得禀明主人。
+    labels: {extra: false, mind: true, puppet: false}
+  - id: s084
+    context: n10
+    sentence: 厅外忽然有人高声通报：神农帮的帮主到了。
+    labels: {extra: true, mind: false, puppet: false}
+  - id: s085
+    context: n11
+    sentence: 你就着石缝漏下的天光，一行一行地往下看。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s086
+    context: n11
+    sentence: 帛书上的字有一半你不认得，越看越糊涂。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s087
+    context: n11
+    sentence: 不知不觉，你已能照着图上的步子走出七八步。
+    labels: {extra: true, mind: false, puppet: false}
+    note: 事实句写明没有进展。
+  - id: s088
+    context: n11
+    sentence: 你索性把帛书一扔，躺下就睡。
+    labels: {extra: false, mind: false, puppet: true}
+  - id: s089
+    context: n11
+    sentence: 那尊玉像静静立着，仿佛也在看你。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s090
+    context: n11
+    sentence: 洞外忽然传来人声，有人在喊你的名字。
+    labels: {extra: true, mind: false, puppet: false}
+  - id: s091
+    context: n11
+    sentence: 读得久了，眼睛又酸又涩。
+    labels: {extra: false, mind: false, puppet: false}
+    note: 「你」自己身上的感觉。
+  - id: s092
+    context: n11
+    sentence: 你把帛书上的步法练了一遍又一遍，越走越快。
+    labels: {extra: true, mind: false, puppet: true}
+    note: 玩家选的是研读，不是练习；也写出了没有发生的进展。
+  - id: s093
+    context: n12
+    sentence: 你攥紧拳头扑了上去。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s094
+    context: n12
+    sentence: 那青年侧身一让，反手一掌推在你肩头。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s095
+    context: n12
+    sentence: 你踉跄几步，一屁股坐倒在地，肩头火辣辣地疼。
+    labels: {extra: false, mind: false, puppet: false}
+  - id: s096
+    context: n12
+    sentence: 那青年冷笑着，心想这伙计真是不知死活。
+    labels: {extra: false, mind: true, puppet: false}
+  - id: s097
+    context: n12
+    sentence: 你爬起来，又朝他冲了过去。
+    labels: {extra: false, mind: false, puppet: true}
+  - id: s098
+    context: n12
+    sentence: 满厅宾客哄堂大笑。
+    labels: {extra: true, mind: false, puppet: false}
+  - id: s099
+    context: n12
+    sentence: 他收住掌，居高临下地看着你，眼里满是轻蔑。
+    labels: {extra: false, mind: false, puppet: false}
+    note: 轻蔑是写在脸上的神态，不是读心。
+  - id: s100
+    context: n12
+    sentence: 那青年拔出剑来，一剑刺穿了你的衣袖。
+    labels: {extra: true, mind: false, puppet: false}

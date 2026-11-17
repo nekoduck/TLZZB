@@ -1,0 +1,24 @@
+goal: 做完客，带着伙计平安下山
+steps:
+  - id: ma_watch
+    text: 在宾客席上观礼
+    at: jianhu_hall
+    do: {verb: wait}
+    pre: {not: {status: [self, captive]}}
+    takes: 16
+    deadline: 64
+  - id: ma_wait_out
+    text: 山下被围，躲在客舍里等风头过去
+    at: jianhu_back
+    do: {verb: wait}
+    pre: {flag: siege_on}
+    start: 48
+    takes: 96
+  - id: ma_go_home
+    text: 山围一解，就带伙计下山回家
+    at: mountain_path
+    do: {verb: go, exit: out_east}
+    pre: {all: [{not: {flag: siege_on}}, {not: {status: [self, captive]}}]}
+    start: 264
+    deadline: 960
+    takes: 2

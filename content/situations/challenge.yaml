@@ -1,0 +1,149 @@
+# 通用：外人进了有主的地方，被主人家的人拦下盘问。开场条件写在角色位的 pick 里（when 恒真），
+# 世界层在有人的地点逐个尝试绑定。盘问过的人带状态 vetted：放行的一日之内不再问，赶开的两个时辰之内不再问。
+# 拿人要有缘由：离场结算里只有对来人怀着敌意的主人家才动手；神农帮营地另有 camp_capture。
+# 万劫谷的规矩：先在谷口敲树。眼前的人：细看大树知道规矩，取下小锤「用」它，两个时辰之内带状态 knocked
+# （见 items.yaml 的 gate_hammer），盘问的人认这个状态（admit）；没敲过的，仆役照例赶人。不在眼前的人只看他知不知道这条规矩。
+id: challenge
+origin: generic
+title: '{keeper}拦住{intruder}盘问来历'
+chronicle_open: '{keeper}拦下了{intruder}，盘问来历'
+chronicle_close: '{keeper}对{intruder}的盘问有了结果'
+when: true
+roles:
+  keeper:
+    pick:
+      where:
+        all:
+          - {not: {status: [$it, captive]}}
+          - {not: {status: [$it, bound]}}
+          - any:
+              - all:
+                  - {role: [$it, wuliang_disciple]}
+                  - {not: {flag: [bout_running, true]}}
+                  - {any: [{at: [$it, jianhu_gate]}, {at: [$it, jianhu_hall]}, {at: [$it, jianhu_back]}]}
+              - all:
+                  - {role: [$it, shennong_member]}
+                  - {flag: siege_on}
+                  - {at: [$it, mountain_path]}
+              - all:
+                  - {any: [{role: [$it, wanjie_family]}, {role: [$it, wanjie_servant]}]}
+                  - {any: [{at: [$it, valley_gate]}, {at: [$it, zhong_hall]}, {at: [$it, zhong_inner]}]}
+  intruder:
+    pick:
+      where:
+        all:
+          - {not: {status: [$it, vetted]}}
+          - {not: {status: [$it, captive]}}
+          - {not: {status: [$it, bound]}}
+          - {not: {status: [$it, hidden]}}
+          - {not: {role: [$it, lingjiu_envoy]}}
+          - any:
+              - all:
+                  - {role: [$keeper, wuliang_disciple]}
+                  - {not: {role: [$it, wuliang_disciple]}}
+                  - {not: {role: [$it, jianhu_guest]}}
+              - all:
+                  - {role: [$keeper, shennong_member]}
+                  - {not: {role: [$it, shennong_member]}}
+                  - {not: {role: [$it, shennong_errand]}}
+              - all:
+                  - {any: [{role: [$keeper, wanjie_family]}, {role: [$keeper, wanjie_servant]}]}
+                  - {not: {role: [$it, wanjie_family]}}
+                  - {not: {role: [$it, wanjie_servant]}}
+scene: tense
+actions:
+  question:
+    role: keeper
+    lean: true
+    pre: {not: {flag: .asked}}
+    desc: '{keeper}拦住{intruder}，喝问来历'
+    effects:
+      - {set_flag: [.asked, true]}
+      - {emit: {actor: $keeper, verb: question, text: '{keeper}拦住{intruder}，喝问是什么人、来做什么'}}
+  explain:
+    role: intruder
+    lean: true
+    pre: {not: {flag: .explained}}
+    desc: '{intruder}报上来意'
+    effects:
+      - {set_flag: [.explained, true]}     # 不顺手记 .asked：同一轮里守门的已经选了「喝问」，那一招要仍然做得出
+      - {emit: {actor: $intruder, verb: explain, text: '{intruder}向{keeper}报上来意'}}
+  admit:
+    role: keeper
+    lean: true
+    pre: {all: [{any: [{flag: .asked}, {flag: .explained}]}, {status: [$intruder, knocked]}]}
+    desc: '{keeper}见{intruder}照规矩敲过了树，放他进去'
+    effects:
+      - {add_status: [$intruder, vetted, {ticks: 96}]}
+      - {set_flag: [.passed, true]}
+      - {emit: {actor: $keeper, verb: let_pass, text: '{keeper}听见过谷口的敲树声，知道{intruder}是照规矩来的，点点头，让他进去了'}}
+  let_pass:
+    role: keeper
+    pre: {any: [{flag: .asked}, {flag: .explained}]}
+    desc: '{keeper}放{intruder}过去'
+    effects:
+      - {add_status: [$intruder, vetted, {ticks: 96}]}
+      - {set_flag: [.passed, true]}
+      - {emit: {actor: $keeper, verb: let_pass, text: '{keeper}打量了{intruder}几眼，侧身让开了路'}}
+  drive_off:
+    role: keeper
+    pre: {any: [{flag: .asked}, {flag: .explained}]}
+    desc: '{keeper}喝令{intruder}离开'
+    effects:
+      - {add_status: [$intruder, vetted, {ticks: 16}]}
+      - {set_flag: [.driven, true]}
+      - {rel: [$intruder, $keeper, affinity, -10]}
+      - {emit: {actor: $keeper, verb: drive_off, text: '{keeper}沉下脸，喝令{intruder}立刻离开'}}
+  seize:
+    role: keeper
+    pre: {any: [{flag: .asked}, {flag: .explained}]}
+    desc: '{keeper}动手拿下{intruder}'
+    effects:
+      - {add_status: [$intruder, captive, {source: $keeper}]}
+      - {follow: [$intruder, null]}
+      - {set_flag: [.seized, true]}
+      - {emit: {actor: $keeper, verb: seize, text: '{keeper}招呼同伴，一拥而上拿住了{intruder}', loud: true}}
+exit_when: {any: [{flag: .passed}, {flag: .driven}, {flag: .seized}, {not: {same_loc: [$keeper, $intruder]}}]}
+max_turns: 5
+offscreen:
+  - when: {stat: [$intruder, power, '>=', 4]}
+    effects:
+      - {add_status: [$intruder, vetted, {ticks: 96}]}
+      - {emit: {actor: $keeper, verb: let_pass, text: '{keeper}见{intruder}来头不小，没敢阻拦'}}
+  - when:                                   # 对来人怀着敌意，或来人是对头门下：动手拿人，来人逃得掉就被赶开
+      any:
+        - {rel: [$keeper, $intruder, affinity, '<=', -30]}
+        - {enemies: [$keeper, $intruder]}
+    effects:
+      - {add_status: [$intruder, vetted, {ticks: 16}]}
+      - check:
+          kind: flee
+          who: $intruder
+          from: [$keeper]
+          ok:
+            - {emit: {actor: $keeper, verb: drive_off, text: '{keeper}要拿{intruder}，{intruder}见势不妙，抽身躲开了'}}
+          fail:
+            - {add_status: [$intruder, captive, {source: $keeper}]}
+            - {follow: [$intruder, null]}
+            - {emit: {actor: $keeper, verb: seize, text: '{keeper}不由分说，把{intruder}扣了下来'}}
+  - when:                                   # 万劫谷：知道谷口规矩的人敲了树，等人出来领进去
+      all:
+        - {any: [{role: [$keeper, wanjie_family]}, {role: [$keeper, wanjie_servant]}]}
+        - {knows: [$intruder, F_gate_knock]}
+    effects:
+      - {add_status: [$intruder, vetted, {ticks: 96}]}
+      - {emit: {actor: $keeper, verb: let_pass, text: '{intruder}照规矩在谷口敲了树，{keeper}问明来意，让他进去了'}}
+  - when: true
+    effects:
+      - check:
+          kind: chance
+          who: $keeper
+          chance: 70
+          ok:
+            - {add_status: [$intruder, vetted, {ticks: 96}]}
+            - {emit: {actor: $keeper, verb: let_pass, text: '{keeper}盘问过{intruder}，放他过去了'}}
+          fail:
+            - {add_status: [$intruder, vetted, {ticks: 16}]}
+            - {rel: [$intruder, $keeper, affinity, -10]}
+            - {emit: {actor: $keeper, verb: drive_off, text: '{keeper}盘问{intruder}不得要领，沉着脸叫他走开'}}
+paragraphs: []

@@ -1,0 +1,93 @@
+# 追杀木婉清的人撞上了她，或撞上了骑着她那匹黑马的人（她本人就在眼前时，只冲着她去）。
+# 骑马的不是正主：他们要的是问出她的下落，截不住也就算了，不下重手。
+id: ambush_mu
+origin: canon
+title: '{hunter}一伙拦住了{quarry}'
+chronicle_open: '{hunter}一伙拦路截住了{quarry}'
+chronicle_close: '{hunter}一伙拦截{quarry}的事有了结果'
+when:
+  all:
+    - {onstage: rui_popo}
+    - {alive: rui_popo}
+    - {not: {status: [rui_popo, captive]}}
+roles:
+  hunter: rui_popo
+  quarry:
+    pick:
+      where:
+        all:
+          - any:
+              - {role: [$it, mu_quarry]}
+              - {all: [{has: [$it, black_rose]}, {not: {same_loc: [$it, mu_wanqing]}}]}
+          - {not: {status: [$it, ambushed]}}
+          - {not: {status: [$it, captive]}}
+at: $hunter
+scene: tense
+actions:
+  block_road:
+    role: hunter
+    lean: true
+    loud: true
+    pre: {not: {flag: .confronted}}
+    desc: '{hunter}一伙拦住了{quarry}'
+    effects:
+      - {set_flag: [.confronted, true]}
+      - {learn: [$quarry, F_mu_hunted, 1.0, saw]}
+      - {emit: {actor: $hunter, verb: ambush, text: '路边忽然闪出几个人来，{hunter}拦在当路，喝问{quarry}那黑衣女子在哪里', loud: true, kinds: [{k: threaten, who: $quarry, by: $hunter}]}}
+  turn_back:
+    role: quarry
+    lean: true
+    pre: {all: [{flag: .confronted}, {not: {role: [$quarry, mu_quarry]}}]}
+    desc: '{quarry}拨转马头往回跑'
+    effects:
+      - {set_flag: [.done, true]}
+      - {add_status: [$quarry, ambushed, {ticks: 48}]}
+      - check:
+          kind: flee
+          who: $quarry
+          from: [$hunter]
+          ok:
+            - {emit: {actor: $quarry, verb: flee, text: '{quarry}拨转马头往回狂奔，把追兵甩在了后头'}}
+          fail:
+            - {emit: {actor: $hunter, verb: seize_rein, text: '{hunter}一把带住马缰，逼问了{quarry}几句，见他确实不知那女子的去向，才松手放他走了'}}
+  fight_off:
+    role: quarry
+    lean: true
+    pre: {all: [{flag: .confronted}, {role: [$quarry, mu_quarry]}]}
+    desc: '{quarry}抢先放箭，杀出一条路'
+    effects:
+      - {set_flag: [.done, true]}
+      - {add_status: [$quarry, ambushed, {ticks: 24}]}
+      - {injure: [$hunter, 1]}
+      - {emit: {actor: $quarry, verb: shoot, text: '{quarry}不等对方站稳，袖中短箭连发，逼退了{hunter}一伙', loud: true}}
+exit_when: {any: [{flag: .done}, {not: {same_loc: [$hunter, $quarry]}}]}
+max_turns: 6
+offscreen:
+  - when: {role: [$quarry, mu_quarry]}
+    effects:
+      - {add_status: [$quarry, ambushed, {ticks: 24}]}
+      - check:
+          kind: chance
+          who: $quarry
+          chance: 75
+          ok:
+            - {injure: [$hunter, 1]}
+            - {emit: {actor: $quarry, verb: shoot, text: '{quarry}与{hunter}一伙恶斗一场，放箭逼退了对方', loud: true}}
+          fail:
+            - {injure: [$quarry, 1]}
+            - {emit: {actor: $hunter, verb: strike, text: '{hunter}一伙围住{quarry}厮杀，{quarry}带伤冲了出去', loud: true}}
+      - {trace: [$hunter, 地上有一片打斗的痕迹，还钉着两支短箭]}
+  - when: true
+    effects:
+      - {learn: [$quarry, F_mu_hunted, 1.0, saw]}
+      - {add_status: [$quarry, ambushed, {ticks: 48}]}
+      - check:
+          kind: flee
+          who: $quarry
+          from: [$hunter]
+          ok:
+            - {emit: {actor: $quarry, verb: flee, text: '{quarry}半路遇上{hunter}一伙拦截，拨马逃开了'}}
+          fail:
+            - {emit: {actor: $hunter, verb: seize_rein, text: '{hunter}一伙截住{quarry}，逼问那黑衣女子的下落，问不出什么，才放他走了'}}
+      - {trace: [$hunter, 地上一片马蹄乱踏的痕迹]}
+paragraphs: []

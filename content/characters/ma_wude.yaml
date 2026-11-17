@@ -1,0 +1,36 @@
+id: ma_wude
+name: 马五德
+unknown_alias: 胖胖的茶商
+tier: soul
+base_power: 2
+neili: 20
+arts: {trade: 2}
+literacy: 1
+aptitude: 1
+luck: 5
+roles: [jianhu_guest, ma_caravan_master]
+initiative: 2
+self_intro: 普洱的大茶商，年轻时练过几年武，好结交江湖朋友，这回带着伙计上山观礼。
+values: [好客爱交朋友, 怕事，遇险先求自保, 精明会算账, 待伙计还算厚道]
+drives: [survive, greed, 'protect:player']
+voice:
+  habits: [逢人先拱手称兄道弟, 一紧张就打哈哈]
+  samples: []
+bottom_lines:
+  - text: 不当面得罪东道主
+    blocks: [{verb: say, act: insult, target: zuo_zimu}, {verb: say, act: taunt, target: zuo_zimu}]
+  - text: 不跟人拼命
+    blocks: [{verb: attack, act: kill}]
+choices:
+  - situation: 同行的人在主人家闯了祸
+    did: 赶紧打圆场，撇清自己，不敢替人出头
+    para: null
+  - situation: 山下被人围住，下不了山
+    did: 躲在客舍里等风头过去，不肯冒险闯关
+    para: null
+knows: [F_wuliang_two_sects, F_tea_gift, F_four_evils]
+rel:
+  player: {trust: 40, affinity: 30}
+  duan_yu: {trust: 10, affinity: 15}
+  zuo_zimu: {trust: 20, affinity: 10, regard: 3}
+agenda: ma_wude

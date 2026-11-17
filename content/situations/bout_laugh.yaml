@@ -1,0 +1,64 @@
+# 方案 5.7 的原样，另加：when 里已了结的就不再开场（否则离场结算会每个时辰再掴一次）；
+# 各个动作带上「这一拍还没演过」的前提，演过的不再标 ★；离场结算也记下「比剑分了胜负、客人笑过」，
+# 龚光杰「讨回面子」那一步的前提才成立。
+id: bout_laugh
+origin: canon
+title: '{victor}在场中比剑，{guest}在一旁看着'
+chronicle_open: '⟦jianhu_hall⟧里，{victor}下场比剑'
+chronicle_close: '{victor}与{guest}在练武厅上的那场过节有了结果'
+when:
+  all:
+    - {flag: [bout_running, true]}
+    - {same_loc: [gong_guangjie, duan_yu]}
+    - {not: {flag: slapped}}
+    - {not: {flag: apologized}}
+roles:
+  victor: gong_guangjie
+  guest: duan_yu
+scene: tense
+actions:
+  feint_win:
+    role: victor
+    lean: true                    # 按性子多半会这么做：标 ★，做不做仍由他自己选
+    pre: {not: {flag: bout_over}}
+    desc: '{victor}卖个破绽，引对手上当'
+    effects:
+      - {set_flag: [bout_over, true]}
+      - {emit: {actor: $victor, verb: feint_win, text: '{victor}卖个破绽，一剑逼得对手认输'}}
+  laugh:
+    role: guest
+    lean: true
+    pre: {all: [{flag: bout_over}, {not: {flag: guest_laughed}}]}
+    loud: true
+    desc: '{guest}看出那一招是使诈，忍不住笑出声'
+    effects:
+      - {set_flag: [guest_laughed, true]}
+      - {emit: {actor: $guest, verb: laugh, text: '{guest}失声笑了出来'}}
+  slap:
+    role: victor
+    lean: true
+    pre: {all: [{flag: guest_laughed}, {not: {flag: slapped}}, {not: {flag: apologized}}]}
+    desc: '{victor}恼羞成怒，上前掴{guest}一掌'
+    effects:
+      - {injure: [$guest, 1]}
+      - {set_flag: [slapped, true]}
+      - {emit: {actor: $victor, verb: slap, text: '{victor}一掌掴在{guest}脸上'}}
+  apologize:
+    role: guest                   # 没有 lean：他本不想赔礼。有人劝过，他才可能选它
+    pre: {all: [{flag: guest_laughed}, {not: {flag: slapped}}, {not: {flag: apologized}}]}
+    desc: '{guest}拱手赔个不是'
+    effects:
+      - {set_flag: [apologized, true]}
+      - {emit: {actor: $guest, verb: apologize, text: '{guest}拱手赔了个不是'}}
+exit_when: {any: [{flag: slapped}, {flag: apologized}, {not: {same_loc: [$victor, $guest]}}]}
+max_turns: 6                      # 到时还没了结就散场，不替任何人做决定
+offscreen:                        # 玩家不在场时的结算：从上到下取第一个 when 成立的
+  - when: true
+    effects:
+      - {set_flag: [bout_over, true]}
+      - {set_flag: [guest_laughed, true]}
+      - {injure: [$guest, 1]}
+      - {set_flag: [slapped, true]}
+      - {emit: {actor: $victor, verb: slap, text: '{victor}使诈赢了一场，{guest}失声发笑，{victor}恼羞成怒，一掌掴在{guest}脸上'}}
+      - {trace: [jianhu_hall, 厅上的人还在议论方才那一记耳光]}
+paragraphs: []

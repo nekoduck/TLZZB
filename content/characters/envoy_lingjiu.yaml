@@ -1,0 +1,35 @@
+# 有名角色的简卡（方案 5.4 末条）。
+id: envoy_lingjiu
+name: 灵鹫宫圣使
+unknown_alias: 披斗篷的女子
+tier: named
+base_power: 3
+neili: 40
+arts: {}
+literacy: 2
+aptitude: 1
+luck: 5
+roles:
+- lingjiu_envoy
+self_intro: 灵鹫宫派来的使者，两派的人见了都要低头。
+values:
+- 高高在上，不容人顶撞
+- 只认主人的号令
+drives:
+- clan_honor
+- survive
+voice:
+  habits:
+  - 说话冷淡，句句是命令
+  samples: []
+bottom_lines: []
+knows:
+- F_shennong_orders
+- F_lingjiu_rules
+- F_envoy_due
+- F_four_evils
+rel:
+  sikong_xuan:
+    trust: -20
+    regard: 3
+agenda: envoy_lingjiu

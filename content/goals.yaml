@@ -1,0 +1,524 @@
+# 重新打算的规则表（方案 8.3）：所求 × 处境 → 候选目标与步骤模板。由 src/tianlong/world/goals.py 解释。
+#
+# scoring：规则分 = 所求的权重 × 紧迫程度 - 风险 - 路程
+#   distance_per_hour：第一步要走多少个时辰，每个时辰扣几分
+#   risk_per_level：对手（risk 写的变量）的武功比自己高几级，每级扣几分
+#   keep：「照旧做原来的打算」的分。只在由事件触发（不是一步作废或做完）、且当前这一步的前提仍成立时给出
+#   within：新步骤的期限，从重新打算那一刻算起（刻）
+# labels：所求在提示词里的说法（{who} 换成参数所指的人；protect:friends 写作「朋友」）
+# weights：所求的权重，键是所求的种类（protect:<人> 的种类是 protect）；any 是「任何」
+# goals：每条一个候选目标
+#   id；drive：所求的种类（可写成列表）；text：一句目标，可用 ⟦$变量⟧
+#   when：处境谓词。self 指此人；$target 指所求的对象（protect / obey / grudge 的参数；
+#         protect:friends 展开成他好感不低于 30 的每一个人；protect:player 指玩家）
+#   bind：变量 → 绑定方法，按先后绑定，后面的可以用前面的；任何一个绑不上，这个目标就不进候选
+#     captor_of: 人        把他扣住、捆住的人
+#     poisoner_of: 人      给他下毒的人
+#     cure_for: 人         治得了他身上的毒的东西，而且此人知道它在哪（自己拿着、就在眼前、或相信一条提到它的事实）
+#     holder_of: 物 / place_of: 物 / loc_of: 人   谁拿着它；它在哪；那人在哪
+#     superior_of: 人      他听命于谁
+#     safe_place: self     最近的、眼下没人对他怀敌意的别处（同属一方的地方优先）
+#     away_from: 人        同上，且那人不在那里
+#     hostile_here: self   此刻身边对他怀敌意的人
+#     threat_here: self    同上，而且真有威胁：比他强，或眼下的打算正冲着他来（捉拿、攻击）
+#     rumored_item: self   他相信的事实里提到的要紧东西（秘籍、宝物、活宝），不在他手里
+#     teaches_of: 物 / art_of: 人 / practice_art: self   秘籍里他还没学的本事；那人会而他不会、又教得了的本事；他能往上练的本事
+#     foe_at: 人           那人眼下要去的地方（当前这一步的 at），不知道就取他所在之处
+#     pick: {where: 谓词}  图内的活人里，按路程由近到远挑第一个使谓词成立的（$it 指候选人）
+#     pick_item: {where: 谓词}   在世的物件里按 id 挑第一个使谓词成立的
+#     fact_subject: {tag: 标签, where: 谓词}   他相信的、带这个标签的事实里提到的人（图内，由近到远，$it 指候选人）
+#   urgency：紧迫程度 1 到 3；risk：对手的变量
+#   cooldown: 刻数   选中过这条规则之后，隔这么久才再进候选（「讨个说法」这类事不必每个时辰做一回）
+#   pressing: true   等不得的事：这条规则成立时，「照旧做原来的打算」不进候选
+#   templates：一两个步骤模板。模板的 pre 此刻要成立；每一步写法同打算的一步（text / at / do / pre / takes /
+#     offscreen），$变量 在落地时换成 id；at 写人时取他此刻所在之处；第一步的 pre 此刻也要成立，第一步去得了。
+#     do 的 say 可写 ask: {verb, params}（请求对方做的事）与 cls（事情的类别）。
+#
+# 候选全由这张表生成，模型只在其中挑选和排序（8.3 的三条保证）。这里没有「回到原著」这一项。
+
+scoring:
+  distance_per_hour: 2
+  risk_per_level: 10
+  keep: 100
+  within: 192
+
+labels:            # 所求在提示词里的说法；{who} 换成参数所指的人
+  survive: 保住自己的性命
+  protect: 护着{who}
+  obey: 听{who}的号令
+  grudge: 找{who}报仇
+  clan_honor: 门派的体面
+  greed: 贪图钱财宝物
+  curiosity: 好奇，什么都想看看
+  get_stronger: 想把本事练得更强
+
+weights:
+  survive: 30
+  protect: 25
+  obey: 20
+  grudge: 18
+  clan_honor: 15
+  greed: 12
+  get_stronger: 12
+  curiosity: 10
+  any: 5
+
+goals:
+  # ------------------------------------------------------------ protect:<人>：那人被擒、中毒或遇险
+  - id: protect_free
+    drive: protect
+    text: 救出⟦$target⟧
+    when: {all: [{alive: $target}, {onstage: $target}, {any: [{status: [$target, captive]}, {status: [$target, bound]}]}, {not: {status: [self, captive]}}]}
+    bind:
+      captor: {captor_of: $target}
+    urgency: 3
+    risk: $captor
+    templates:
+      - id: release
+        steps:
+          - {id: free, text: 赶到⟦$target⟧被扣的地方，把人放出来, at: $target, do: {verb: release, target: $target}, pre: {any: [{status: [$target, captive]}, {status: [$target, bound]}]}, takes: 2}
+
+  - id: protect_ransom
+    drive: protect
+    text: 拿东西去换回⟦$target⟧
+    when: {all: [{alive: $target}, {status: [$target, captive]}, {not: {status: [self, captive]}}]}
+    bind:
+      captor: {captor_of: $target}
+      cure: {cure_for: $captor}
+      place: {place_of: $cure}
+    urgency: 2
+    templates:
+      - id: carry
+        pre: {has: [self, $cure]}
+        steps:
+          - {id: bring, text: 把⟦$cure⟧送到⟦$captor⟧手里, at: $captor, do: {verb: give, item: $cure, target: $captor}, pre: {has: [self, $cure]}, takes: 1}
+      - id: fetch
+        pre: {item_at: [$cure, $place]}
+        steps:
+          - {id: search, text: 去⟦$place⟧把⟦$cure⟧找出来, at: $place, do: {verb: search}, pre: {item_at: [$cure, $place]}, takes: 2}
+          - {id: take, text: 拿上⟦$cure⟧, at: $place, do: {verb: take, item: $cure}, pre: {item_at: [$cure, $place]}, takes: 1}
+          - {id: bring, text: 把⟦$cure⟧送到⟦$captor⟧手里, do: {verb: give, item: $cure, target: $captor}, pre: {has: [self, $cure]}, takes: 1}
+
+  - id: protect_cure
+    drive: protect
+    text: 替⟦$target⟧弄到解药
+    when: {all: [{alive: $target}, {onstage: $target}, {any: [{status: [$target, poisoned_duanchang]}, {status: [$target, poisoned_diao]}]}]}
+    bind:
+      cure: {cure_for: $target}
+      place: {place_of: $cure}
+    urgency: 3
+    templates:
+      - id: carry
+        pre: {has: [self, $cure]}
+        steps:
+          - {id: feed, text: 把⟦$cure⟧给⟦$target⟧服下, do: {verb: use, item: $cure, target: $target}, pre: {has: [self, $cure]}, takes: 1}
+      - id: fetch
+        pre: {item_at: [$cure, $place]}
+        steps:
+          - {id: search, text: 去⟦$place⟧把⟦$cure⟧找出来, at: $place, do: {verb: search}, pre: {item_at: [$cure, $place]}, takes: 2}
+          - {id: take, text: 拿上⟦$cure⟧, at: $place, do: {verb: take, item: $cure}, pre: {item_at: [$cure, $place]}, takes: 1}
+          - {id: feed, text: 把⟦$cure⟧给⟦$target⟧服下, do: {verb: use, item: $cure, target: $target}, pre: {has: [self, $cure]}, takes: 1}
+
+  - id: protect_beg_cure
+    drive: protect
+    text: 向拿着解药的人讨来救⟦$target⟧
+    when: {all: [{alive: $target}, {any: [{status: [$target, poisoned_duanchang]}, {status: [$target, poisoned_diao]}]}]}
+    bind:
+      cure: {cure_for: $target}
+      holder: {holder_of: $cure}
+    urgency: 2
+    risk: $holder
+    templates:
+      - id: ask
+        pre: {not: {has: [self, $cure]}}
+        steps:
+          - {id: ask, text: 去求⟦$holder⟧把⟦$cure⟧给⟦$target⟧, at: $holder, do: {verb: say, act: request, to: $holder, ask: {verb: give, params: {item: $cure, target: $target}}, cls: costly}, takes: 2}
+
+  - id: protect_help
+    drive: protect
+    text: 赶去照应⟦$target⟧
+    when: {all: [{alive: $target}, {onstage: $target}, {any: [{status: [$target, injured]}, {status: [$target, pursued]}]}, {not: {status: [$target, tended]}}, {not: {status: [self, captive]}}]}
+    urgency: 2
+    templates:
+      - id: tend
+        steps:
+          - {id: help, text: 到⟦$target⟧身边照料他, at: $target, do: {verb: help, target: $target}, pre: {alive: $target}, takes: 2}
+
+  - id: protect_seek_help
+    drive: protect
+    text: 为⟦$target⟧的事去找⟦$ally⟧求援
+    when: {all: [{alive: $target}, {any: [{status: [$target, captive]}, {status: [$target, poisoned_duanchang]}, {status: [$target, poisoned_diao]}]}, {not: {status: [self, captive]}}]}
+    bind:
+      ally:
+        pick:
+          where:
+            all:
+              - {not: {same_loc: [$it, $target]}}
+              - {rel: [self, $it, trust, '>=', 30]}
+              - {stat: [$it, power, '>=', 2]}
+              - {not: {status: [$it, captive]}}
+    urgency: 2
+    templates:
+      - id: plead
+        steps:
+          - {id: ask, text: 去求⟦$ally⟧出手相救⟦$target⟧, at: $ally, do: {verb: say, act: request, to: $ally, ask: {verb: release, params: {target: $target}}, cls: risky}, takes: 2}
+
+  # ------------------------------------------------------------ survive：自己中毒、被擒、被追
+  - id: survive_antidote
+    drive: survive
+    text: 设法解了身上的毒
+    when: {any: [{status: [self, poisoned_duanchang]}, {status: [self, poisoned_diao]}]}
+    bind:
+      cure: {cure_for: self}
+      place: {place_of: $cure}
+    urgency: 3
+    templates:
+      - id: swallow
+        pre: {has: [self, $cure]}
+        steps:
+          - {id: use, text: 服下⟦$cure⟧, do: {verb: use, item: $cure}, pre: {has: [self, $cure]}, takes: 1}
+      - id: fetch
+        pre: {all: [{item_at: [$cure, $place]}, {not: {status: [self, captive]}}]}
+        steps:
+          - {id: search, text: 去⟦$place⟧把⟦$cure⟧找出来, at: $place, do: {verb: search}, pre: {item_at: [$cure, $place]}, takes: 2}
+          - {id: take, text: 拿上⟦$cure⟧, at: $place, do: {verb: take, item: $cure}, pre: {item_at: [$cure, $place]}, takes: 1}
+          - {id: use, text: 服下⟦$cure⟧, do: {verb: use, item: $cure}, pre: {has: [self, $cure]}, takes: 1}
+
+  - id: survive_ask_holder
+    drive: survive
+    text: 向拿着解药的⟦$holder⟧讨解药
+    when: {any: [{status: [self, poisoned_duanchang]}, {status: [self, poisoned_diao]}]}
+    bind:
+      cure: {cure_for: self}
+      holder: {holder_of: $cure}
+    urgency: 2
+    risk: $holder
+    templates:
+      - id: ask
+        pre: {not: {has: [self, $cure]}}
+        steps:
+          - {id: ask, text: 去求⟦$holder⟧给自己⟦$cure⟧, at: $holder, do: {verb: say, act: request, to: $holder, ask: {verb: give, params: {item: $cure, target: self}}, cls: costly}, takes: 2}
+
+  - id: survive_poisoner
+    drive: survive
+    text: 找下毒的⟦$poisoner⟧讨个说法
+    when: {any: [{status: [self, poisoned_duanchang]}, {status: [self, poisoned_diao]}]}
+    bind:
+      poisoner: {poisoner_of: self}
+    urgency: 2
+    risk: $poisoner
+    templates:
+      - id: talk
+        steps:
+          - {id: ask, text: 去找⟦$poisoner⟧，求他给解药, at: $poisoner, do: {verb: say, act: request, to: $poisoner, ask: {verb: help, params: {target: self}}, cls: costly}, takes: 2}
+
+  - id: survive_healer
+    drive: survive
+    text: 去找懂药的⟦$healer⟧
+    when: {any: [{status: [self, poisoned_duanchang]}, {status: [self, poisoned_diao]}]}
+    bind:
+      healer:
+        pick:
+          where:
+            all:
+              - {any: [{art: [$it, shennong_herbs, 1]}, {role: [$it, herb_gatherer]}]}
+              - {not: {status: [$it, captive]}}
+    urgency: 2
+    risk: $healer
+    templates:
+      - id: visit
+        steps:
+          - {id: ask, text: 去请⟦$healer⟧看看身上的毒, at: $healer, do: {verb: say, act: request, to: $healer, ask: {verb: help, params: {target: self}}, cls: effort}, takes: 2}
+
+  - id: survive_escape
+    drive: survive
+    text: 设法脱身
+    when: {any: [{status: [self, captive]}, {status: [self, bound]}]}
+    bind:
+      captor: {captor_of: self}
+    urgency: 2
+    risk: $captor
+    templates:
+      - id: slip
+        steps:
+          - {id: struggle, text: 趁看守不备挣脱出来, do: {verb: struggle}, pre: {any: [{status: [self, captive]}, {status: [self, bound]}]}, takes: 2}
+
+  - id: survive_plead
+    drive: survive
+    text: 求⟦$captor⟧放了自己
+    when: {status: [self, captive]}
+    bind:
+      captor: {captor_of: self}
+    urgency: 1
+    templates:
+      - id: beg
+        steps:
+          - {id: beg, text: 向⟦$captor⟧求情，求他放人, at: $captor, do: {verb: say, act: request, to: $captor, ask: {verb: release, params: {target: self}}, cls: costly}, pre: {status: [self, captive]}, takes: 1}
+
+  - id: survive_flee
+    drive: survive
+    text: 躲开⟦$foe⟧
+    when: {all: [{not: {status: [self, captive]}}, {not: {status: [self, bound]}}]}
+    bind:
+      foe: {threat_here: self}        # 光是互相看不顺眼不用躲：对方比自己强，或正冲着自己来，才躲
+      safe: {away_from: $foe}
+    urgency: 3
+    templates:
+      - id: run
+        steps:
+          - {id: run, text: 往⟦$safe⟧躲一躲, at: $safe, do: {verb: wait}, takes: 8}
+
+  # ------------------------------------------------------------ clan_honor：门派受辱或被围
+  # 门里出了丑事（相信了一条带 sect_scandal 标签的事实，说的是本门弟子）：掌门坐不住，先把人拿下。
+  # pressing：这件事等不得，候选里不再有「照旧」。一次拿一个；拿下之后重新打算，还有同案的就接着拿。
+  - id: honor_purge
+    drive: clan_honor
+    pressing: true
+    text: 拿下⟦$culprit⟧，清理门户
+    when: {all: [{role: [self, wuliang_head]}, {not: {status: [self, captive]}}]}
+    bind:
+      culprit:
+        fact_subject:
+          tag: sect_scandal
+          where:
+            all:
+              - {alive: $it}
+              - {role: [$it, wuliang_disciple]}
+              - {not: {status: [$it, captive]}}
+              - {not: {status: [$it, bound]}}
+    urgency: 3
+    risk: $culprit
+    templates:
+      - id: seize
+        steps:
+          - id: seize
+            text: 赶到⟦$culprit⟧跟前，喝令把人拿下问罪
+            at: $culprit
+            do: {verb: restrain, target: $culprit}
+            pre: {all: [{alive: $culprit}, {not: {status: [$culprit, captive]}}]}
+            takes: 1
+
+  - id: honor_hold_sect
+    drive: clan_honor
+    text: 守住剑湖宫的门户
+    when: {all: [{flag: siege_on}, {role: [self, wuliang_disciple]}, {not: {status: [self, captive]}}]}
+    urgency: 2
+    templates:
+      - id: guard
+        steps:
+          - {id: guard, text: 到山门前守着, at: jianhu_gate, do: {verb: wait}, pre: {not: {status: [self, captive]}}, takes: 48}
+
+  - id: honor_hold_camp
+    drive: clan_honor
+    text: 守住神农帮的营地
+    when: {all: [{role: [self, shennong_member]}, {not: {status: [self, captive]}}]}
+    urgency: 1
+    templates:
+      - id: guard
+        steps:
+          - {id: guard, text: 回营坐镇, at: shennong_camp, do: {verb: wait}, pre: {not: {status: [self, captive]}}, takes: 48}
+
+  - id: honor_save_face
+    drive: clan_honor
+    cooldown: 96                 # 话说过一回就够了：一日之内不再为这个找上门去
+    text: 找⟦$foe⟧讨回面子
+    when: {not: {status: [self, captive]}}
+    bind:
+      foe:
+        pick:
+          where:
+            all:
+              - {rel: [self, $it, affinity, '<=', -10]}
+              - {not: {status: [$it, captive]}}
+    urgency: 1
+    risk: $foe
+    templates:
+      - id: taunt
+        steps:
+          - {id: taunt, text: 当面向⟦$foe⟧讨个说法, at: $foe, do: {verb: say, act: taunt, to: $foe}, takes: 1}
+
+  - id: honor_call_aid
+    drive: clan_honor
+    text: 请⟦$ally⟧出手相助
+    when: {all: [{flag: siege_on}, {not: {status: [self, captive]}}]}
+    bind:
+      ally:
+        pick:
+          where:
+            all:
+              - {stat: [$it, power, '>=', 2]}
+              - {rel: [self, $it, trust, '>=', 20]}
+              - {not: {status: [$it, captive]}}
+    urgency: 1
+    templates:
+      - id: ask
+        steps:
+          - {id: ask, text: 去请⟦$ally⟧助一臂之力, at: $ally, do: {verb: say, act: request, to: $ally, ask: {verb: follow, params: {target: self}}, cls: risky}, takes: 2}
+
+  # ------------------------------------------------------------ obey:<主上>：主上有令，或主上将到
+  - id: obey_greet
+    drive: obey
+    text: 去迎候⟦$target⟧
+    when: {all: [{alive: $target}, {onstage: $target}, {not: {same_loc: [self, $target]}}, {not: {status: [self, captive]}}]}
+    urgency: 2
+    templates:
+      - id: greet
+        steps:
+          - {id: greet, text: 赶到⟦$target⟧跟前行礼, at: $target, do: {verb: say, act: greet, to: $target}, takes: 1}
+
+  - id: obey_serve
+    drive: obey
+    text: 听⟦$target⟧的差遣
+    when: {all: [{alive: $target}, {onstage: $target}, {not: {status: [self, captive]}}]}
+    urgency: 1
+    templates:
+      - id: attend
+        steps:
+          - {id: attend, text: 守在⟦$target⟧身边听候差遣, at: $target, do: {verb: wait}, takes: 24}
+
+  - id: obey_amends
+    drive: obey
+    text: 向⟦$target⟧请罪补过
+    when: {all: [{alive: $target}, {onstage: $target}, {rel: [$target, self, trust, '<=', -10]}, {not: {status: [self, captive]}}]}
+    urgency: 2
+    templates:
+      - id: apologize
+        steps:
+          - {id: apologize, text: 到⟦$target⟧跟前请罪, at: $target, do: {verb: say, act: greet, to: $target}, takes: 1}
+
+  # ------------------------------------------------------------ curiosity / greed：听说有宝物或秘密
+  - id: seek_treasure
+    drive: [curiosity, greed]
+    text: 去找⟦$item⟧
+    when: {not: {status: [self, captive]}}
+    bind:
+      item: {rumored_item: self}
+      place: {place_of: $item}
+    urgency: 1
+    templates:
+      - id: search
+        pre: {item_at: [$item, $place]}
+        steps:
+          - {id: search, text: 到⟦$place⟧翻找⟦$item⟧, at: $place, do: {verb: search}, pre: {item_at: [$item, $place]}, takes: 2}
+          - {id: take, text: 拿走⟦$item⟧, at: $place, do: {verb: take, item: $item}, pre: {item_at: [$item, $place]}, takes: 1}
+      - id: ask_holder
+        pre: {not: {item_at: [$item, $place]}}
+        steps:
+          - {id: ask, text: 到⟦$place⟧打听⟦$item⟧的下落, at: $place, do: {verb: say, act: ask, about: $item}, takes: 2}
+
+  - id: ask_around
+    drive: [curiosity, greed]
+    text: 打听⟦$item⟧的事
+    when: {not: {status: [self, captive]}}
+    bind:
+      item: {rumored_item: self}
+    urgency: 1
+    templates:
+      - id: ask
+        steps:
+          - {id: ask, text: 向身边的人打听⟦$item⟧, do: {verb: say, act: ask, about: $item}, takes: 2}
+
+  # ------------------------------------------------------------ grudge:<仇人>：得知仇人的下落
+  - id: grudge_hunt
+    drive: grudge
+    text: 去找⟦$target⟧寻仇
+    when: {all: [{alive: $target}, {onstage: $target}, {not: {status: [self, captive]}}]}
+    urgency: 2
+    risk: $target
+    templates:
+      - id: strike
+        steps:
+          - {id: strike, text: 找到⟦$target⟧就动手, at: $target, do: {verb: attack, target: $target, intent: kill}, pre: {alive: $target}, takes: 1}
+
+  - id: grudge_ambush
+    drive: grudge
+    text: 在⟦$spot⟧设伏等⟦$target⟧
+    when: {all: [{alive: $target}, {onstage: $target}, {not: {status: [self, captive]}}]}
+    bind:
+      spot: {foe_at: $target}
+    urgency: 1
+    risk: $target
+    templates:
+      - id: lurk
+        steps:
+          - {id: lurk, text: 埋伏在⟦$spot⟧等⟦$target⟧来, at: $spot, do: {verb: wait}, takes: 16}
+          - {id: strike, text: 等⟦$target⟧到了就动手, at: $spot, do: {verb: attack, target: $target, intent: kill}, pre: {same_loc: [self, $target]}, takes: 1}
+
+  - id: grudge_avoid
+    drive: grudge
+    text: 避开⟦$target⟧
+    when: {all: [{alive: $target}, {onstage: $target}, {not: {status: [self, captive]}}]}
+    bind:
+      safe: {away_from: $target}
+    urgency: 1
+    templates:
+      - id: hide
+        steps:
+          - {id: away, text: 往⟦$safe⟧避一避, at: $safe, do: {verb: wait}, takes: 16}
+
+  # ------------------------------------------------------------ get_stronger：手里有秘籍，或身边有肯教的人
+  # 好奇的人手里有一卷没读过的书，也会翻开来读（不只是想变强的人）。
+  # 秘籍写明是哪一件：pick_item 的 where 认不出「这是一本秘籍」（没有按 tags 的谓词），按 id 挑第一件
+  # 手里的东西多半挑不中它。再有别的秘籍，照样添一条。
+  - id: study_manual
+    drive: [get_stronger, curiosity]
+    text: 研读⟦silk_scroll⟧
+    when: {all: [{has: [self, silk_scroll]}, {not: {status: [self, captive]}}]}
+    bind:
+      art: {teaches_of: silk_scroll}
+    urgency: 2
+    templates:
+      - id: read
+        steps:
+          - {id: read, text: 照着⟦silk_scroll⟧研读⟦$art⟧, do: {verb: study, item: silk_scroll, art: $art}, pre: {has: [self, silk_scroll]}, takes: 32}
+
+  - id: seek_teacher
+    drive: get_stronger
+    text: 向⟦$teacher⟧求教⟦$art⟧
+    when: {not: {status: [self, captive]}}
+    bind:
+      teacher:
+        pick:
+          where:
+            all:
+              - {rel: [self, $it, trust, '>=', 20]}
+              - {not: {status: [$it, captive]}}
+      art: {art_of: $teacher}
+    urgency: 1
+    templates:
+      - id: ask
+        steps:
+          - {id: ask, text: 去求⟦$teacher⟧教自己⟦$art⟧, at: $teacher, do: {verb: say, act: request, to: $teacher, ask: {verb: teach, params: {target: self, art: $art, hours: 4}}}, takes: 2}
+
+  - id: practice
+    drive: get_stronger
+    text: 苦练⟦$art⟧
+    when: {not: {status: [self, captive]}}
+    bind:
+      art: {practice_art: self}
+    urgency: 1
+    templates:
+      - id: drill
+        steps:
+          - {id: drill, text: 找个清静地方练⟦$art⟧, do: {verb: practice, art: $art}, takes: 32}
+
+  # ------------------------------------------------------------ 任何：无事
+  - id: idle
+    drive: any
+    text: 照旧过日子
+    when: true
+    urgency: 2
+    templates:
+      - id: daily
+        steps:
+          - {id: daily, text: 照日常的作息过日子, do: {verb: wait}, takes: 48}
+
+  - id: wait
+    drive: any
+    text: 等一等再说
+    when: true
+    urgency: 1
+    templates:
+      - id: pause
+        steps:
+          - {id: pause, text: 先等一等，看看局面再说, do: {verb: wait}, takes: 16}

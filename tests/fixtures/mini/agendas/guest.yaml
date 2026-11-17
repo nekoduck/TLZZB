@@ -1,0 +1,3 @@
+goal: 看热闹
+steps:
+  - {id: g_watch, text: 在堂上看比武, at: hall, do: {verb: wait}, deadline: 400}

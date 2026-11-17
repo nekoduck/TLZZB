@@ -1,0 +1,39 @@
+hall:
+  name: 演武堂
+  unknown_alias: 一间宽敞的厅堂
+  owner: hall_sect
+  desc: {day: 堂上地面光滑，四壁挂着兵器。, dusk: 堂里点起了灯。, night: 堂上一片漆黑。}
+  loud_to: [yard]
+  exits:
+    - {to: yard, cost: 1}
+  features:
+    beam: {name: 房梁, desc: 粗大的木梁横在头顶，梁上积着灰。, cover: 20}
+    rack: {name: 兵器架, desc: 架上插着几杆木枪。}
+yard:
+  name: 前院
+  unknown_alias: 一处院子
+  desc: {day: 院子里晒着几捆柴，墙角有口井。, night: 院子里黑沉沉的。}
+  loud_to: [hall]
+  exits:
+    - {to: hall, cost: 1}
+    - {to: cliff, cost: 4}
+    - {to: out_road, cost: 8, edge: true}
+  features:
+    woodpile: {name: 柴堆, desc: 一人高的柴堆，码得歪歪斜斜。, cover: 15, contains: [old_manual]}
+    well: {name: 水井, desc: 井口的石头磨得发亮。, reveals: [F_well_secret]}
+cliff:
+  name: 断崖
+  unknown_alias: 一处崖边
+  terrain: -10
+  handholds: true
+  desc: {day: 崖边风大，往下看云气翻涌。, night: 崖下黑得看不见底。}
+  exits:
+    - {to: yard, cost: 2, check: descend}
+    - {to: hall, cost: 3, hidden: true}
+  features:
+    pine:
+      name: 老松
+      desc: 一株老松斜伸出崖外，根下像是有条小路。
+      cover: 10
+      reveals: ['exit:cliff:hall']
+      pre: {stat: [self, literacy, '>=', 0]}

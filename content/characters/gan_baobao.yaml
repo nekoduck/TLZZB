@@ -1,0 +1,37 @@
+id: gan_baobao
+name: 甘宝宝
+unknown_alias: 谷里的一位夫人
+tier: soul
+base_power: 3
+neili: 30
+arts: {}
+literacy: 2
+aptitude: 2
+luck: 5
+roles: [wanjie_family]
+initiative: 4
+self_intro: 万劫谷的女主人，人称钟夫人，温婉有礼，心里压着旧事。
+values: [把女儿看得比什么都重, 温婉而有主见, 旧事藏在心里，不肯对人说, 听到段姓会失神]
+drives: ['protect:zhong_ling', survive]
+voice:
+  habits: [说话轻声细语, 问话一句接一句，问得极细]
+  samples: []
+bottom_lines:
+  - text: 不对人说起年轻时的旧事
+    blocks: [{verb: say, act: tell, fact_tag: zhong_family_private}]
+  - text: 不伤自己的女儿
+    blocks: [{verb: attack, target: zhong_ling}]
+choices:
+  - situation: 陌生人带来女儿遇险的消息
+    did: 先细细盘问来人的姓名来历，再拿主意
+    para: null
+  - situation: 丈夫发脾气要为难客人
+    did: 好言劝住丈夫，背地里另想办法
+    para: null
+knows: [F_wuliang_two_sects, F_diao_venom, F_diao_antidote_father, F_diao_antidote_cabinet, F_route_wanjie, F_gate_knock, F_valley_hates_duan, F_zhong_ling_daughter, F_gan_old_affair, F_zhong_ling_birth, F_mu_lodging, 'exit:pine_wood:valley_gate']
+rel:
+  zhong_ling: {trust: 70, affinity: 90}
+  zhong_wanchou: {trust: 40, affinity: 20}
+  mu_wanqing: {trust: 30, affinity: 30}
+  jin_xier: {trust: 50, affinity: 30}
+agenda: gan_baobao

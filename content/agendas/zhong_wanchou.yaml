@@ -1,0 +1,20 @@
+goal: 守住万劫谷与妻子，不许姓段的进谷
+steps:
+  - id: zw_guard_valley
+    text: 守着谷，不许姓段的进
+    at: zhong_hall
+    do: {verb: wait}
+    pre: {all: [{not: {status: [self, captive]}}, {alive: gan_baobao}]}
+    takes: 240
+  - id: zw_watch_gate
+    text: 到谷口看看动静
+    at: valley_gate
+    do: {verb: wait}
+    pre: {not: {status: [self, captive]}}
+    takes: 16
+  - id: zw_keep_wife
+    text: 守在妻子身边，她要出谷就拦
+    at: zhong_hall
+    do: {verb: wait}
+    pre: {all: [{alive: gan_baobao}, {at: [gan_baobao, zhong_hall]}]}
+    takes: 240

@@ -1,0 +1,21 @@
+rope: {name: 麻绳, unknown_alias: 一段麻绳, holder: player, tags: [rope]}
+rations: {name: 干粮, unknown_alias: 一包干粮, holder: player, tags: [food]}
+old_manual:
+  name: 云步图谱
+  unknown_alias: 一本旧册子
+  tags: [manual]
+  teaches: [cloud_steps]
+  props: {reveals: [F_manual_contents]}
+antidote: {name: 清心丸, unknown_alias: 一粒药丸, holder: guest, tags: [antidote], props: {cures: [poisoned_slow]}}
+poison:
+  name: 断魂散
+  unknown_alias: 一包药粉
+  holder: fighter
+  tags: [poison]
+  props: {inflicts: {status: poisoned_slow, ticks: 192}, lethal: true}
+token: {name: 玉佩, unknown_alias: 一块玉佩, holder: guest, tags: [token], props: {evidence: strong, value: 20}}
+sword: {name: 长剑, unknown_alias: 一柄长剑, holder: fighter, props: {power_mod: 1}}
+lucky_charm:
+  name: 平安符
+  unknown_alias: 一道黄符
+  props: {on_obtain: [{stat: [self, luck, 2]}]}

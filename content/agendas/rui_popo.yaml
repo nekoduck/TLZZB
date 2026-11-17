@@ -1,0 +1,7 @@
+goal: 奉命取木婉清的性命
+steps:
+  - {id: rp_enter, text: 从图外赶到这一带, do: {verb: wait}, pre: {alive: self}, start: 168, takes: 1, offscreen: [{enter: [self, highroad]}]}
+  - {id: rp_lay_wait, text: 在大路上设伏，等那黑衣女子经过, at: highroad, do: {verb: wait}, pre: {alive: mu_wanqing}, takes: 48}
+  - {id: rp_strike, text: 找到她的住处，上门动手, at: mu_house, do: {verb: wait}, pre: {alive: mu_wanqing}, takes: 8}
+  - {id: rp_besiege_crag, text: 守在高崖下，堵住她的退路, at: crag_foot, do: {verb: wait}, pre: {alive: mu_wanqing}, takes: 96}
+  - {id: rp_report, text: 差事了结，回去复命, at: highroad, do: {verb: go, exit: out_dali}, pre: {not: {alive: mu_wanqing}}, takes: 1}

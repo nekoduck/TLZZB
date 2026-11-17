@@ -1,0 +1,27 @@
+goal: 找杀了他徒弟的人算账；顺便找个像样的徒弟
+steps:
+  - id: ne_enter
+    text: 从图外赶到这一带
+    do: {verb: wait}
+    pre: {alive: self}
+    start: 416
+    takes: 1
+    offscreen: [{enter: [self, highroad]}]
+  - id: ne_seek_mu
+    text: 到黑衣女子落脚的地方去找她
+    at: mu_house
+    do: {verb: search}
+    pre: {all: [{alive: mu_wanqing}, {knows: [self, F_eshen_disciple_killed]}]}
+    takes: 4
+  - id: ne_hunt_mu
+    text: 循着踪迹追到高崖一带
+    at: crag_foot
+    do: {verb: search}
+    pre: {alive: mu_wanqing}
+    takes: 8
+  - id: ne_roam
+    text: 四处转悠，看有没有合意的徒弟
+    at: mountain_path
+    do: {verb: wait}
+    pre: {not: {status: [self, captive]}}
+    takes: 192

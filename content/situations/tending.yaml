@@ -1,0 +1,55 @@
+# 通用：有人受伤或中毒，身边有对他有好感的人。照料、找药。
+id: tending
+origin: generic
+title: '{carer}在照料{patient}'
+chronicle_open: '{carer}照料起{patient}来'
+chronicle_close: '{carer}这一回照料{patient}的事完了'
+when: true
+roles:
+  patient:
+    pick:
+      where:
+        all:
+          - {not: {status: [$it, tended]}}
+          - any:
+              - {status: [$it, injured]}
+              - {status: [$it, poisoned_duanchang]}
+              - {status: [$it, poisoned_diao]}
+  carer:
+    pick:
+      where:
+        all:
+          - {rel: [$it, $patient, affinity, '>=', 20]}
+          - {not: {status: [$it, captive]}}
+          - {not: {status: [$it, bound]}}
+scene: calm
+actions:
+  tend:
+    role: carer
+    lean: true
+    cost: 2
+    desc: '{carer}替{patient}包扎、喂水'
+    effects:
+      - {add_status: [$patient, tended, {ticks: 96}]}
+      - {set_flag: [.tended, true]}
+      - {emit: {actor: $carer, verb: tend, text: '{carer}替{patient}裹好伤处，喂他喝了几口水', kinds: [{k: helped, who: $patient, by: $carer}]}}
+  ask_for_medicine:
+    role: carer
+    desc: '{carer}问{patient}哪里能找到药'
+    effects:
+      - {emit: {actor: $carer, verb: ask, text: '{carer}问{patient}哪里能找到对症的药'}}
+  thank:
+    role: patient
+    pre: {flag: .tended}
+    desc: '{patient}道谢'
+    effects:
+      - {emit: {actor: $patient, verb: thank, text: '{patient}有气无力地道了声谢'}}
+exit_when: {any: [{flag: .tended}, {not: {same_loc: [$patient, $carer]}}]}
+max_turns: 4
+offscreen:
+  - when: true
+    effects:
+      - {add_status: [$patient, tended, {ticks: 96}]}
+      - {rel: [$patient, $carer, affinity, 10]}
+      - {emit: {actor: $carer, verb: tend, text: '{carer}照料了{patient}一阵'}}
+paragraphs: []

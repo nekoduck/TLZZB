@@ -1,0 +1,39 @@
+# 有名角色的简卡（方案 5.4 末条）。
+id: sn_chief_b
+name: 神农帮的瘦高头目
+unknown_alias: 一个瘦高个儿
+tier: named
+base_power: 2
+neili: 20
+arts:
+  shennong_herbs: 1
+literacy: 1
+aptitude: 1
+luck: 5
+roles:
+- shennong_member
+superior: sikong_xuan
+self_intro: 神农帮的另一个头目，带人守着下山的路卡。
+values:
+- 精明，爱打小算盘
+- 怕担干系
+drives:
+- obey:sikong_xuan
+- survive
+voice:
+  habits:
+  - 说话前先打量人
+  samples: []
+bottom_lines: []
+knows:
+- F_wuliang_two_sects
+- F_shennong_siege
+- F_shennong_orders
+- F_duanchang_antidote_sikong
+rel:
+  sikong_xuan:
+    trust: 40
+    affinity: 10
+    fear: 30
+    regard: 3
+agenda: sn_chief_b

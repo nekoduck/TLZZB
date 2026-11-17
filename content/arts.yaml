@@ -1,0 +1,84 @@
+# 本事（方案 6.12、9.6）。hours 以时辰计；数值是种子，以原文与试玩为准。
+lingbo:
+  name: 凌波微步
+  unknown_alias: 一种古怪的步法
+  kind: movement
+  sources: [silk_scroll]
+  secrecy: none
+  teacher_roles: []
+  requires:
+    all:
+      - {stat: [self, literacy, '>=', 2]}
+      - {art: [self, yijing, 1]}            # 得认得六十四卦的方位
+  stages:
+    - {name: 初窥, hours: 16, effects: {flee: 20}}
+    - {name: 小成, hours: 40, effects: {flee: 40, evade: true}}
+    - {name: 纯熟, hours: 120, effects: {flee: 60, evade: true}}
+beiming:
+  name: 北冥神功
+  unknown_alias: 一门吸人内力的怪异功夫
+  kind: inner
+  sources: [silk_scroll]
+  secrecy: none
+  teacher_roles: []
+  requires:                                 # 须先无内力，待原文核对
+    all:
+      - {stat: [self, literacy, '>=', 2]}
+      - {stat: [self, neili, '<=', 0]}
+  stages:
+    - {name: 第一幅, hours: 24, effects: {absorb: 20}}
+wuliang_sword:
+  name: 无量剑法
+  unknown_alias: 一路剑法
+  kind: combat
+  sources: [teacher]
+  secrecy: sect                             # 门派武功：外人求教算「违背所属」
+  teacher_roles: [wuliang_disciple]
+  requires: {role: [self, wuliang_disciple]}
+  stages:
+    - {name: 入门, hours: 24, power: 1}
+    - {name: 纯熟, hours: 160, power: 2}
+shennong_herbs:
+  name: 神农帮的药与毒
+  unknown_alias: 认药辨毒的手艺
+  kind: craft
+  sources: [teacher]
+  secrecy: none                             # 寻常手艺：求教算「费事」
+  teacher_roles: [shennong_member]
+  requires: {stat: [self, aptitude, '>=', 1]}
+  stages:
+    - {name: 认毒采药, hours: 24, effects: {identify_poison: true}}
+    - {name: 配药, hours: 80, effects: {identify_poison: true, brew: true}}
+diao_handling:
+  name: 驯貂
+  unknown_alias: 摆弄小兽的本事
+  kind: craft
+  sources: [teacher]
+  secrecy: none
+  teacher_roles: [wanjie_family]
+  requires: null                            # 「貂不怕你」无法写成谓词；有人肯教即可，见 content_notes
+  stages:
+    - {name: 貂不咬你, hours: 16, effects: {creature_safe: true}}
+    - {name: 指使得动, hours: 60, effects: {creature_safe: true, command_creature: true}}
+yijing:
+  name: 易经卦位
+  unknown_alias: 一门讲卦象方位的学问
+  kind: lore
+  sources: [teacher]
+  secrecy: none
+  teacher_roles: []
+  requires: {stat: [self, literacy, '>=', 1]}
+  stages:
+    - {name: 识得卦名, hours: 24}
+    - {name: 熟记方位, hours: 60}
+trade:
+  name: 行商的本事
+  unknown_alias: 做买卖的门道
+  kind: craft
+  sources: [teacher]
+  secrecy: none
+  teacher_roles: [ma_caravan_master]
+  requires: null
+  stages:
+    - {name: 会估价, hours: 16, effects: {bargain: 10}}
+    - {name: 精于讲价, hours: 80, effects: {bargain: 20}}

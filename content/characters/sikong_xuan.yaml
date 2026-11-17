@@ -1,0 +1,38 @@
+id: sikong_xuan
+name: 司空玄
+unknown_alias: 留着山羊胡的老者
+tier: soul
+base_power: 3
+neili: 40
+arts: {shennong_herbs: 2}
+literacy: 1
+aptitude: 1
+luck: 5
+roles: [shennong_member, shennong_head, lingjiu_vassal]
+superior: envoy_lingjiu
+initiative: 5
+self_intro: 神农帮的帮主，精于用药使毒，带着帮众扎营在无量山下。
+values: [识时务，惜命, 对上卑恭，对下严厉, 手段狠，不讲情面]
+drives: [survive, 'obey:envoy_lingjiu', clan_honor]
+voice:
+  habits: [说话阴沉，慢条斯理, 爱拿毒药吓唬人]
+  samples: []
+bottom_lines:
+  - text: 不违抗灵鹫宫的号令
+    blocks: [{verb: say, act: refuse, target: envoy_lingjiu}]
+  - text: 解药没到手之前不放人质
+    blocks: [{verb: release, when: {status: [self, poisoned_diao]}}]
+choices:
+  - situation: 自己中了毒，手里扣着对方的亲人
+    did: 逼一个俘虏服下慢毒去取解药，留下另一个做人质
+    para: null
+  - situation: 上头派人来查问差事
+    did: 低声下气地迎候，把过错推到别人身上
+    para: null
+knows: [F_wuliang_two_sects, F_shennong_siege, F_shennong_orders, F_lingjiu_rules, F_envoy_due, F_duanchang_antidote_sikong, F_four_evils]
+rel:
+  sn_chief_a: {trust: 40, affinity: 20}
+  sn_chief_b: {trust: 30, affinity: 10}
+  envoy_lingjiu: {fear: 70}
+  zuo_zimu: {affinity: -40, regard: 3}
+agenda: sikong_xuan

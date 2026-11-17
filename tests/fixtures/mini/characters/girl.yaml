@@ -1,0 +1,14 @@
+name: 阿翠
+unknown_alias: 梁上那少女
+tier: soul
+base_power: 1
+literacy: 1
+aptitude: 2
+luck: 10
+roles: [valley_family]
+drives: [curiosity, 'protect:friends']
+bottom_lines:
+  - text: 不丢下朋友独自逃命
+    blocks: [{verb: flee, when: {friend_here: [self, 30]}}]
+rel: {guest: {affinity: 10}}
+agenda: girl

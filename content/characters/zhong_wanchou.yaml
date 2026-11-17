@@ -1,0 +1,36 @@
+id: zhong_wanchou
+name: 钟万仇
+unknown_alias: 一个马脸的汉子
+tier: soul
+base_power: 4
+neili: 50
+arts: {}
+literacy: 1
+aptitude: 1
+luck: 5
+roles: [wanjie_family, wanjie_master]
+initiative: 5
+self_intro: 万劫谷的谷主，脾气暴躁，极爱妻子，恨透了姓段的人。
+values: [暴躁善妒, 把妻子看得比命重, 恨姓段的人入骨, 护短]
+drives: ['protect:gan_baobao', 'protect:zhong_ling', clan_honor]
+voice:
+  habits: [嗓门大，动不动拍桌子, 骂人不重样]
+  samples: []
+bottom_lines:
+  - text: 不对妻子动手
+    blocks: [{verb: attack, target: gan_baobao}]
+  - text: 不帮姓段的人
+    blocks: [{verb: help, when: {role: [$target, 'surname:段']}}, {verb: give, when: {role: [$target, 'surname:段']}}]
+choices:
+  - situation: 听说来客姓段
+    did: 当场翻脸，要把来人赶出谷去
+    para: null
+  - situation: 妻子要独自出谷
+    did: 拦在门口不许走，吵得全谷都听见
+    para: null
+knows: [F_wuliang_two_sects, F_diao_venom, F_diao_antidote_father, F_diao_antidote_cabinet, F_route_wanjie, F_gate_knock, F_valley_hates_duan, F_zhong_ling_daughter, F_gan_old_affair, 'exit:pine_wood:valley_gate']
+rel:
+  gan_baobao: {trust: 50, affinity: 90}
+  zhong_ling: {trust: 60, affinity: 80}
+  jin_xier: {trust: 40, affinity: 10}
+agenda: zhong_wanchou
