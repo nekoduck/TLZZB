@@ -197,7 +197,7 @@ async def test_reply_that_agrees_and_acts_is_not_rolled_back(llm, world):
 
 
 async def test_false_premise_is_voided_before_setting_out(llm, world):
-    """前提不成立的远处一步：走得动的人当场作废、重新打算，不白走一趟（3.4 保证一）。"""
+    """前提不成立的远处一步：走得动的人不动身，下个时辰仍不成立就作废、重新打算，不白走一趟（3.4 保证一）。"""
     defs, state = world
     player_off(state, defs)
     chief = state.chars["sn_chief_b"]
@@ -205,9 +205,12 @@ async def test_false_premise_is_voided_before_setting_out(llm, world):
     before = chief.loc
     assert before != "jianhu_hall"
     events = await offscreen.advance(state, defs, "sn_chief_b", 8)
+    st = next(s for s in chief.agenda.steps if s.id == "t_far")
+    assert st.state == "pending"  # 头一次不成立：先原地等一个时辰（fix-regress：一时的空档不算数）
+    timeflow.advance_time(state, defs, 8)
+    events += await offscreen.advance(state, defs, "sn_chief_b", 8)
     assert chief.loc == before  # 没有动身
     assert not any(e.verb in ("go", "arrive") for e in events)
-    st = next(s for s in chief.agenda.steps if s.id == "t_far")
     assert st.state == "void"  # 没有期限也不干等
     assert "sn_chief_b" in state.replan_queue
 

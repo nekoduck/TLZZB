@@ -3,11 +3,12 @@
 对每个离场的人，取当前这一步：
 
 1. 没到 ``start``：等。过了 ``deadline``：作废。
-2. 人不在 ``at``：先把 ``pre`` 当作人已经到了那里看一遍——不成立而他又走得动，这一步当场作废，不白走
-   一趟（方案 3.4 保证一；走不动的人原地等着）。成立，就沿最短路（``kernel.actions.path``）走过去，
-   耗时按出口的 cost（坐骑按 speed 折算），
+2. 人不在 ``at``：动身之前先把 ``pre`` 当作人已经到了那里看一遍——不成立而他又走得动，这个时辰原地等，
+   到下个时辰仍不成立，这一步作废，不白走一趟（方案 3.4 保证一；走不动的人原地等着）。成立，就沿最短路
+   （``kernel.actions.path``）走过去，耗时按出口的 cost（坐骑按 speed 折算），
    带 check 的出口照掷（走路就是一次 ``go``，由 ``resolve.apply`` 结算）。走在一段路上的时间记在
-   ``Agenda.progress`` 里，走完这一段清零。
+   ``Agenda.progress`` 里，走完这一段清零。上了路就不再查前提（``Agenda.en_route``），到了动手时再查。
+   有人拦着、追着而没走成的（``resolve.held_back``），这段路已经花的工夫留着，下个时辰接着闯。
 3. 到了地方，``progress`` 累加，满 ``takes`` 时动手。
 4. 动手那一刻检查 ``pre``：不成立，这一步作废；成立，有 ``offscreen`` 就执行它，没有就按动词走通用结算。
 
@@ -82,6 +83,11 @@ def _progress(state: WorldState, defs: Defs, c: Character, n: int) -> None:
     resolve.run_effects(state, defs, [{"progress": [c.id, n]}], Ctx(self_id=c.id), source="agenda")
 
 
+def _mark(state: WorldState, defs: Defs, c: Character, field: str, value: int | None) -> None:
+    """动身前那次前提检查的账（``Agenda.en_route`` / ``Agenda.doubt``），经效果 ``mark_char`` 记。"""
+    resolve.run_effects(state, defs, [{"mark_char": [c.id, field, value]}], Ctx(self_id=c.id), source="agenda")
+
+
 def expire_deadlines(state: WorldState, defs: Defs, chars: list[Character]) -> list[Event]:
     """过了 deadline 的当前步作废（8.2 第 1 条）。在场的人也一样：期限是时钟上的事，不是动作。"""
     out: list[Event] = []
@@ -149,11 +155,22 @@ async def advance(
             out += set_state(state, defs, c, st, "void", "target gone")
             break
         if c.loc != where:
-            # 动身之前先看前提（当作人已经到了那里）：不成立而他又走得动，这一步当场作废、重新打算，
-            # 不白走一趟（3.4 保证一）。走不动的人（被扣、重伤）照旧原地等着。
-            if not _pre_at(state, defs, c, st, where) and _can_set_out(state, defs, c, where):
-                out += set_state(state, defs, c, st, "void", "pre (before setting out)")
-                break
+            ag = c.agenda
+            assert ag is not None
+            if not ag.en_route:
+                # 动身之前先看前提（当作人已经到了那里），只在动身前看：上了路就不再看，到了动手时再查。
+                # 不成立而他又走得动：这个时辰原地等（记下时刻），下个时辰仍不成立才作废、重新打算——
+                # 不白走一趟（3.4 保证一），也不为一时的空档丢掉打算（眼前刚开场的情境，效果要到在场的人
+                # 动手才发生；被扣的人挣脱了一个时辰又被拿回去）。走不动的人（被扣、重伤）照旧原地等着。
+                if _pre_at(state, defs, c, st, where):
+                    if ag.doubt is not None:
+                        _mark(state, defs, c, "doubt", None)
+                elif _can_set_out(state, defs, c, where):
+                    if ag.doubt is None:
+                        _mark(state, defs, c, "doubt", state.tick)
+                    elif state.tick > ag.doubt:
+                        out += set_state(state, defs, c, st, "void", "pre (before setting out)")
+                    break
             if budget <= 0:
                 break
             moved, evs, budget, stop = _walk(state, defs, c, st, where, budget)
@@ -242,16 +259,22 @@ def _walk(
     act_ = actions.build(state, defs, c.id, "go", {"exit": e.to})
     if act_ is None:
         return False, [], budget, True  # 走不动（被扣押、重伤）：这个时辰原地不动，也不记路程
+    if not ag.en_route:
+        _mark(state, defs, c, "en_route", 1)  # 真的迈开步了：这一趟途中不再查前提
     need = actions.travel_cost(state, c, e) - ag.progress
     if need > budget:
         _progress(state, defs, c, budget)
         return False, [], 0, True
     before = c.loc
     evs = resolve.apply(state, defs, act_, source="agenda", offscreen=True)
+    moved = c.loc != before
+    if not moved and resolve.held_back(evs, c.id):
+        # 有人拦着、追着，没走成（D-347）：人还在原地，这段路已经花的工夫留着，下个时辰接着闯，
+        # 不必原地再站满一整段路的时间
+        return False, evs, budget, True
     budget -= max(0, need)
     if c.agenda is ag and _step_pending(c, st.id):
         _progress(state, defs, c, 0)
-    moved = c.loc != before
     return moved, evs, budget, not moved
 
 

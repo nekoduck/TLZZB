@@ -133,6 +133,9 @@ class Agenda(BaseModel):  # 一个人此刻的打算
     status: Literal["active", "waiting", "done"] = "active"
     # 新增
     waiting_for: str = ""  # status 为 waiting 时，写明在等什么（6.11 活性约束）
+    # 离场结算给当前这一步记的账（8.2）：换了一步、换了打算就清掉
+    en_route: bool = False  # 动身前的前提查过成立，人已经上路：途中不再查，到了动手时再查
+    doubt: Tick | None = None  # 动身前查到前提不成立的那一刻：到下个时辰仍不成立才作废
 
 
 class Character(BaseModel):

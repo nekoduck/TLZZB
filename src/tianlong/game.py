@@ -32,7 +32,7 @@ from tianlong import minds, narrator, parser, store, storyteller, world
 from tianlong.config import Settings
 from tianlong.content.loader import load as load_content
 from tianlong.content.validate import require_valid
-from tianlong.kernel import actions, danger, growth, perception, refs, resolve, timeflow
+from tianlong.kernel import actions, conflict, danger, growth, perception, refs, resolve, timeflow
 from tianlong.kernel.actions import ActionInst
 from tianlong.kernel.defs import Defs
 from tianlong.kernel.perception import PlayerView
@@ -646,6 +646,10 @@ class Game:
                 yield ev
             self._save()
             return
+        if act.verb == "go" and resolve.held_back(evs, st.player):
+            # 要走，被拦着、追着的人截了下来（D-347）：人还站在原地，这条路一步也没走，照 flee 不耗时（6.1）。
+            # 照出口的耗时算的话，几个时辰就在原地白白过去，赶路又不打断，身上的期限会这样烧完
+            cost = 0
         self._set_turn(st.turn + 1)
         if option is not None:
             storyteller.note_choice(st, df, option)
@@ -659,6 +663,27 @@ class Game:
         self._train = self._train_plan(evs)
         async for ev in self._advance(act, cost, speech=speech):
             yield ev
+
+    def _keep_reprieve(self) -> None:
+        """侥幸不死之后「可再逃一次」（6.5，D-352 的两刻）：从玩家下一次能动手时起算。
+
+        杀招多半落在这一回合的反应轮里，那时这一回合自己的耗时还没有过去（搜要 2 刻、赶路常是几个时辰）；
+        照那一刻起算两刻，回合一结束机会就已经过期，玩家根本没有能逃的那一步。所以时间走完之后重记一次：
+        状态还在就把期限推到此刻之后两刻，已经到期被清掉的补回来。这一回合里得了又自己逃过一次的不补。
+        """
+        st = self.state
+        pid = st.player
+        if st.ended is not None or not perception.on_map(self.player):
+            return
+        by: str | None = None
+        for ev in self._events():
+            p = ev.params
+            if ev.actor == pid and ev.verb == "flee":
+                by = None  # 逃过了：之前得的那一次已经用掉
+            if p.get("outcome") == "saved" and pid in (ev.actor, p.get("target")) and p.get("winner") not in (None, pid):
+                by = str(p["winner"])  # 输的是玩家，侥幸没死（conflict.outcome_effects 给了 reprieve）
+        if by is not None:
+            self._fx([{"add_status": [pid, "reprieve", {"ticks": conflict.REPRIEVE_TICKS, "source": by}]}])
 
     async def _advance(
         self,
@@ -682,6 +707,8 @@ class Game:
             act, ticks, stop_when_able=stop_when_able, interruptible=interruptible
         )
         self._rec.interrupted = interrupted
+        if elapsed > 0:
+            self._keep_reprieve()
         world.end_of_turn(st, df)
         if st.ended is None and st.replan_queue:
             self._collect(await world.process_queue(self.llm, st, df))

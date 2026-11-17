@@ -124,9 +124,10 @@
 
 - **底线匹配** `kernel/bottom.py`：`block_matches(state, defs, owner, block, verb, params, …)`、`card_blocks(defs, c)`。`actions.blocked_by_bottom`、`speech.say_blocked`、`speech.request_blocked` 共用它。一条 block 写出来的键都对得上才算命中：`act` 对 `attack` 看 `params.intent`（缺省 `injure`），对 `say` 看言语行为；`art`、`item`、`exit` 等与同名参数比（K1、K2）。
 - **同门** `mood.sect_roles(defs, state)`、`mood.same_sect(defs, a, b, state)`：只认 `world.yaml` 的 `request.sect_roles`；没写时退回「占着地盘的身份」（K3）。
-- **记账用的效果**（K4、K18、K20，`effects.EFFECT_SHAPES` 里有形状）：`{request: {frm?, to, kind?, action|about, action_class?, status?, condition?, id?, …}}`、`{superior: [c, boss|null]}`、`{dequeue: c}`、`{turn: n}`、`{offer: [...]}`、`{fact: {id, text, tags?, gossip?}}`、`{mark_char: [c, 字段, 值?]}`（只许 `reflect_mark`、`last_replan` 这类记账字段）。
+- **记账用的效果**（K4、K18、K20，`effects.EFFECT_SHAPES` 里有形状）：`{request: {frm?, to, kind?, action|about, action_class?, status?, condition?, id?, …}}`、`{superior: [c, boss|null]}`、`{dequeue: c}`、`{turn: n}`、`{offer: [...]}`、`{fact: {id, text, tags?, gossip?}}`、`{mark_char: [c, 字段, 值?]}`（只许 `reflect_mark`、`last_replan` 这类记账字段；另有记在他眼下打算上的 `en_route`、`doubt`：离场结算里「动身前查一次前提」的账，见下面 world 一节）。
 - **timeflow** `run_due_scheduled(state, defs)` 公开（K5）；world 不再借用 `_run_scheduled`。
 - **resolve** `apply(state, defs, action, speech=None, *, source, offscreen=False)`；`mark_offscreen(state, first_id)`（K6）。world/offscreen 全部走 `offscreen=True`。
+- **走开与逃跑**（D-347，fix-regress 修订）`danger.blockers(state, 人)`：拦着、追着他的人，`go` 只和他们较量；`danger.pursuers(state, 人)`：`flee`、`struggle` 的追者与看守（有敌意而且 `danger.can_stop`：清醒、没被捆扣、看得见他）。走不脱被追上时，追者眼下这一步若是冲他来的攻击或捉拿，这一步记作做完。`resolve.held_back(events, 人)`：这次 `go` 是不是按逃跑判定结算而没走成（game 据此不耗路上的时间）。
 - **perception** `ViewEvent` 新增 `actor_id`、`target_ids`、`loc`（K7）；`event_targets(event)`；`item_visible(...)`（K9：别人身上看不见的东西不进 `steal` 的候选）。
 - **事件动词** 跟着别人换了地方的事件动词是 `follow_move`；`follow` 只表示「开始跟着某人」，不换地方（K8）。
 - **actions** `edge_text(state, defs, exit)`（走出地图的出口写成「离开这一带」，K10）；`build(state, defs, actor, 'say', …)` 与 `build_speech_wait(state, defs, actor)`：只说话不动 = 1 刻的 `wait` 加一句 `Speech`（K12）。
@@ -170,6 +171,7 @@
 
 - `world.tick(llm, state, defs, *, decide=None, rules_only=False)`；`world.onscene_elapsed(...)`（I6：在场者「等」的进度，game 在 `pass_time` 里调用）；`world.baseline.check(state, defs)`、`divergences_report(state, defs)`。
 - `world.offscreen`：`say` 的一步指名的人不在跟前 → 这一步作废（不调内核）；`reply()` 遇到「话 + 非等的动作」分两次结算。
+- `world.offscreen` 动身前的前提检查（D-362，fix-regress 修订）：只在动身前查（当作人已到那里），上了路不再查，到了动手时再查。头一次不成立只原地等一个时辰，下个时辰仍不成立才作废。账记在 `Agenda.en_route`（已上路）与 `Agenda.doubt`（头一次不成立的时刻）上，经 `mark_char` 写，换了一步就清掉。被拦着、追着而没走成的 `go`（`kernel.resolve.held_back(events, 人)`）不清这段路已经花的工夫，下个时辰接着闯。
 - `world.goals` 的 `safe_place` / `away_from`：避开对头正要去的地方；两个互相敌视、同在一处的人里 id 小的先挑，另一个避开他会挑的那处；同样近的几处各人取舍不同（确定性）。
 
 ### game 与命令行

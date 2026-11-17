@@ -74,6 +74,16 @@ def hostiles_toward(state: WorldState, cid: str) -> list[Character]:
     ]
 
 
+def can_stop(o: Character, c: Character) -> bool:
+    """o 拦得住、追得上 c：清醒、自己没被捆住扣住、看得见他。"""
+    return (
+        perception.conscious(o)
+        and not has_status(o, "bound")
+        and not has_status(o, "captive")
+        and perception.visible_to(o, c)
+    )
+
+
 def blockers(state: WorldState, cid: str) -> list[Character]:
     """拦着、追着 cid 的人（6.1：有人拦阻或追赶时走开要判定）：同处、清醒、没被捆住扣住、看得见他，
     而且眼下的打算就是冲他来的捉拿、攻击，或刚把他挡住、推开、逼退（他身上 impeded 的来源）。
@@ -85,12 +95,18 @@ def blockers(state: WorldState, cid: str) -> list[Character]:
     return [
         o
         for o in perception.present(state, c.loc, exclude=cid)
-        if perception.conscious(o)
-        and not has_status(o, "bound")
-        and not has_status(o, "captive")
-        and perception.visible_to(o, c)
-        and (intends(state, o, cid) or o.id in held_by)
+        if can_stop(o, c) and (intends(state, o, cid) or o.id in held_by)
     ]
+
+
+def pursuers(state: WorldState, cid: str) -> list[Character]:
+    """cid 拔腿逃（flee）时追得上来的人：对他有敌意的人里，拦得住、追得上的那些（``can_stop``）。
+
+    被捆着、扣着的仇家，看不见他的仇家，都追不上来；他们仍算「有敌意的人在场」（``hostiles_toward``），
+    所以逃这个动作照旧可用，只是不拿他们的本事压成功率，也不由他们把人追上。
+    """
+    c = state.chars[cid]
+    return [o for o in hostiles_toward(state, cid) if can_stop(o, c)]
 
 
 def any_hostility_at(state: WorldState, loc: str) -> bool:

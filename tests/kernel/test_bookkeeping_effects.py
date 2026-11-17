@@ -212,6 +212,29 @@ def test_mark_char_only_bookkeeping_fields(w):
             w.fx([{"mark_char": bad}])
 
 
+def test_mark_char_setout_marks_live_on_the_current_step(w):
+    """离场结算记的两项账（动身前的前提检查）：记在眼下的打算上，换了一步、插了一步就清掉。"""
+    w.fx([{"mark_char": ["player", "doubt", 40]}])  # 没有打算的人：不记，也不报错
+    ag = {
+        "goal": "g",
+        "steps": [
+            {"id": "x1", "text": "一", "do": {"verb": "wait"}},
+            {"id": "x2", "text": "二", "do": {"verb": "wait"}},
+        ],
+    }
+    w.fx([{"agenda": ["guest", ag]}, {"mark_char": ["guest", "doubt", 40]}])
+    a = w.c("guest").agenda
+    assert a.doubt == 40 and not a.en_route
+    w.fx([{"mark_char": ["guest", "en_route", 1]}])
+    assert a.en_route and a.doubt is None  # 上了路：之前那次不成立不留底
+    w.fx([{"step_state": ["guest", "x1", "done"]}])
+    assert not a.en_route and a.doubt is None and a.cursor == 1
+    w.fx([{"mark_char": ["guest", "doubt", 48]}, {"step": ["guest", {"id": "x0", "text": "零", "do": {"verb": "wait"}}]}])
+    assert a.doubt is None and not a.en_route
+    w.fx([{"mark_char": ["guest", "en_route", 1]}, {"mark_char": ["guest", "en_route", None]}])
+    assert not a.en_route
+
+
 def test_setup_effects_roll_back(w):
     snap = resolve.Snapshot(w.s)
     w.fx(

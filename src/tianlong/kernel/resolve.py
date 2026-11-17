@@ -293,6 +293,15 @@ def resolve_action(
     return getattr(r, actions.VERBS[action.verb].resolver)()
 
 
+def held_back(evs: list[Event], cid: str) -> bool:
+    """这几条事件里，``cid`` 的 ``go`` 是不是按逃跑判定结算而没走成：有人拦着、追着（D-347），
+    ``R._flee_to`` 记的那条 fail（params 里有成功率）。人还在原地，这条路一步也没走。
+
+    过带判定的出口失手坠落不在此列：那是 ``fall`` 事件，人也已经不在原地了。
+    """
+    return any(e.actor == cid and e.verb == "go" and e.outcome == "fail" and "chance" in e.params for e in evs)
+
+
 def _matching_step(
     state: WorldState, defs: Defs, actor: str, action: ActionInst, speech: Speech | None
 ) -> Step | None:
@@ -546,10 +555,9 @@ class R:
         me = self.me
         blockers = self._blockers()
         if blockers:
-            # 有人拦着、追着：这一步按逃跑判定（6.4），成了照常过出口（含出图、要判定的出口），不成被追上
-            seen = {o.id for o in blockers}
-            pursuers = blockers + [o for o in self._pursuers() if o.id not in seen]
-            return self._flee_to(e, pursuers, f"⟦{me}⟧想走，被⟦{{top}}⟧拦了下来")
+            # 有人拦着、追着：这一步按逃跑判定（6.4），成了照常过出口（含出图、要判定的出口），不成被追上。
+            # 较量的只有拦着的人（D-347）：屋里别的仇家没有冲他来，不压成功率，也不是把人拦下的那个
+            return self._flee_to(e, blockers, f"⟦{me}⟧想走，被⟦{{top}}⟧拦了下来")
         return self._traverse(e, f"⟦{me}⟧往⟦{e.to}⟧去了", f"⟦{me}⟧来到⟦{e.to}⟧")
 
     def r_follow(self) -> list[Event]:
@@ -559,12 +567,13 @@ class R:
         return self.fx([{"follow": [self.me, t]}, self.say(f"⟦{self.me}⟧跟上了⟦{t}⟧")])
 
     def _pursuers(self) -> list[Any]:
-        ps = danger.hostiles_toward(self.state, self.me)
+        """逃、挣扎时追得上来、看得住的人：有敌意而且腾得出手的（``danger.pursuers``）；没有，就是扣着他的那个。"""
+        ps = danger.pursuers(self.state, self.me)
         if not ps:
             cap = next((s for s in self.c.statuses if s.kind in ("captive", "bound") and s.source), None)
             if cap is not None and cap.source in self.state.chars:
                 g = self.state.chars[cap.source]
-                if g.loc == self.c.loc and perception.conscious(g):
+                if g.loc == self.c.loc and danger.can_stop(g, self.c):
                     ps = [g]
         return ps
 
@@ -588,6 +597,9 @@ class R:
         if not pursuers:
             return self.fx([self.say(f"⟦{me}⟧慌不择路，没能逃开", outcome="fail", params={"chance": chance})])
         top = max(pursuers, key=lambda x: growth.power(self.state, self.defs, x))
+        # 追者眼下这一步就是冲他来的攻击、捉拿：追上的这一下就是他这一步的出手，记作做完。
+        # 不记的话他在紧跟着的那轮反应里还要再出一次手，同一来源的两次致命判定落在同一回合里（6.10）
+        struck = danger.current_step(top) if danger.intends(self.state, top, me) else None
         f = conflict.caught(self.state, self.defs, top, self.c)
         return self.fx(
             conflict.outcome_effects(f)
@@ -599,6 +611,7 @@ class R:
                     params={"chance": chance, "winner": top.id, "outcome": f.outcome},
                 )
             ]
+            + ([{"step_state": [top.id, struck.id, "done"]}] if struck is not None else [])
         )
 
     def r_struggle(self) -> list[Event]:
@@ -1090,6 +1103,7 @@ __all__ = [
     "run_effects",
     "settle_offscreen",
     "resolve_action",
+    "held_back",
     "mark_offscreen",
     "snapshot",
     "Snapshot",

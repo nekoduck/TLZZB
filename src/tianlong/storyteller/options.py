@@ -7,7 +7,8 @@
 3. 按计分表给每个候选一个方向与规则分；近三回合选过同一动词与对象的扣 15。
 4. 规则分前 20（每个方向至少留一个）交 J4，一次请求每个候选一个 score 问题；分 = 规则分 + 10 × 分量。
    J4 失败、或路由为 rules_only / claude_only（J4 没有慢路），分量一律记 1。
-5. 每个方向留分最高的一个；险境（danger ≥ 2）必有「自保」，眼前有插得上手的事必有「介入」；
+5. 每个方向留分最高的一个；险境（danger ≥ 2）必有「自保」，侥幸不死、下手的人还在跟前时也必有（那一次逃），
+   眼前有插得上手的事必有「介入」；
    至少一个与牵挂挂钩；凑不出三个方向时放宽为「动词与对象不同」，用 look 与 wait 补位。
 
 game 结算玩家选中的选项：``resolve.apply(state, defs, option.action, option.speech, source="player")``。
@@ -149,6 +150,11 @@ class _Scene:
         self.present_last = set(present_last) if isinstance(present_last, list) else None
         self.names = common.unknown_names(state, defs)
         self.hostile_to_me = {h.id for h in danger.hostiles_toward(state, state.player)}
+        # 侥幸不死、还能再逃一次（6.5），而下手的人还在跟前：这一步逃与险境里的自保同样要紧
+        self.reprieve = any(
+            s.kind == "reprieve" and s.source in state.chars and state.chars[s.source].loc == self.p.loc
+            for s in self.p.statuses
+        )
 
     def talk_open(self, cid: str) -> bool:
         """与此人有未了的话头：没答复的请求、他还价的条件、刚到场。"""
@@ -188,6 +194,8 @@ def _direction(sc: _Scene, a: ActionInst) -> tuple[str, float, list[str]]:
         add("推进", 10 * max(t.weight for t in tied))
     # 自保
     if sc.danger >= 2 and (a.verb in SAFE_VERBS or "reply" in a.tags):
+        add("自保", 35)
+    elif sc.reprieve and a.verb == "flee":
         add("自保", 35)
     me = sc.p
     if a.verb == "use" and "target" not in p and has_status(me, "hungry"):
@@ -332,7 +340,7 @@ def _top(cands: list[Option]) -> list[Option]:
 
 def _hint_level(sc: _Scene, o: Option) -> float:
     """给 Mock 的规则提示（真 Jev 不看）：与 J4 的四级同一口径。"""
-    if (o.tag == "介入" and o.rule >= 50) or (o.tag == "自保" and sc.danger >= 2):
+    if (o.tag == "介入" and o.rule >= 50) or (o.tag == "自保" and (sc.danger >= 2 or sc.reprieve)):
         return 3
     if o.thread_ids:
         return 2
@@ -414,7 +422,7 @@ def _choose(sc: _Scene, scored: list[Option], pool: list[Option]) -> list[Option
     for o in sorted(scored, key=_key):
         best.setdefault(o.tag, o)
     must: list[str] = []
-    if sc.danger >= 2:
+    if sc.danger >= 2 or sc.reprieve:
         must.append("自保")
     if affectable_event(sc, scored):
         must.append("介入")

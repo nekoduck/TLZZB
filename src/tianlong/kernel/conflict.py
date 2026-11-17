@@ -21,6 +21,7 @@ from tianlong.kernel.state import Character, WorldState, has_status
 
 Intent = Literal["push", "injure", "restrain", "kill"]
 EVADE_GAP = 3
+REPRIEVE_TICKS = 2  # 侥幸不死之后「可再逃一次」的工夫（刻）
 
 
 class Fight(BaseModel):
@@ -178,7 +179,7 @@ def outcome_effects(f: Fight) -> list[dict]:
         out.append({"injure": [loser, 3, w]})
         out.append({"add_status": [loser, "alerted", {"ticks": 2, "source": w}]})
         # 「可再逃一次」（6.5）：重伤本来不能走动（6.9），这 2 刻里许他逃一次（actions 的 flee）
-        out.append({"add_status": [loser, "reprieve", {"ticks": 2, "source": w}]})
+        out.append({"add_status": [loser, "reprieve", {"ticks": REPRIEVE_TICKS, "source": w}]})
     elif f.outcome in ("kill", "buffered"):
         out.append({"kill": [loser, w]})
     if f.absorbed and f.absorber:

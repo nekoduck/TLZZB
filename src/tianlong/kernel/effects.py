@@ -130,7 +130,8 @@ REQUEST_KEYS = frozenset(
 )
 REQUEST_STATUSES = ("open", "agreed", "refused", "countered", "expired")
 FACT_KEYS = frozenset({"id", "text", "tags", "gossip", "contradicts", "known_by"})
-CHAR_MARKS = ("reflect_mark", "last_replan")  # mark_char 只许改这两个记账字段
+# mark_char 只许改这几个记账字段：前两个在人身上；后两个在他眼下的打算上（离场结算记的账，见 Agenda）
+CHAR_MARKS = ("reflect_mark", "last_replan", "en_route", "doubt")
 FOLLOW_MOVE = "follow_move"  # 跟着别人换了地方的那条事件的动词（「开始跟随」仍是 follow）
 
 CHECK_KINDS = ("flee", "hide", "steal", "climb", "descend", "leap", "fall", "death_save", "chance")
@@ -817,8 +818,10 @@ class Run:
             learn(self.state, self.char(who), f.id, 1.0, "saw")
 
     def e_mark_char(self, arg: Any) -> None:
-        """``{mark_char: [c, 字段, 值]}``：只许改记账字段 ``reflect_mark``（夜间反思读到第几条记忆）
-        与 ``last_replan``（上次重新打算的时刻，可写 null）。"""
+        """``{mark_char: [c, 字段, 值]}``：只许改记账字段 ``reflect_mark``（夜间反思读到第几条记忆）、
+        ``last_replan``（上次重新打算的时刻，可写 null），以及离场结算记在他眼下打算上的两项：
+        ``en_route``（非零：动身前的前提查过成立、人已上路，顺带清掉 ``doubt``；null 或 0 清掉）、
+        ``doubt``（动身前查到前提不成立的时刻，可写 null）。没有打算的人，后两项不记。"""
         if not isinstance(arg, list) or len(arg) < 2:
             raise EffectError(f"mark_char: bad arg {arg!r}")
         c = self.char(arg[0])
@@ -830,8 +833,15 @@ class Run:
             if value is None or int(value) < 0:
                 raise EffectError(f"mark_char: bad reflect_mark {value!r}")
             c.reflect_mark = int(value)
-        else:
+        elif field == "last_replan":
             c.last_replan = None if value is None else int(value)
+        elif c.agenda is not None:
+            if field == "en_route":
+                c.agenda.en_route = bool(value)
+                if c.agenda.en_route:
+                    c.agenda.doubt = None
+            else:
+                c.agenda.doubt = None if value is None else int(value)
 
     # ------------------------------------------------------------ situations & threads
 
@@ -1168,6 +1178,8 @@ def insert_step(state: WorldState, c: Character, st: Step) -> None:
     ag = c.agenda
     ag.steps.insert(ag.cursor, st)
     ag.progress = 0
+    ag.en_route = False
+    ag.doubt = None
     ag.status = "active"
     ag.waiting_for = ""
 
@@ -1185,6 +1197,8 @@ def set_step_state(state: WorldState, c: Character, step_id: str, new: str) -> N
     while ag.cursor < len(ag.steps) and ag.steps[ag.cursor].state != "pending":
         ag.cursor += 1
         ag.progress = 0
+        ag.en_route = False
+        ag.doubt = None
     if ag.cursor >= len(ag.steps):
         ag.status = "done"
         events.queue_replan(state, c.id)
