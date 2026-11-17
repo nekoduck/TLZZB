@@ -1,0 +1,151 @@
+export const meta = {
+  name: 'final-seams-and-regression-review',
+  description: 'Close cross-ownership leftovers from the review fixes, rerun the J5 eval on real Jev, then review the fix diff for regressions and repair what reproduces',
+  phases: [
+    { title: 'Leftovers', detail: 'two agents with disjoint ownership close the items the fixers could not reach' },
+    { title: 'Regression review', detail: 'two reviewers read the fix diff and must reproduce what they report' },
+    { title: 'Repair', detail: 'one fixer, test-first, for reproduced medium/high findings' },
+  ],
+}
+
+const COMMON = [
+  'You are working in the repository /home/user/TLZZB (a terminal text sandbox game in Python 3.12; spec: docs/PLAN.md, module contracts: docs/ARCHITECTURE.md, content format: docs/CONTENT_FORMAT.md, recorded decisions: DECISIONS.md).',
+  'Use .venv/bin/python for everything (pytest, ruff, the tianlong CLI).',
+  'Rules for this run:',
+  '- Keep a short progress log in docs/wip/<your label>.md (one line per finished item, plus a section of decision sentences in Chinese for the orchestrator to number into DECISIONS.md). If that file already exists, a previous run of you was interrupted: read it and continue from there instead of redoing finished items.',
+  '- Do not edit DECISIONS.md. Do not commit, stash, reset or checkout: the orchestrator commits. Another agent may be editing files outside your ownership at the same time; if a test in files you do not own fails once, re-run it before investigating.',
+  '- Never print, log or echo the value of any environment variable that holds a key (JEV_KEY, JEV_API_KEY, ANTHROPIC_API_KEY). There is no ANTHROPIC_API_KEY in this environment; anything needing Claude must work in mock mode or be skipped.',
+  '- Do not reproduce text of the novel. Code comments and docs are in Chinese, matching the surrounding files; plain, specific wording.',
+  '- Economy: use targeted pytest runs while working; run the full suite (about 7 minutes) at most once, at the end. Finish with ruff check src tests scripts.',
+  '- Your final message is a report for the orchestrator: per item, what changed (files), tests added, the decision sentence, and anything left undone with the reason.',
+].join('\n')
+
+const SEAMS = [
+  COMMON,
+  '',
+  'Your label: seams. You own: src/tianlong/game.py, src/tianlong/__main__.py, src/tianlong/kernel/**, src/tianlong/parser/**, src/tianlong/storyteller/common.py, src/tianlong/storyteller/speaking.py, src/tianlong/ui/commands.py, src/tianlong/content/**, tests/** (except tests/evalrun), docs/ARCHITECTURE.md. Do not touch src/tianlong/evalrun/**, evals/**, README.md, config.toml.',
+  '',
+  'A final spec review produced fixes by three agents with disjoint file ownership (see docs/wip/fix-core.md, docs/wip/fix-play.md, docs/wip/fix-delivery.md and DECISIONS.md D-347 to D-366). They left these cross-ownership items. Do them in this order:',
+  '',
+  '1. Diverged replay must be reported (D-354). The llm half exists: Replayer.mismatches and LLM.replayer. Still missing: (a) in Game (the place where a turn is logged, after budget events), when llm.replayer has mismatches and no warning was shown yet, emit one warn Notice that says the replay no longer matches the recording and the game continues by rules and templates, quoting the first mismatch and the count, and note it in the turn record; never raise. (b) in __main__ cmd_play, after the run, if the replayer has mismatches, print the first one and the count to stderr and return exit code 1. (c) tests: the verbatim replay e2e test asserts no mismatches and nothing remaining; a diverging-inputs case expects exactly one warn Notice; a CLI case expects exit code 1. (d) docs/ARCHITECTURE.md: mention LLM.replayer next to recorder.',
+  '2. parser/binding.py cannot_reason: while the player holds the reprieve status (D-352), a flee attempt must not be answered with the too-hurt refusal.',
+  '3. Training progress strictly by elapsed time (D-360). Today game.py pays the first hour of a multi-hour study/practice/teach up front (Game._hour_one) and credits the rest as time passes (_train_plan/_train_credit). Add a kernel hook so nothing is prepaid: resolve.apply/_apply take defer_train (default False); with it set, r_study/r_practice/r_teach skip the train effect and the progress suffix and put what is needed (progress per hour, student, art, max level) in the event params; game.py passes defer_train=True for the player and credits all progress through _train_credit by elapsed ticks; remove _hour_one if it is then unused. NPC and off-screen paths keep the existing behaviour. An uninterrupted order must credit exactly the same total as before; an order interrupted after two ticks must credit two ticks worth (or nothing if progress is counted in whole hours; choose, test, and record the choice).',
+  '4. One referable predicate. parser/wish.referable and storyteller/common.referable are two copies of the same rule (which entities the player character can refer to: name known or aliased, visible, seen or handled, visited). Move the rule to kernel/perception.py as the single implementation and make both callers (and ui/commands.met_people if it fits without changing its output) use it. Keep the existing tests green; replace the test that compares the two copies with a test of the single one.',
+  '5. Player promises with a deed (follow-up to D-351). Check parser/binding.build_speech: when the player promises something that maps cleanly onto an action pattern the kernel already supports for promise_do (look at how NPC promises and kernel/speech.py represent do-patterns), bind promise_do so the promise can be kept or broken. If no clean mapping exists for the common cases, do not invent one: leave the code and say so in your report.',
+  '6. Content validation at start. Game.new and Game.load do not call content.validate.validate. Measure its cost on the shipped content; if it is under about half a second, call it once in Game.new (not on every load) and fail with a clear, listed error when it reports problems; make sure tests that build games from fixture content still pass (give them a way to skip if they use deliberately partial content). If it is too slow or too noisy on fixtures, leave it out and report the numbers.',
+  '',
+  'After each item run the directly relevant tests. At the end run the full suite once and ruff.',
+].join('\n')
+
+const EVALS = [
+  COMMON,
+  '',
+  'Your label: evals. You own: src/tianlong/evalrun/**, tests/evalrun/**, evals/**, docs/adr/0003-routing-after-m3-evaluation.md, and only the evaluation numbers in README.md and config.toml ([jev.thresholds] narration_flag, and only if the gate below forces it). Do not touch anything else.',
+  '',
+  'Context: the J5 narration-check state layout changed in the last round (D-356): the player raw words moved out of the action line into a labelled last section of prompts/jev/j5_state.md, filled from a spoken variable. Items:',
+  '',
+  '1. src/tianlong/evalrun/checks.py j5_state still appends the raw words to player_action in parentheses. Pass spoken to the template the way narrator/narrate.py does in production, so the eval measures the production prompt. Update the unit tests.',
+  '2. src/tianlong/evalrun/assertions.py ASK_ACTION maps take_place_of to release; check what the kernel and parser actually use for that request kind (grep kernel/speech.py, parser, content) and correct the mapping; add or fix a test.',
+  '3. Rerun the J5 narration-check evaluation on real Jev (the JEV_KEY environment variable is set and real calls are authorized; cost is negligible). Find the command in evals/README.md and src/tianlong/__main__.py (python -m tianlong eval ...). Record detection and false-kill at thresholds 0.70 and 0.80 (and a small sweep if neither passes the PLAN 7.12 gate: detection at least 80 percent, false kill at most 10 percent). Update evals/results, evals/report.md, evals/results/findings.md, the M3 numbers in README.md and the table in docs/adr/0003-routing-after-m3-evaluation.md where the numbers changed. If 0.80 no longer passes and another threshold does, change narration_flag in config.toml and write the decision sentence in your log; if nothing passes, set route check to claude_first in config.toml is NOT yours to do: report it instead.',
+  '4. If time allows, rerun the zh/en comparison only if its English templates are affected by the layout change (check src/tianlong/evalrun/en/); otherwise leave it.',
+  '',
+  'Report the before and after numbers side by side. Real Jev answers jitter between runs; if a number sits within two points of a gate, run it twice more and report all runs.',
+].join('\n')
+
+const FINDINGS = {
+  type: 'object',
+  properties: {
+    checked: { type: 'array', items: { type: 'string' }, description: 'what you examined or ran, one line each' },
+    findings: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          title: { type: 'string' },
+          severity: { type: 'string', enum: ['high', 'medium', 'low'] },
+          files: { type: 'array', items: { type: 'string' } },
+          spec: { type: 'string', description: 'PLAN section or decision id it contradicts, or "regression" with the old behaviour' },
+          evidence: { type: 'string', description: 'the reproduction: script or test you ran and its output, or an exact code trace with line numbers' },
+          fix: { type: 'string' },
+        },
+        required: ['title', 'severity', 'files', 'spec', 'evidence', 'fix'],
+      },
+    },
+  },
+  required: ['checked', 'findings'],
+}
+
+const REVIEW_COMMON = [
+  'You are a read-only reviewer in the repository /home/user/TLZZB (Python 3.12 text sandbox game; spec docs/PLAN.md; decisions DECISIONS.md; use .venv/bin/python).',
+  'A final review produced a batch of fixes. Your job is to find what those fixes broke or got wrong: regressions, new contradictions with docs/PLAN.md, fixes that do not actually close the reported problem, and interactions between fixes made by different people.',
+  'Get the change with: git diff 41ee2c4 -- <paths> (working tree against the commit before the fixes). The fixes and their intent are listed in DECISIONS.md D-347 to D-366 and in docs/wip/*.md.',
+  'Rules:',
+  '- Do not modify anything inside the repository. Write scratch scripts and tests only under /tmp/claude-0/-home-user-TLZZB/d7b9f8e2-e70a-5fc4-8d97-f15f3ac7b99a/scratchpad/regress/ and run them from the repository root.',
+  '- Report only what you reproduced (a script or test whose output shows the wrong behaviour) or can pin to an exact code path with line numbers. No style remarks, no speculative risks, no missing-feature wishes. If you find nothing, return an empty list; that is a valid result.',
+  '- Never print the value of key-holding environment variables. Do not make real network calls; use mock mode.',
+  '- Severity: high = wrong game outcome a player can hit in normal play, crash, save corruption or a broken guarantee from PLAN 3.4; medium = wrong in a corner a player can reach; low = everything else.',
+  '- Economy: do not run the full suite. Targeted runs and small experiments only.',
+].join('\n')
+
+const REVIEW_A = [
+  REVIEW_COMMON,
+  '',
+  'Your slice: src/tianlong/kernel/**, src/tianlong/llm/**, src/tianlong/game.py, src/tianlong/__main__.py and their tests.',
+  'Things worth probing, among others you find yourself:',
+  '- go under a blocker now rolls as flee (D-347): NPC agenda steps and off-screen movement that use go while someone intends to attack or restrain them; followers; edge exits; the player buffer; whether an NPC can now get stuck forever failing the same go.',
+  '- hidden reveal (D-349): content setpieces that rely on a hidden actor; the eavesdropping scenes in content/situations; whether an emit by a hidden actor now always leaks.',
+  '- gratitude gating (D-350) against content that expects rescue trust (the acceptance scenarios in tests/acceptance and content/situations).',
+  '- reprieve (D-352) and status clearing; save and load round trip of the new status and of the new training bookkeeping in game.py; invariants.',
+  '- training by elapsed time (D-360) and defer_train: totals for uninterrupted orders, level-ups mid-way, teach with a student who leaves.',
+  '- replay: a recorded session of at least 30 turns replays verbatim with zero mismatches after all changes (tests/e2e has the machinery).',
+  'Also run: .venv/bin/python -m tianlong baseline --lucky --mock --strict (expect all 19 marks on time) and a short fuzz: .venv/bin/python scripts/fuzz.py --seeds 2 --turns 300 --jobs 2 --out <scratch>.jsonl --md <scratch>.md (expect zero exceptions, invariant failures, rollbacks, stalls). Report deviations as findings with the output.',
+].join('\n')
+
+const REVIEW_B = [
+  REVIEW_COMMON,
+  '',
+  'Your slice: src/tianlong/minds/**, src/tianlong/parser/**, src/tianlong/storyteller/**, src/tianlong/narrator/**, src/tianlong/world/**, src/tianlong/pipeline/**, prompts/**, content/** and their tests.',
+  'Things worth probing, among others you find yourself:',
+  '- offscreen premise check before setting out (D-362): canon agenda steps whose premise only becomes true on arrival or through the walk itself (for example premises that mention the actor being at the place, or flags set by a situation at the destination); count how many agenda steps in content/agendas are voided at set-out in a real-dice baseline run of a few seeds compared with what docs/content_notes.md reports, and whether any canon mark is now systematically missed (run .venv/bin/python scripts/baseline_report.py with a handful of seeds; read its options first).',
+  '- zhong_ling following duan_yu (D-363) and caught_eloping narrowed to two places (D-364, D-365): does the canon line still play out with real dice; can the lovers now elope without the situation ever opening in most seeds, and does that contradict PLAN 9.5 or baseline marks.',
+  '- wish binding (D-361) and the referable rule: a wish about someone the player has only heard of by name; aliases; items.',
+  '- model_line for wishes (D-356): do J4/J6 option generation and thread matching still advance wish threads; does the epilogue still mention wishes.',
+  '- gist override (D-355): kernel-overridden replies read sensibly in mock play; no player-facing template leaks ids.',
+  '- chronicle knowledge (D-357): events the player was told about appear under the heard section; deaths.',
+  '- pipeline filter_knows (D-366): python -m tianlong pipeline p7 --mock passes on shipped content.',
+].join('\n')
+
+phase('Leftovers')
+const left = await parallel([
+  () => agent(SEAMS, { label: 'seams', phase: 'Leftovers' }),
+  () => agent(EVALS, { label: 'evals', phase: 'Leftovers' }),
+])
+
+phase('Regression review')
+const reviews = (await parallel([
+  () => agent(REVIEW_A, { label: 'regress:kernel-llm-game', phase: 'Regression review', schema: FINDINGS }),
+  () => agent(REVIEW_B, { label: 'regress:play-world-content', phase: 'Regression review', schema: FINDINGS }),
+])).filter(Boolean)
+
+const all = reviews.flatMap(r => r.findings || [])
+const todo = all.filter(f => f.severity !== 'low')
+const low = all.filter(f => f.severity === 'low')
+log('regression review: ' + all.length + ' findings, ' + todo.length + ' medium/high go to repair, ' + low.length + ' low only reported')
+
+let repair = null
+if (todo.length) {
+  phase('Repair')
+  const REPAIR = [
+    COMMON,
+    '',
+    'Your label: fix-regress. You own the whole repository except DECISIONS.md, README.md and evals/**.',
+    'Two reviewers examined the last batch of fixes (DECISIONS.md D-347 to D-366 plus the seams items in docs/wip/seams.md) and reported the findings below, each with a reproduction. Work test-first: for each finding, first write a regression test that fails for the reported reason. If you cannot make it fail, the finding is not reproduced: skip it and say so. Otherwise fix it with the smallest change that keeps the intent of the original decision, and keep the lucky baseline (python -m tianlong baseline --lucky --mock --strict: 19 marks) and tests/acceptance green.',
+    'If a finding shows that one of the decisions D-347 to D-366 was itself wrong, say which and write the corrected decision sentence in your log.',
+    '',
+    'Findings (JSON):',
+    JSON.stringify(todo, null, 1),
+  ].join('\n')
+  repair = await agent(REPAIR, { label: 'fix-regress', phase: 'Repair' })
+}
+
+return { leftovers: { seams: left[0], evals: left[1] }, checked: reviews.map(r => r.checked), findings: all, repair }
