@@ -4,7 +4,7 @@
 
 每一回合：一段叙述，三个选项；也可以不选，直接写下你想做的事、想说的话。
 
-规格在 [docs/PLAN.md](docs/PLAN.md)（实现方案，权威）；规格没写、实现时自己拿的主意逐条记在 [DECISIONS.md](DECISIONS.md)；两份架构决定在 [docs/adr/](docs/adr/)。
+规格在 [docs/PLAN.md](docs/PLAN.md)（实现方案，权威）；规格没写、实现时自己拿的主意逐条记在 [DECISIONS.md](DECISIONS.md)；三份架构决定在 [docs/adr/](docs/adr/)。
 
 ## 快速开始
 
@@ -126,18 +126,19 @@ corpus/  build/  runs/  saves/     原著、管线中间产物、每局日志、
 | M1 内核 | 11.1 的单元测试全过（`tests/kernel`）；不经模型、只用命令把 `bout_laugh` 玩通，学会一门本事（`tests/e2e/test_m1_commands.py`） | — |
 | M2 一回合 | 真实 `content/` 里用替身完整地玩 30 回合，每屏视角检查通过（`tests/e2e/test_m2_gate.py`）；50 回合录制后逐字重放；Jev 一侧的首字时延实测 100 回合，中位数 580 毫秒、P90 855 毫秒（闸是 3 秒、6 秒） | C3 叙述、C4 措辞的真模型输出与首字时延（要 Claude 密钥） |
 | M3 人物 | 11.6 的报告出齐了 Jev 一侧（`evals/report.md`）：J2 抉择过闸（门槛之上覆盖 52.5%、一致 83.3%），J5 核对按游戏里发给 Jev 的那份状态重跑后过闸（门槛 0.80：检出 96.0%、误杀 6.0%；四次跑检出 96% 到 100%、误杀 6% 到 8%。这道闸对状态的排法很敏感，起初把玩家原话放在状态最后时检出只有 70% 到 74%，见 `evals/results/findings.md`），J1 归类未过闸（门槛之上覆盖 87.7%、六项全对 81.4%，要求 95%）、路由定为先走 C1；防作弊集替身 40/40、真 J1 归类 40/40；拒绝集替身（归类照标注）20/20、真 J1 归类 20/20；知识边界与视角的字符串检查为零违规 | 报告里 Claude 的各栏（C1 归类、C2 抉择、台词一级的知识边界判读） |
-| M4 世界 | 手写内容上带 `--lucky` 的基线 12 日 19/19 个参照点按时成立；真骰子 20 个种子全部跑完、无不变量失败；劝说路径（笑声之后劝人赔礼 → 耳光不落 → 记为分岔）经真正的回合循环走通（`tests/game/test_persuasion.py`）；「提前救人」「替人送信」两个分岔场景在真骰子下通过（`tests/acceptance/test_divergence.py`，见 `docs/wip/scenario-fix.md`） | 这两个场景写进验收记录（`docs/acceptance.md` 还没有） |
+| M4 世界 | 手写内容上带 `--lucky` 的基线 12 日 19/19 个参照点按时成立；真骰子 20 个种子全部跑完，没有不变量失败、停摆、异常，14 个种子全部按时，平均每个种子按时 17.2 / 19（逐点的比例见 `docs/content_notes.md` 第六节）；劝说路径（笑声之后劝人赔礼 → 耳光不落 → 记为分岔）经真正的回合循环走通（`tests/game/test_persuasion.py`） | 真模型（Jev 加 Claude）下的 20 个种子基线：`python scripts/baseline_report.py --live`（要 Claude 密钥） |
 | M5 内容 | 管线 P0 至 P7 的代码与替身跑通；P7 的校验与走运的基线在手写内容上通过 | 用原著真跑管线生成 `content/`（要原著全文与 Claude 密钥）；差异报告的八条；人工过目 |
-| M6 全域 | 收笔与后事、年谱与分岔清单、检查点都在并有测试 | 11.4 的全部分岔场景、11.2 的 2,000 回合试探：待填 |
+| M6 全域 | 收笔与后事、年谱与分岔清单、检查点都在并有测试；11.4 的八个分岔场景全部通过，每条「必须成立」都是硬断言，另查幽灵事件、回弹、停摆三条统一断言（`tests/acceptance/test_divergence.py`）；11.2 的全量试探在同一个提交上跑完：20 个种子 × 2,000 回合，40,000 回合、约 898 个游戏日，异常、不变量失败、回滚、停摆、静日、幽灵事件都是 0（`docs/acceptance.md`） | 存档随游戏日缓慢线性增长，没有上限（40 日内约 2 MB）；`docs/acceptance.md` 第 5 节的遗留问题 |
 | M7 打磨 | Jev 一侧每回合成本实测 0.064 美分（100 回合，每回合约 10 个 Jev 请求；闸是 2 美分） | 文风、Claude 一侧的时延与成本（要 Claude 密钥）；两局试玩与五个问题的记录（要人） |
 
-「待填」的格子等验收测试与评测的最新结果出来后填；数字以 `evals/report.md` 与 `docs/wip/` 里各模块的交付记录为准。
+数字的出处：评测在 `evals/report.md`，验收在 `docs/acceptance.md`，基线在 `docs/content_notes.md` 第六节。
 
 ## 文档索引
 
 - [docs/PLAN.md](docs/PLAN.md)：实现方案（规格）。与别的文档冲突时以它为准。
 - [DECISIONS.md](DECISIONS.md)：规格没写、实现时拿的主意，逐条编号。
-- [docs/adr/](docs/adr/)：架构决定记录（内核为真、快慢两套模型；在场与离场、谁来推进打算）。
+- [docs/adr/](docs/adr/)：架构决定记录（内核为真、快慢两套模型；在场与离场、谁来推进打算；评测之后每类判断走哪条路）。
+- [docs/acceptance.md](docs/acceptance.md)：验收记录（随机试探、分岔场景、遗留问题）。
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)：模块之间的契约。
 - [docs/CONTENT_FORMAT.md](docs/CONTENT_FORMAT.md)：`content/` 各文件的格式。
 - [docs/API_NOTES.md](docs/API_NOTES.md)：已实现模块的接口索引。
