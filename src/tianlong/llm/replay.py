@@ -22,7 +22,7 @@ from tianlong.llm.claude import (
     build_params,
     message_text,
 )
-from tianlong.llm.errors import LLMUnavailable, ReplayMismatch
+from tianlong.llm.errors import LLMUnavailable
 from tianlong.llm.jev import Answers, JevClient, validate_response
 from tianlong.llm.record import Recorder, Replayer, error_from_payload
 
@@ -71,7 +71,9 @@ class ReplayJev(JevClient):
         try:
             answers = validate_response(data, questions)
         except ValueError as e:
-            raise ReplayMismatch(f'replay: recorded {kind} answers do not fit the questions: {e}') from e
+            raise self.replayer.mismatch(
+                f'replay: recorded {kind} answers (seq={rec.get("seq")}) do not fit the questions: {e}'
+            ) from e
         self._record(kind, spec, body, data, 0.0, 0.0, escalated, attempts=int(rec.get('attempts') or 1))
         return answers
 
@@ -110,7 +112,9 @@ class ReplayClaude(ClaudeClient):
         try:
             obj = schema.model_validate_json(message_text(resp or {}))
         except ValidationError as e:
-            raise ReplayMismatch(f'replay: recorded {kind} output does not fit {schema.__name__}') from e
+            raise self.replayer.mismatch(
+                f'replay: recorded {kind} output (seq={rec.get("seq")}) does not fit {schema.__name__}'
+            ) from e
         self._record(meta, params, resp, escalated=escalated)
         return obj, meta
 

@@ -154,7 +154,12 @@ def exit_lethal(state: WorldState, defs: Defs, c: Character, e: Exit) -> bool:
 
 
 def flee_available(state: WorldState, c: Character) -> bool:
-    return bool(danger.hostiles_toward(state, c.id)) or has_status(c, "alerted") or has_status(c, "captive")
+    return (
+        bool(danger.hostiles_toward(state, c.id))
+        or has_status(c, "alerted")
+        or has_status(c, "captive")
+        or has_status(c, "reprieve")
+    )
 
 
 def path(state: WorldState, defs: Defs, actor: str, frm: str, to: str) -> list[Exit]:
@@ -342,7 +347,8 @@ def _v(state: WorldState, defs: Defs, c: Character, verb: str, p: dict) -> _B | 
             desc = "夺路" + desc  # 有人拦着、追着：这一步要按逃跑判定（resolve.r_go）
         return _B(cost=travel_cost(state, c, e), desc=desc, lethal=exit_lethal(state, defs, c, e))
     if verb == "flee":
-        if inj >= 3 or not flee_available(state, c):
+        # 重伤不能走动（6.9），唯独侥幸不死之后可再逃一次（6.5：``reprieve``，由 conflict 给、逃一次即用掉）
+        if (inj >= 3 and not has_status(c, "reprieve")) or not flee_available(state, c):
             return None
         e = find_exit(state, defs, c, p.get("exit", ""))
         if e is None or e.edge:
@@ -462,6 +468,8 @@ def _v(state: WorldState, defs: Defs, c: Character, verb: str, p: dict) -> _B | 
             s.kind.startswith("poisoned") for s in t.statuses
         ):
             return None
+        if has_status(t, "tended") and not has_status(t, "unconscious"):
+            return None  # 已经有人照料着、人也醒着：再照料一遍什么也不变，不该再记一次恩
         return _B(cost=2, desc=f"照料⟦{t.id}⟧")
     if verb == "restrain":
         t = _person(state, c, p.get("target"))

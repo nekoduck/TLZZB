@@ -809,14 +809,24 @@ def fact_ids(content: Path, extra_facts: Mapping[str, Any] | None = None) -> dic
 AFTER_OPENING_TAGS = frozenset({'after_opening', 'future'})
 
 
+def unknown_at_opening(facts: Mapping[str, Any]) -> set[str]:
+    """明写 known_by 为空（[] 或 null）的事实：开局时无人知道（方案 9.6 里「将来才可能有人得知」的那几条）。
+
+    没有 known_by 这个键的不算：隐藏出口的 `exit:*`，和知情人只记在人物卡 knows 里的事。
+    """
+    return {fid for fid, f in facts.items() if isinstance(f, Mapping) and 'known_by' in f and not f['known_by']}
+
+
 def filter_knows(knows: Any, facts: Mapping[str, Any]) -> tuple[list[str], list[str]]:
-    """knows 只留开局那一刻为真的事实：在事实表里，且没有标「开局之后」。返回 (留下的, 丢掉的)。"""
+    """knows 只留开局那一刻此人可能知道的事实：在事实表里，没有标「开局之后」，也不是事实表明写
+    「开局时无人知道」（known_by 为空）的。返回 (留下的, 丢掉的)。"""
     kept: list[str] = []
     dropped: list[str] = []
+    nobody = unknown_at_opening(facts)
     for fid in knows or []:
         f = facts.get(fid) if isinstance(fid, str) else None
         tags = set((f or {}).get('tags') or []) if isinstance(f, Mapping) else set()
-        if isinstance(fid, str) and fid in facts and not (tags & AFTER_OPENING_TAGS):
+        if isinstance(fid, str) and fid in facts and not (tags & AFTER_OPENING_TAGS) and fid not in nobody:
             if fid not in kept:
                 kept.append(fid)
         else:

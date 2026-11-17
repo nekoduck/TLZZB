@@ -166,6 +166,10 @@ def _promises(state: WorldState) -> None:
         if p.status != "open" or p.deadline is None or p.deadline > state.tick:
             continue
         p.status = "broken"
+        if not p.do:
+            # 没写明要做什么的许诺：内核判不出守没守（``speech.promise_kept`` 只认 do），
+            # 到期静默了结——不扣信任、不记「没有做到」、不触发重新打算
+            continue
         mood.adj_rel(state, p.to, p.frm, "trust", -20)
         to = state.chars.get(p.to)
         if to is not None and is_alive(to):

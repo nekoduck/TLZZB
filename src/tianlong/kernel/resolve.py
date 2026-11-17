@@ -548,7 +548,9 @@ class R:
     def r_flee(self) -> list[Event]:
         e = actions.find_exit(self.state, self.defs, self.c, self.p["exit"])
         assert e is not None
-        return self._flee_to(e, self._pursuers(), f"⟦{self.me}⟧想逃，被⟦{{top}}⟧追上")
+        # 侥幸不死后的那一次逃（6.5）：成与不成，这一逃就把机会用掉了
+        used = self.fx([{"remove_status": [self.me, "reprieve"]}])
+        return used + self._flee_to(e, self._pursuers(), f"⟦{self.me}⟧想逃，被⟦{{top}}⟧追上")
 
     def _flee_to(self, e: Exit, pursuers: list[Any], caught_lead: str) -> list[Event]:
         """逃跑判定（6.4）：成了过出口；不成，有人追就被追上（下场按追者的意图），没人追只是没逃开。"""
@@ -751,11 +753,14 @@ class R:
             effs.append({"eat": t})
         for st in props.get("cures", []):
             tc = self.state.chars[t]
-            if any(s.kind == st for s in tc.statuses):
+            held = [s for s in tc.statuses if s.kind == st]
+            if held:
                 effs.append({"remove_status": [t, st]})
-                if t != me and (st.startswith("poisoned") or st in ("bound", "captive")):
+                if t == me or not self._others_doing(held):
+                    continue  # 自己（或自己这一边）下的毒、上的绑，自己解了：不算恩
+                if st.startswith("poisoned") or st in ("bound", "captive"):
                     kinds.append(events.kind("rescue", who=t, by=me))
-                elif t != me:
+                else:
                     kinds.append(events.kind("helped", who=t, by=me))
         inf = props.get("inflicts")
         if isinstance(inf, dict) and inf.get("status"):
@@ -847,13 +852,33 @@ class R:
             return self.fx([{"add_status": [t, "bound", {"source": me}]}, self.say(f"⟦{me}⟧把⟦{t}⟧捆了起来")])
         return self._fight(tc, "restrain", f"⟦{me}⟧扑上去要拿住⟦{t}⟧")
 
+    def _others_doing(self, held: list[Any]) -> bool:
+        """这些状态里有没有别人加在他身上的：来源不是自己、不是自己的上司、也不是自己的手下。
+
+        不知道来源的算别人的。解的是自己这一边加的，不算救、也不算帮（与 ``speech.holds_captive``
+        认「谁扣着人」同一个口径）。
+        """
+        me = self.me
+        for s in held:
+            src = self.state.chars.get(s.source) if s.source else None
+            own = s.source == me or (
+                s.source is not None
+                and (s.source == self.c.superior or (src is not None and src.superior == me))
+            )
+            if not own:
+                return True
+        return False
+
     def r_release(self) -> list[Event]:
         me, t = self.me, self.p["target"]
+        held = [s for s in self.state.chars[t].statuses if s.kind in ("bound", "captive")]
+        # 被救了命（5.5）要真有一救：放的是别人拿住的人才算。自己（或自己这一边）拿的人自己放了，不算恩
+        kinds = [events.kind("rescue", who=t, by=me)] if self._others_doing(held) else []
         return self.fx(
             [
                 {"remove_status": [t, "bound"]},
                 {"remove_status": [t, "captive"]},
-                self.say(f"⟦{me}⟧放开了⟦{t}⟧", kinds=[events.kind("rescue", who=t, by=me)]),
+                self.say(f"⟦{me}⟧放开了⟦{t}⟧", kinds=kinds),
             ]
         )
 

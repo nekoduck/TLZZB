@@ -165,7 +165,7 @@ def process_card(
     # knows：只留开局那一刻为真的事
     if 'knows' in data:
         data['knows'], dropped = filter_knows(data.get('knows'), facts)
-        review += [f'{cid}：knows 里的 {x} 不在事实表里或是开局之后的事，已删去' for x in dropped]
+        review += [f'{cid}：knows 里的 {x} 不在事实表里、是开局之后的事或开局时无人知道，已删去' for x in dropped]
     if draft.notes.strip():
         review.append(f'{cid} 的备注：{draft.notes.strip()}')
     return data, probs, review

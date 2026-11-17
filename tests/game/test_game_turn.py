@@ -8,7 +8,7 @@ from pathlib import Path
 from tianlong import store
 from tianlong.config import Settings
 from tianlong.game import INPUTS_FILE, META_FILE, Game
-from tianlong.kernel import invariants
+from tianlong.kernel import invariants, perception
 from tianlong.kernel.state import has_status
 from tianlong.ui.events import FREE_INPUT_HINT, WARN_PREFIX
 
@@ -365,3 +365,25 @@ def test_plain_text_of_a_turn_matches_transcript(settings: Settings) -> None:
         await s.close()
 
     asyncio.run(run())
+
+
+async def test_wish_with_a_name_the_character_does_not_know_exposes_nobody(real_settings: Settings) -> None:
+    """2.3、8.4：/心愿 里写了书上的名字，选项不因此去「打听」那个角色不该知道的人（她还躲在梁上）。"""
+    s = await new_session(real_settings)
+    st = s.state
+    girl = st.chars["zhong_ling"]
+    me = st.chars[st.player]
+    assert girl.loc == me.loc and "zhong_ling" not in st.known_terms
+    alias = girl.unknown_alias
+    evs = await s.send("/心愿 我要找到钟灵")
+    assert "记下了你的心愿" in notices(evs)[0]
+    wish = next(t for t in st.threads.values() if t.kind == "wish")
+    assert "钟灵" in wish.text and wish.refs == []
+    for raw in ("我四下看看", "我在这里等一会儿", "我听听他们在说什么"):
+        evs = await s.send(raw)
+        opts = options_of(evs)
+        if "zhong_ling" in st.known_terms or girl.loc != st.chars[st.player].loc:
+            break  # 她自己现了身、报了名，就不在这条测试的范围里了
+        if opts is not None and not any(o.id == "zhong_ling" for o in perception.visible_people(st, me)):
+            assert not any(alias in t or "钟灵" in t for t in opts), opts
+    await s.close()

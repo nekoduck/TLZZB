@@ -304,7 +304,7 @@ async def run(ctx: Ctx) -> StepResult:
         problems.append(f'opening.yaml：{err}，未写入')
     elif isinstance(data, dict):
         dropped = filter_opening_knows(data, facts)
-        review += [f'opening.yaml {x}：不在事实表里或是开局之后的事，已删去' for x in dropped]
+        review += [f'opening.yaml {x}：不在事实表里、是开局之后的事或开局时无人知道，已删去' for x in dropped]
         copied += copied_text_problems(corpus, data, 'opening.yaml')
         planned.append(plan_yaml(content / 'opening.yaml', data, keep_missing_at=OPENING_KEEP))
     elif data is not None:

@@ -2,10 +2,15 @@
 
 返回的 dict 直接当作 ``{thread: …}`` 效果的参数交给内核（kernel.effects 的 thread 效果分配 id）。
 Jev 对每个候选实体问一道是非题；Jev 不可用时按名字匹配。
+
+只对到玩家的角色说得出的东西上（``referable``）：他知道名字的、此刻看得见的、见过经手过的、到过的。
+玩家从书里知道、角色却没听说过的名字，心愿的文字照留，但不对到任何人和物上——否则选项会顺着它
+去「打听」一个角色不该知道的人（2.3、8.4）。知道了名字以后，再写一遍心愿就对得上。
 """
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
 from tianlong import prompting
@@ -14,7 +19,7 @@ from tianlong.kernel.defs import Defs
 from tianlong.kernel.state import WorldState
 from tianlong.llm import LLMError
 from tianlong.parser import lexical as lx
-from tianlong.parser.candidates import model_text, pov
+from tianlong.parser.candidates import pov
 from tianlong.parser.intake import words
 from tianlong.parser.stage import strip_stage
 
@@ -24,10 +29,35 @@ MAX_TEXT = 60
 WISH_WEIGHT = 3
 
 
+def referable(state: WorldState) -> Callable[[str], bool]:
+    """玩家的角色说得出哪些东西（与 ``storyteller.common.referable`` 同一口径，测试里对过）。
+
+    知道名字或有个叫法的；人：此刻看得见、有来往、亲见或听人当面说起过；物：此刻看得见、见过、经手过、
+    细看过；地方：眼下所在或到过。本事只凭知道名字。
+    """
+    me = state.chars[state.player]
+    seen = perception.seen_entities(state, me)
+    here = {o.id for o in perception.visible_people(state, me)}
+
+    def ok(eid: str) -> bool:
+        if eid in state.known_terms or eid in state.term_alias:
+            return True
+        if eid in state.chars:
+            return eid in here or eid in me.rel or eid in seen or f"char:{eid}" in seen
+        if eid in state.items:
+            return eid in seen or f"item:{eid}" in seen or perception.item_visible(state, me, eid, seen=seen)
+        if eid in state.locations:
+            return eid == me.loc or eid in state.visited
+        return False
+
+    return ok
+
+
 def wish_candidates(state: WorldState, defs: Defs, text: str) -> list[str]:
-    """候选实体：名字或叫法对得上的，加上在场的人、身上的东西、玩家已知的专名。"""
+    """候选实体：叫法对得上、角色也说得出的，加上在场的人、身上的东西、玩家已知的专名。"""
     me = state.chars[state.player]
     ids: list[str] = []
+    can_refer = referable(state)
 
     def add(eid: str) -> None:
         if eid and eid != state.player and eid not in ids and len(ids) < MAX_CANDS:
@@ -35,8 +65,9 @@ def wish_candidates(state: WorldState, defs: Defs, text: str) -> list[str]:
 
     pool = [e for e in list(state.chars) + list(state.items) + list(defs.arts) + list(state.locations)
             if e != state.player and (e not in state.items or state.items[e].in_world)]
-    for eid, _ in lx.match_entities(state, defs, text, pool):
-        add(eid)
+    for eid, _ in lx.match_entities(state, defs, text, pool, pov=True):
+        if can_refer(eid):
+            add(eid)
     for o in perception.present(state, me.loc, exclude=me.id):
         if perception.visible_to(me, o):
             add(o.id)
@@ -49,7 +80,8 @@ def wish_candidates(state: WorldState, defs: Defs, text: str) -> list[str]:
 
 
 def rule_refs(state: WorldState, defs: Defs, text: str, cands: list[str]) -> list[str]:
-    return [eid for eid, _ in lx.match_entities(state, defs, text, cands, floor=3)][:MAX_REFS]
+    """按叫法对：不知其名的只按玩家眼里的叫法，写了真名也对不上眼前那个还不知名的人。"""
+    return [eid for eid, _ in lx.match_entities(state, defs, text, cands, floor=3, pov=True)][:MAX_REFS]
 
 
 async def map_wish(llm: Any, state: WorldState, defs: Defs, text: str) -> dict:
@@ -74,7 +106,8 @@ async def map_wish(llm: Any, state: WorldState, defs: Defs, text: str) -> dict:
             )
             qs = {
                 f"w{i}": {"type": "noul",
-                          "instructions": w["wish"].replace("{事}", model_text(state, defs, refs.ref(eid)))}
+                          # 候选按玩家眼里的叫法给（不像 J1 那样另附真名）：Jev 也只能凭角色知道的东西去对
+                          "instructions": w["wish"].replace("{事}", pov(state, defs, refs.ref(eid)))}
                 for i, eid in enumerate(cands)
             }
             hints = {f"w{i}": 1.0 for i, eid in enumerate(cands) if eid in found}

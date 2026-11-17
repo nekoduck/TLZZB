@@ -46,6 +46,7 @@ class LLM:
     replay: bool = False
     run_dir: Path | None = None
     warnings: list[str] = field(default_factory=list)
+    replayer: Replayer | None = None  # 重放时的录制源；`replayer.mismatches` 是与录制对不上的各处
 
     def mode(self, category: str) -> str:
         """路由取值（config.toml 的 [route]）。"""
@@ -95,6 +96,7 @@ def make_llm(
     ledger = Ledger.from_settings(settings, on_warn=_warn)
     jev: JevClient
     claude: ClaudeClient
+    replayer: Replayer | None = None
     if replay_dir is not None:
         replayer = Replayer(replay_dir, strict=strict_replay)
         jev = ReplayJev(settings, replayer, recorder=recorder)
@@ -115,6 +117,7 @@ def make_llm(
         replay=replay_dir is not None,
         run_dir=run_dir,
         warnings=warnings,
+        replayer=replayer,
     )
 
 

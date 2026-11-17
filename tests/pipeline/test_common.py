@@ -18,13 +18,16 @@ from tianlong.pipeline.common import (
     Request,
     ask,
     diff_data,
+    fact_ids,
     filter_knows,
     merge_locked,
     parse_yaml_text,
     plan_yaml,
     system_blocks,
+    unknown_at_opening,
 )
 
+from .conftest import REPO
 from .helpers import scripted
 
 
@@ -116,6 +119,31 @@ def test_filter_knows() -> None:
     facts = {'F_a': {'text': 'a'}, 'F_late': {'text': 'b', 'tags': ['after_opening']}, 'exit:x:y': {}}
     assert filter_knows(['F_a', 'F_late', 'F_none', 'exit:x:y', 'F_a'], facts) == (
         ['F_a', 'exit:x:y'], ['F_late', 'F_none'])
+
+
+def test_filter_knows_drops_facts_nobody_knows_at_opening() -> None:
+    """明写 known_by 为空 = 开局时无人知道：谁的 knows 里都不该有。没有这个键的照旧留下。"""
+    facts = {
+        'F_a': {'text': 'a', 'known_by': ['*']},
+        'F_cards_only': {'text': 'b'},  # 知情人只记在人物卡里：没有 known_by 这个键
+        'F_nobody': {'text': 'c', 'known_by': []},
+        'F_null': {'text': 'd', 'known_by': None},
+        'exit:x:y': {'tags': ['exit']},
+    }
+    assert unknown_at_opening(facts) == {'F_nobody', 'F_null'}
+    assert filter_knows(['F_nobody', 'F_a', 'F_cards_only', 'F_null', 'exit:x:y'], facts) == (
+        ['F_a', 'F_cards_only', 'exit:x:y'], ['F_nobody', 'F_null'])
+
+
+def test_filter_knows_on_shipped_facts() -> None:
+    """种子内容：开局之后才有的事、无人知道的事都留不在 knows 里；出口事实照旧留下。"""
+    facts = fact_ids(REPO / 'content')
+    nobody = unknown_at_opening(facts)
+    assert nobody and not any(fid.startswith('exit:') for fid in nobody)
+    known = next(fid for fid, f in facts.items() if f.get('known_by'))
+    hidden_exit = next(fid for fid in facts if fid.startswith('exit:'))
+    late = sorted(nobody)[0]
+    assert filter_knows([late, known, hidden_exit], facts) == ([known, hidden_exit], [late])
 
 
 async def test_system_blocks_only_first_chapters_and_stable(settings, kw, build: Path) -> None:

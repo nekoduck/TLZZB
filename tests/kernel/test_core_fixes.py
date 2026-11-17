@@ -375,11 +375,11 @@ def test_use_cure_on_own_victim_is_no_rescue(w: World) -> None:
 
 def test_use_cure_on_others_victim_is_a_rescue(w: World) -> None:
     w.fx([{"give": ["guest", "player", "antidote"]}])
-    w.c("girl").statuses.append(Status(kind="poisoned_slow", until=w.s.tick + 100, source="fighter"))
-    o0 = _ta(w, "girl", "player")[2]
-    evs = w.act("player", "use", item="antidote", target="girl")
+    w.c("fighter").statuses.append(Status(kind="poisoned_slow", until=w.s.tick + 100, source="guest"))
+    o0 = _ta(w, "fighter", "player")[2]
+    evs = w.act("player", "use", item="antidote", target="fighter")
     assert any(k.get("k") == "rescue" for e in evs for k in e.kinds)
-    assert _ta(w, "girl", "player")[2] == o0 + 1
+    assert _ta(w, "fighter", "player")[2] == o0 + 1
 
 
 # ---------------------------------------------------------------- 5. 判不出守没守的许诺
@@ -451,11 +451,12 @@ def test_saved_attacker_keeps_reprieve_after_his_own_action(w: World) -> None:
     f = w.c("fighter")
     f.base_power = 6
     f.agenda = Agenda(
-        goal="k", steps=[Step(id="k1", text="k", do={"verb": "attack", "target": "guest", "intent": "kill"})]
+        goal="k", steps=[Step(id="k1", text="k", do={"verb": "attack", "target": "girl", "intent": "kill"})]
     )
     w.s.flags["__lucky__"] = True
-    evs = w.act("guest", "attack", target="fighter")
+    evs = w.act("girl", "attack", target="fighter")
     w.s.flags["__lucky__"] = False
     assert evs[-1].params["outcome"] == "saved" and evs[-1].params["winner"] == "fighter"
-    assert w.status("guest", "reprieve") is not None
-    assert w.has("guest", "flee", exit="yard")
+    assert actions.injury_level(w.c("girl")) == 3 and w.status("girl", "reprieve") is not None
+    assert w.status("girl", "alerted") is None  # 示警照旧在自己这一步收尾时用掉
+    assert w.has("girl", "flee", exit="yard")

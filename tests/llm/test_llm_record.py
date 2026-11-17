@@ -104,3 +104,50 @@ def test_recorder_lines_and_annotate(tmp_path: Path) -> None:
 def test_replayer_missing_source(tmp_path: Path) -> None:
     with pytest.raises(ReplayMismatch):
         Replayer(tmp_path / 'nope')
+
+
+async def test_replay_mismatches_are_kept_for_reporting(settings: Settings, tmp_path: Path) -> None:
+    """对不上的重放照旧抛 ReplayMismatch（调用方按模型失败兜底），但每一处都记在 Replayer 上，
+    门面把它露出来：游戏主循环与命令行据此报告，不至于悄悄当成一次成功的重放（D-018）。"""
+    run1 = tmp_path / 'run1'
+    await play(make_llm(settings, mock=True, run_dir=run1))
+
+    live = make_llm(settings, mock=True, run_dir=None)
+    assert live.replayer is None
+
+    ok = make_llm(settings, mock=False, run_dir=None, replay_dir=run1)
+    assert ok.replayer is not None and ok.replayer is ok.jev.replayer  # type: ignore[attr-defined]
+    await play(ok)
+    assert ok.replayer.mismatches == [] and ok.replayer.remaining() == {}
+
+    rep = make_llm(settings, mock=False, run_dir=None, replay_dir=run1)
+    assert rep.replayer is not None
+    with pytest.raises(ReplayMismatch):
+        await rep.jev.ask('J2', '【你是谁】另一个人', Q)  # 请求与录制不同
+    with pytest.raises(ReplayMismatch):
+        await rep.jev.ask('J4', 's', Q)  # 录制里没有这个代号
+    with pytest.raises(ReplayMismatch):
+        await rep.claude.call_json('C2_soul', ['别的规则'], '处境', Decision)
+    with pytest.raises(ReplayMismatch):
+        async for _ in rep.claude.stream_text('C3', ['别的叙述规则'], '发生的事'):
+            pass
+    ms = rep.replayer.mismatches
+    assert len(ms) == 4
+    assert "'J2'" in ms[0] and 'seq=1' in ms[0] and '.state' in ms[0]
+    assert 'no more recorded calls' in ms[1]
+    assert 'seq=2' in ms[2] and 'seq=3' in ms[3]
+    assert rep.replayer.remaining() == {'J2': 2, 'C2_soul': 1, 'C3': 1}  # 对不上的不占用录制
+
+
+async def test_replay_recorded_output_unfit_is_kept_too(settings: Settings, tmp_path: Path) -> None:
+    """宽松模式下请求不同仍按先后取用；取出的录制答不上现在的问题，也是一处对不上、也要记下。"""
+    run1 = tmp_path / 'run1'
+    await play(make_llm(settings, mock=True, run_dir=run1))
+    rep = make_llm(settings, mock=False, run_dir=None, replay_dir=run1, strict_replay=False)
+    other = {'pick': {'type': 'choice', 'instructions': '挑一个', 'criteria': {'b01': '甲', 'b02': '乙'}}}
+    with pytest.raises(ReplayMismatch, match='do not fit'):
+        await rep.jev.ask('J2', '【你是谁】某人', other)
+    with pytest.raises(ReplayMismatch, match='does not fit'):
+        await rep.claude.call_json('C3', ['叙述规则'], '发生的事', Decision)
+    assert rep.replayer is not None and len(rep.replayer.mismatches) == 2
+    assert 'do not fit' in rep.replayer.mismatches[0] and 'does not fit' in rep.replayer.mismatches[1]

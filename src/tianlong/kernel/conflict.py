@@ -177,6 +177,8 @@ def outcome_effects(f: Fight) -> list[dict]:
     elif f.outcome == "saved":
         out.append({"injure": [loser, 3, w]})
         out.append({"add_status": [loser, "alerted", {"ticks": 2, "source": w}]})
+        # 「可再逃一次」（6.5）：重伤本来不能走动（6.9），这 2 刻里许他逃一次（actions 的 flee）
+        out.append({"add_status": [loser, "reprieve", {"ticks": 2, "source": w}]})
     elif f.outcome in ("kill", "buffered"):
         out.append({"kill": [loser, w]})
     if f.absorbed and f.absorber:

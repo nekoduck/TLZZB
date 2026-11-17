@@ -732,12 +732,15 @@ class _Builder:
         state = self.state
         seen: set[str] = set()
         here = {o.id for o in self.visible}
+        can_refer = common.referable(state)
         for th in sorted(self.threads, key=lambda t: -t.weight):
             if th.kind not in THREAD_ASK_KINDS:
                 continue
             for e in th.refs:
                 if e in seen or e == self.me.id or e in here or e == self.me.loc or "#" in e:
                     continue
+                if not can_refer(e):
+                    continue  # 角色没见过、没听说过的人和物：不替他开口打听（2.3、8.4）
                 if e not in state.chars and e not in state.locations and e not in state.items and e not in self.defs.arts:
                     continue
                 if e in state.items and state.items[e].holder == self.me.id:

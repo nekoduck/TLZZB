@@ -229,13 +229,16 @@ def bigrams(text: str) -> set[str]:
     return {t[i : i + 2] for i in range(len(t) - 1)}
 
 
-def names_of(state: WorldState, defs: Defs, eid: str) -> list[tuple[str, int]]:
-    """一个实体的各种叫法及其分量：真名、玩家的特别叫法、不知其名时的叫法。"""
+def names_of(state: WorldState, defs: Defs, eid: str, *, pov: bool = False) -> list[tuple[str, int]]:
+    """一个实体的各种叫法及其分量：真名、玩家的特别叫法、不知其名时的叫法。
+
+    ``pov``：只按玩家的角色叫得出的叫法来——他还不知道名字的，不给真名。
+    """
     out: list[tuple[str, int]] = []
     found = refs.lookup(state, defs, eid)
     if found is not None:
         name, alias = found
-        if name:
+        if name and (not pov or eid in state.known_terms):
             out.append((name, 10))
         if alias and alias != name:
             out.append((alias, 8))
@@ -248,12 +251,13 @@ def names_of(state: WorldState, defs: Defs, eid: str) -> list[tuple[str, int]]:
     return out
 
 
-def match_score(state: WorldState, defs: Defs, eid: str, text: str) -> int:
-    """text 提到 eid 的分数；0 表示没提到。"""
+def match_score(state: WorldState, defs: Defs, eid: str, text: str, *, pov: bool = False) -> int:
+    """text 提到 eid 的分数；0 表示没提到。``pov``：不知其名的只按玩家眼里的叫法对（见 ``names_of``）。"""
     if not text:
         return 0
     best = 0
-    for nm, w in names_of(state, defs, eid):
+    named = not pov or eid in state.known_terms
+    for nm, w in names_of(state, defs, eid, pov=pov):
         if not nm:
             continue
         if nm in text:
@@ -264,13 +268,13 @@ def match_score(state: WorldState, defs: Defs, eid: str, text: str) -> int:
             if n >= 2:
                 best = max(best, n)
     c = state.chars.get(eid)
-    if c is not None and c.name and len(c.name) >= 2:
+    if named and c is not None and c.name and len(c.name) >= 2:
         sur = c.name[0]
         if any(sur + h in text for h in HONORIFICS):
             best = max(best, 6)
     if best == 0 and (eid in state.items or "#" in eid):
         # 物件、景物的中心字（「麻绳」的「绳」）：弱匹配，只在别无所指时起作用
-        for nm, _ in names_of(state, defs, eid):
+        for nm, _ in names_of(state, defs, eid, pov=pov):
             head = nm.rstrip("子儿头") if nm else ""
             if head and has_cjk(head[-1]) and head[-1] in text:
                 best = 2
@@ -279,10 +283,10 @@ def match_score(state: WorldState, defs: Defs, eid: str, text: str) -> int:
 
 
 def match_entities(
-    state: WorldState, defs: Defs, text: str, ids: Iterable[str], *, floor: int = 2
+    state: WorldState, defs: Defs, text: str, ids: Iterable[str], *, floor: int = 2, pov: bool = False
 ) -> list[tuple[str, int]]:
     """按分数从高到低给出 text 提到的实体。"""
-    scored = [(eid, match_score(state, defs, eid, text)) for eid in ids]
+    scored = [(eid, match_score(state, defs, eid, text, pov=pov)) for eid in ids]
     scored = [(e, s) for e, s in scored if s >= floor]
     scored.sort(key=lambda es: -es[1])
     return scored

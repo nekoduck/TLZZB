@@ -3,7 +3,7 @@
 - `tianlong.content.loader.load` 加 `tianlong.content.validate.validate`：引用完整、谓词与效果的语法、
   地图可达、开局时不变量成立。
 - 另查管线自己的规矩：人物卡里的台词样例、文风短例必须是原文的子串（有 `build/paragraphs.jsonl` 时才查）；
-  开局时谁也不知道标了「开局之后」的事实。
+  开局时谁也不知道标了「开局之后」的事实，也不知道事实表明写「无人知道」（`known_by` 为空）的事实。
 - 基线跑（方案 11.3）由上层接进来：`baseline(content_dir)` 返回问题清单（可以是协程）。
 """
 
@@ -12,7 +12,7 @@ from __future__ import annotations
 import inspect
 import shutil
 import tempfile
-from collections.abc import Awaitable, Callable, Mapping, Sequence
+from collections.abc import Awaitable, Callable, Collection, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -30,7 +30,9 @@ from tianlong.pipeline.common import (
     WriteResult,
     dump_yaml,
     load_paragraphs,
+    read_yaml,
     rel,
+    unknown_at_opening,
 )
 
 BaselineHook = Callable[[Path], 'list[str] | Awaitable[list[str]]']
@@ -48,7 +50,10 @@ def load_content(content: Path) -> tuple[Defs | None, WorldState | None, list[st
     return defs, state, []
 
 
-def pipeline_checks(defs: Defs, state: WorldState, corpus: Corpus | None) -> list[str]:
+def pipeline_checks(
+    defs: Defs, state: WorldState, corpus: Corpus | None, nobody: Collection[str] = frozenset()
+) -> list[str]:
+    """``nobody``：事实表里明写开局时无人知道的事实（加载器不留 known_by，由调用方从 facts.yaml 读来）。"""
     out: list[str] = []
     if corpus is not None and len(corpus):
         for scene, items in defs.style.samples.items():
@@ -66,6 +71,11 @@ def pipeline_checks(defs: Defs, state: WorldState, corpus: Corpus | None) -> lis
         for fid in ch.beliefs:
             if fid in late:
                 out.append(f'{cid} 开局就知道 {fid}，而它标的是开局之后的事')
+    # state.chars[*].beliefs 已经并入了人物卡、玩家、路人三处的 knows
+    for cid, ch in state.chars.items():
+        for fid in ch.beliefs:
+            if fid in nobody:
+                out.append(f'{cid} 开局就知道 {fid}，而事实表写的是开局时无人知道（known_by 为空）')
     return out
 
 
@@ -75,7 +85,9 @@ def validate_content(content: Path, corpus: Corpus | None = None) -> list[str]:
     if defs is None or state is None:
         return problems
     try:
-        return validate(defs, state) + pipeline_checks(defs, state, corpus)
+        facts = read_yaml(content / 'facts.yaml')
+        nobody = unknown_at_opening(facts) if isinstance(facts, Mapping) else set()
+        return validate(defs, state) + pipeline_checks(defs, state, corpus, nobody)
     except Exception as e:  # 内容坏到校验器本身出错：照样报成问题
         return [f'校验出错：{type(e).__name__}: {e}']
 

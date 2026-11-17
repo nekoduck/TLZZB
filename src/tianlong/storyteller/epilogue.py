@@ -140,12 +140,17 @@ def _growth(state: WorldState, defs: Defs) -> list[str]:
     return out
 
 
-def _threads(state: WorldState, defs: Defs) -> tuple[list[str], list[str]]:
-    opened = list(dict.fromkeys(common.pv(state, defs, t.text) for t in threads.open_threads(state)))
+def _threads(state: WorldState, defs: Defs, *, for_model: bool = False) -> tuple[list[str], list[str]]:
+    """开着的、了结了的牵挂。``for_model``：给 C7 的那一份，心愿不带玩家的原话（``threads.model_line``）。"""
+    opened = list(
+        dict.fromkeys(
+            common.pv(state, defs, threads.model_line(t) if for_model else t.text) for t in threads.open_threads(state)
+        )
+    )
     # 了结了的：眼前事（情境）的开场与了结已经在年谱里各有一句，这里不再列（它的牵挂写的是
     # 「某某正在做什么」，放在「了结了的」底下读不通）；同一句只留一条；还开着的不算了结。
     kinds = [k for k in threads.KIND_ORDER if k != "event"]
-    closed = [t for t in threads.recent_closed(state, defs, 0, kinds=kinds) if t not in opened]
+    closed = [t for t in threads.recent_closed(state, defs, 0, kinds=kinds, for_model=for_model) if t not in opened]
     return opened, closed
 
 
@@ -153,6 +158,7 @@ def material(state: WorldState, defs: Defs) -> dict[str, Any]:
     """C7 与模板共用的素材：全是玩家知道的东西，已按玩家视角渲染。"""
     seen, heard = _known_lines(state, defs)
     opened, closed = _threads(state, defs)
+    m_opened, m_closed = _threads(state, defs, for_model=True)
     p = common.player(state)
     return {
         "background": defs.world.background,
@@ -163,8 +169,10 @@ def material(state: WorldState, defs: Defs) -> dict[str, Any]:
         "seen": seen,
         "heard": heard,
         "whereabouts": _whereabouts(state, defs),
-        "open_threads": opened,
+        "open_threads": opened,  # 模板后事用（不经模型，给玩家自己看）
         "closed_threads": closed,
+        "open_threads_model": m_opened,  # c7_user.md 用：心愿不带原话
+        "closed_threads_model": m_closed,
         "growth": _growth(state, defs),
     }
 

@@ -20,15 +20,13 @@ steps:
     deadline: 192
   - id: zl_guard_duan
     text: 陪着段公子去营里，见势不妙就放貂护他
-    at: shennong_camp
-    do: {verb: wait}
-    pre: {all: [{has: [self, shandian_diao]}, {alive: sikong_xuan}]}
+    do: {verb: follow, target: duan_yu}         # 是「陪着」：他去哪她跟到哪，不写 at。他死了、不去了，她不会独自进营
+    pre: {all: [{alive: duan_yu}, {has: [self, shandian_diao]}, {alive: sikong_xuan}]}
     takes: 16
     deadline: 240
   - id: zl_wait_rescue
     text: 被扣作人质，等人来救
-    at: shennong_camp
-    do: {verb: wait}
+    do: {verb: wait}                            # 不写 at：被扣的人就在原地等；没被扣，这一步作废，不会自己走进营地去等
     pre: {status: [self, captive]}
     takes: 16
   - id: zl_go_home

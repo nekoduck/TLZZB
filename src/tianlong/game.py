@@ -31,7 +31,7 @@ from typing import Any
 from tianlong import minds, narrator, parser, store, storyteller, world
 from tianlong.config import Settings
 from tianlong.content.loader import load as load_content
-from tianlong.kernel import actions, danger, perception, refs, resolve, timeflow
+from tianlong.kernel import actions, danger, growth, perception, refs, resolve, timeflow
 from tianlong.kernel.actions import ActionInst
 from tianlong.kernel.defs import Defs
 from tianlong.kernel.perception import PlayerView
@@ -61,6 +61,7 @@ YES_WORDS = frozenset({"是", "是的", "对", "好", "确定", "走", "嗯", "y
 NO_WORDS = frozenset({"否", "不", "不是", "不了", "不走", "算了", "留下", "n", "no"})
 LONG_VERBS = ("wait", "rest", "study", "practice", "teach")  # 时间成段过去的动作（6.9、8.7）
 TRAVEL_VERBS = ("go", "flee")
+TRAIN_VERBS = ("study", "practice", "teach")  # 进度按做了多久记的动作（6.12，见 Game._hour_one）
 QUIET_VERBS = frozenset({"wait", "look", "listen", "examine", "rest", "study", "practice"})  # 算不上「动静」
 # 静下来做的长动作：做满一个时辰以上时，旁人之间的闲话与小动作不打断它（见 _breaks_quiet）
 QUIET_LONG_VERBS = ("wait", "rest", "study", "practice")
@@ -94,6 +95,8 @@ TEXT_BUDGET_RULES = "这一局此后改用规则与模板，不再调用模型�
 TEXT_BUDGET_MORE = "预算已追加到 ${budget:.2f}，接着用模型。"
 TEXT_NO_KEYS = "没有找到模型的密钥：这一局只用规则与模板。想看替身模型的效果，加 --mock。"
 TEXT_WAKE = "⟦{me}⟧被一阵动静惊醒了"
+TEXT_GAIN = "⟦{who}⟧在{label}上有了长进"  # 读、练、教到半路升了一层（叙述模板会接成「你……，又在……上有了长进」）
+LABEL_LITERACY = "识字"
 DEBUG_USAGE = (
     "用法：/debug（内核状态与本回合的模型调用）；/debug kill <人>；/debug give <物> [给谁]；"
     "/debug art <本事> <层>；/debug stat <neili|literacy|luck|aptitude|base_power> <值>；"
@@ -112,6 +115,17 @@ def _unique_dir(root: Path, name: str) -> tuple[str, Path]:
         n += 1
         cand = f"{name}-{n}"
     return cand, root / cand
+
+
+@dataclass
+class _Train:
+    """一回合里读、练、教还没记完的进度：头一个时辰内核已经记了，后面的按过去的刻数补。"""
+
+    student: str
+    art: str
+    per_hour: int  # 每个时辰的进度（刻），取自内核结算头一个时辰时算出的数
+    max_level: int | None
+    credited: int = 0  # 头一个时辰之后已经补记的
 
 
 @dataclass
@@ -183,6 +197,7 @@ class Game:
         self._t0 = 0.0
         self._danger0 = 0  # 这一回合开始时的 danger（大险之前的检查点据此判断）
         self._credit: dict[str, int] = {}  # 微轮里已经给在场者的「等」记过、还没从过去的时间里扣掉的刻数（I6）
+        self._train: _Train | None = None  # 这一回合读、练、教还没记的进度（随时间过去一刻一刻记）
 
     # ------------------------------------------------------------------ 建局与读档
 
@@ -594,8 +609,9 @@ class Game:
         fresh = actions.is_legal(st, df, act)
         cost = fresh.cost if fresh is not None else act.cost
         waits = self._wait_marks()
-        # 2 结算玩家的动作
-        evs = self._collect(resolve.apply(st, df, act, speech, source="player"))
+        # 2 结算玩家的动作（读、练、教的多时辰吩咐：内核只先结算头一个时辰，其余随时间过去再记）
+        first = self._hour_one(act)
+        evs = self._collect(resolve.apply(st, df, first, speech, source="player"))
         if not evs or all(e.outcome == "blocked" and e.verb != "warn_danger" for e in evs):
             self._rec.kind = "reply"
             async for ev in self._still(TEXT_CANNOT):
@@ -620,6 +636,7 @@ class Game:
         # 3 在场的人各自反应
         await self._micro_rounds(evs, int(self.settings.limits.max_micro_rounds))
         self._add_credit(waits)
+        self._train = self._train_plan(act, first, evs)
         async for ev in self._advance(act, cost, speech=speech):
             yield ev
 
@@ -749,6 +766,7 @@ class Game:
         st, df = self.state, self.defs
         elapsed = 0
         interrupted = False
+        train, self._train = self._train, None
         long = act.verb in LONG_VERBS
         quiet = act.verb in QUIET_LONG_VERBS and ticks >= TICKS_PER_HOUR
         danger0 = self._danger()
@@ -769,6 +787,8 @@ class Game:
                     interrupted = True
                     break
             elapsed += done
+            if train is not None:
+                self._train_credit(train, elapsed)
             credited, self._credit = self._credit, {}
             evs += self._collect(world.onscene_elapsed(st, df, done, credited=credited))
             for cid, n in credited.items():  # 这一段没抵完的，留到下一段
@@ -801,6 +821,55 @@ class Game:
                 )
             )
         return elapsed, interrupted
+
+    # ---- 读、练、教的进度
+
+    def _hour_one(self, act: ActionInst) -> ActionInst:
+        """读、练、教吩咐了不止一个时辰的：交给内核结算的只是头一个时辰的那一份。
+
+        内核的结算在动手那一刻就把吩咐的时辰数全记成进度；可这段时间还没过去，可能两刻就被打断（6.9、8.7），
+        进度却要按做了多久记（6.12）。所以先只结算一个时辰，后面的在 ``_pass_time`` 里随时间过去再记。
+        耗时仍按吩咐的时辰数算。
+        """
+        if act.verb not in TRAIN_VERBS or int(act.params.get("hours", 1) or 1) <= 1:
+            return act
+        one = actions.build(self.state, self.defs, act.actor, act.verb, {**act.params, "hours": 1})
+        return one if one is not None else act
+
+    def _train_plan(self, act: ActionInst, first: ActionInst, evs: list[Event]) -> _Train | None:
+        """头一个时辰结算完了：记下每个时辰的进度（取内核事件里算好的数），余下的时辰随时间去记。"""
+        if first is act:
+            return None
+        ev = next(
+            (e for e in evs if e.actor == act.actor and e.verb == act.verb and e.outcome == "ok" and "progress" in e.params),
+            None,
+        )
+        per_hour = int(ev.params.get("progress") or 0) if ev is not None else 0
+        if per_hour <= 0:
+            return None  # 学不进去（看不懂、已到头）：没有进度可记
+        art = str(act.params["art"])
+        student = str(act.params["target"]) if act.verb == "teach" else act.actor
+        capped = act.verb != "practice" and art != growth.LITERACY  # 读与听讲只能下到第一层（6.12）
+        return _Train(student=student, art=art, per_hour=per_hour, max_level=1 if capped else None)
+
+    def _train_credit(self, train: _Train, elapsed: int) -> None:
+        """这一回合已经过去 ``elapsed`` 刻：把头一个时辰之后该记的进度补上（整数除法，做满时一刻不差）。"""
+        st = self.state
+        c = st.chars.get(train.student)
+        if c is None or st.ended is not None:
+            return
+        due = train.per_hour * max(0, elapsed - TICKS_PER_HOUR) // TICKS_PER_HOUR - train.credited
+        if due <= 0:
+            return
+        literacy = train.art == growth.LITERACY
+        before = c.literacy if literacy else c.arts.get(train.art, 0)
+        self._collect(self._fx([{"train": [train.student, train.art, due, train.max_level]}]))
+        train.credited += due
+        after = c.literacy if literacy else c.arts.get(train.art, 0)
+        if after > before:
+            label = LABEL_LITERACY if literacy else f"⟦{train.art}⟧"
+            text = TEXT_GAIN.format(who=train.student, label=label)
+            self._collect(self._fx([{"emit": {"actor": train.student, "verb": "progress", "text": text}}]))
 
     def _situations_here(self) -> set[str]:
         loc = self.player.loc

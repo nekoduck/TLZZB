@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 from pathlib import Path
 
 import yaml
@@ -12,6 +13,46 @@ from .conftest import REPO
 
 def test_p7_real_content_has_no_problems() -> None:
     assert validate_content(REPO / 'content') == []
+
+
+def _real_copy(tmp_path: Path) -> Path:
+    root = tmp_path / 'content'
+    shutil.copytree(REPO / 'content', root)
+    return root
+
+
+def _nobody_knows(root: Path) -> list[str]:
+    facts = yaml.safe_load((root / 'facts.yaml').read_text(encoding='utf-8'))
+    return sorted(fid for fid, f in facts.items() if 'known_by' in f and not f['known_by'])
+
+
+def test_p7_flags_a_card_that_knows_what_nobody_knows_at_opening(tmp_path: Path) -> None:
+    """事实表明写「开局时无人知道」的事（known_by 为空），进了谁的 knows 都要报出来。"""
+    root = _real_copy(tmp_path)
+    nobody = _nobody_knows(root)
+    assert nobody  # 种子里有这样的事实：开局之后才有的事、无人知道的秘密
+    cid = sorted(p.stem for p in (root / 'characters').glob('*.yaml'))[0]
+    path = root / 'characters' / f'{cid}.yaml'
+    card = yaml.safe_load(path.read_text(encoding='utf-8'))
+    card['knows'] = nobody + list(card.get('knows') or [])
+    path.write_text(yaml.safe_dump(card, allow_unicode=True, sort_keys=False), encoding='utf-8')
+    problems = validate_content(root)
+    for fid in nobody:
+        assert any(cid in x and fid in x and '无人知道' in x for x in problems), (fid, problems)
+    assert len(problems) == len(nobody)  # 别的人、别的事实不受牵连
+
+
+def test_p7_flags_the_player_and_extras_too(tmp_path: Path) -> None:
+    root = _real_copy(tmp_path)
+    fid = _nobody_knows(root)[0]
+    op = yaml.safe_load((root / 'opening.yaml').read_text(encoding='utf-8'))
+    op['player']['knows'] = [fid] + list(op['player'].get('knows') or [])
+    extra = op['extras'][0]
+    extra['knows'] = [fid] + list(extra.get('knows') or [])
+    (root / 'opening.yaml').write_text(yaml.safe_dump(op, allow_unicode=True, sort_keys=False), encoding='utf-8')
+    problems = validate_content(root)
+    assert sorted(x.split(' ')[0] for x in problems if fid in x and '无人知道' in x) == sorted(['player', extra['id']])
+    assert len(problems) == 2
 
 
 async def test_p7_step_on_real_content(settings, tmp_path: Path, out: list[str]) -> None:

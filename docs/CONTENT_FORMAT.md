@@ -90,6 +90,9 @@ F_lovers:
   known_by: [gan_guanghao, ge_guangpei]     # 人的 id；'*' 表示图内人人皆知；'role:<身份>' 表示有此身份的人
 ```
 
+`known_by` 明写为空（`[]`）＝开局时无人知道：这样的事实不得出现在任何人物卡、玩家、路人的 `knows` 里
+（管线 P3/P4 见了就删，P7 报成问题）。不写 `known_by` 这个键的不受此限（知情人只记在人物卡的 `knows` 里）。
+
 ## arts.yaml
 
 方案 6.12 的格式。另加 `secrecy`（`none` 默认 / `sect`）与 `teacher_roles`（谁算得上能教，例如 `[wuliang_disciple]`）。

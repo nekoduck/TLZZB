@@ -361,7 +361,7 @@ def j4_state(state: WorldState, defs: Defs) -> str:
         present=present,
         recent=recent,
         body=body,
-        threads=[common.pv(state, defs, t.text) for t in threads.open_threads(state)],
+        threads=[common.pv(state, defs, threads.model_line(t)) for t in threads.open_threads(state)],
     )
 
 

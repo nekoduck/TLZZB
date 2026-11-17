@@ -421,6 +421,19 @@ def open_threads(state: WorldState) -> list[Thread]:
     return [t for t in state.threads.values() if not t.closed]
 
 
+def model_line(t: Thread) -> str:
+    """给模型看的一行牵挂（还没按玩家视角渲染）。
+
+    心愿的文字是玩家的原话，原话只进 J1 标明的那一节（方案 7.2）：这里换成内核按对上的人和物拼的一句。
+    别的牵挂本来就是内核拼的句子，原样给。给玩家自己看的画面（/牵挂、模板后事）仍用 ``t.text``。
+    """
+    if t.kind != "wish":
+        return t.text
+    if not t.refs:
+        return "一桩心愿"
+    return "心愿：与" + "、".join(f"⟦{r}⟧" for r in t.refs) + "有关"
+
+
 def signature(state: WorldState) -> list[str]:
     """牵挂的指纹（停滞检测用）：开着的牵挂 id。"""
     return sorted(t.id for t in open_threads(state))
@@ -519,14 +532,19 @@ def render_threads(state: WorldState, defs: Defs) -> str:
     return "\n".join(lines)
 
 
-def recent_closed(state: WorldState, defs: Defs, n: int, *, kinds: Iterable[str] | None = None) -> list[str]:
-    """最近了结的几条牵挂（玩家视角的文字），同一句只留一条（反复开场的情境会了结许多回）。"""
+def recent_closed(
+    state: WorldState, defs: Defs, n: int, *, kinds: Iterable[str] | None = None, for_model: bool = False
+) -> list[str]:
+    """最近了结的几条牵挂（玩家视角的文字），同一句只留一条（反复开场的情境会了结许多回）。
+
+    ``for_model``：这几行要送进模型的输入，心愿用 ``model_line`` 的写法，不带玩家的原话。
+    """
     want = set(kinds) if kinds is not None else None
     out: list[str] = []
     for t in state.threads.values():
         if not t.closed or (want is not None and t.kind not in want):
             continue
-        text = common.pv(state, defs, t.text)
+        text = common.pv(state, defs, model_line(t) if for_model else t.text)
         if text in out:
             out.remove(text)
         out.append(text)

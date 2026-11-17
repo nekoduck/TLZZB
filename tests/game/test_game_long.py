@@ -326,3 +326,93 @@ async def test_interrupt_on_the_hour_still_runs_world_tick(settings: Settings, m
     await s.send("我在这里等上一个时辰")
     assert ran == [t for t in range(t0 + 1, st.tick + 1) if t % 8 == 0]
     await s.close()
+
+
+async def _train(s, verb: str, **params):  # noqa: ANN001, ANN003, ANN202
+    """直接走一个读、练、教的回合（不经输入归类）。"""
+    from tianlong.kernel import actions
+
+    st = s.state
+    act = actions.build(st, s.game.defs, st.player, verb, params)
+    assert act is not None and act.cost == params["hours"] * 8
+    return [ev async for ev in s.game._logged(verb, "turn", s.game._play(act, None))]
+
+
+async def test_interrupted_practice_keeps_only_the_time_actually_spent(settings: Settings) -> None:
+    """6.12：进度按做了多久记。吩咐练十二个时辰、两刻就被打断，不能白得十二个时辰的长进。"""
+    s = await new_session(settings)
+    await s.play(*QUIET_YARD)
+    st = s.state
+    pid = st.player
+    me = st.chars[pid]
+    s.fx([{"art": [pid, "cloud_steps", 1]}])
+    hour = growth.progress_for(me, 1, teacher=False)
+    assert 0 < hour < growth.stage_need(s.game.defs, "cloud_steps", 1)
+    s.fx([{"schedule": [2, [{"move": ["guest", "yard"]}]]}])  # 两刻之后有人走进来
+    t0 = st.tick
+    await _train(s, "practice", art="cloud_steps", hours=12)
+    assert s.game.last_turn is not None and s.game.last_turn.interrupted
+    assert st.tick == t0 + 2
+    assert me.arts["cloud_steps"] == 1  # 没有凭空升一层
+    assert me.art_progress.get("cloud_steps", 0) <= hour  # 至多是内核先记的头一个时辰
+    await s.close()
+
+
+async def test_practice_progress_follows_elapsed_time(settings: Settings) -> None:
+    """头一个时辰之后，进度随实际过去的刻数记：二十刻被打断，记到二十刻为止。"""
+    s = await new_session(settings)
+    await s.play(*QUIET_YARD)
+    st = s.state
+    pid = st.player
+    me = st.chars[pid]
+    s.fx([{"art": [pid, "cloud_steps", 1]}])
+    hour = growth.progress_for(me, 1, teacher=False)
+    s.fx([{"schedule": [20, [{"move": ["guest", "yard"]}]]}])
+    t0 = st.tick
+    await _train(s, "practice", art="cloud_steps", hours=12)
+    assert s.game.last_turn is not None and s.game.last_turn.interrupted
+    assert st.tick == t0 + 20
+    assert me.arts["cloud_steps"] == 1
+    assert me.art_progress.get("cloud_steps", 0) == hour * 20 // 8
+    await s.close()
+
+
+async def test_uninterrupted_practice_gets_all_of_it_and_the_gain_is_told(settings: Settings) -> None:
+    """没被打断：十二个时辰的进度一刻不少；半路升的那一层有一条事实句，叙述看得见。"""
+    s = await new_session(settings)
+    await s.play(*QUIET_YARD)
+    st = s.state
+    pid = st.player
+    me = st.chars[pid]
+    s.fx([{"art": [pid, "cloud_steps", 1]}, {"train": [pid, "cloud_steps", 10]}])  # 先有十刻的底子
+    t0 = st.tick
+    evs = await _train(s, "practice", art="cloud_steps", hours=3)
+    assert s.game.last_turn is not None and not s.game.last_turn.interrupted
+    assert st.tick == t0 + 24
+    total = 10 + growth.progress_for(me, 3, teacher=False)
+    need = growth.stage_need(s.game.defs, "cloud_steps", 1)
+    assert total >= need > 10 + growth.progress_for(me, 1, teacher=False)
+    assert me.arts["cloud_steps"] == 2  # 三个时辰够升一层：与一次记满的结果相同
+    gained = [e for e in st.events_tail if e.tick > t0 and e.actor == pid and "长进" in e.fact_text]
+    assert len(gained) == 1 and gained[0].tick > t0 + 8  # 是练到后来才升的，不是一开头
+    assert text_of(evs).strip()
+    await s.close()
+
+
+async def test_interrupted_teaching_credits_the_student_for_time_spent(settings: Settings) -> None:
+    """教人也一样：进度记在徒弟身上，按实际教了多久算。"""
+    s = await new_session(settings)
+    await s.play(*QUIET_YARD)
+    st = s.state
+    pid = st.player
+    s.fx([{"move": ["fighter", "yard"]}, {"superior": ["fighter", pid]}])
+    student = st.chars["fighter"]
+    assert student.literacy == 0
+    hour = growth.progress_for(student, 1, teacher=True)
+    s.fx([{"schedule": [12, [{"move": ["guest", "yard"]}]]}])
+    t0 = st.tick
+    await _train(s, "teach", target="fighter", art="literacy", hours=6)
+    assert st.tick == t0 + 12 and s.game.last_turn is not None and s.game.last_turn.interrupted
+    assert student.literacy == 0
+    assert student.art_progress.get("literacy", 0) == hour * 12 // 8
+    await s.close()

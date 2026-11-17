@@ -388,8 +388,10 @@ class _Narration:
                 'scene': scene + (('；' + '；'.join(extra)) if extra else ''),
                 'present': '、'.join(v.present) or '无',
                 'names': names_table(v),
-                'player_action': _player_action(v, self.player_fact)
-                + (f'（原话：{self.spoken_text}）' if self.spoken_text else ''),
+                'player_action': _player_action(v, self.player_fact),
+                # 玩家的原话：叙述要引它（7.7 规则 3），J5 得看见才判得了「说了没说过的话」；
+                # 单放在模板最后标明的一节里，不混进内核的事实句（7.2）
+                'spoken': self.spoken_text or '',
             }
         return self._j5_base
 

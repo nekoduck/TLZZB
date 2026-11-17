@@ -106,7 +106,7 @@ def j6_state(state: WorldState, defs: Defs) -> str:
         "jev/j6_state",
         clock=common.clock(state.tick),
         recent=mine,
-        threads=[common.pv(state, defs, t.text) for t in threads.open_threads(state)],
+        threads=[common.pv(state, defs, threads.model_line(t)) for t in threads.open_threads(state)],
         tension=round(tension(state)),
         quiet=int(state.storyteller.get("quiet", 0) or 0),
     )

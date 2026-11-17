@@ -194,3 +194,69 @@ async def test_reply_that_agrees_and_acts_is_not_rolled_back(llm, world):
     cur = ag.steps[ag.cursor]
     assert cur.id == f"req_{r.id}" and cur.state == "pending" and ag.progress >= 1
     assert actions.following_step(state, state.chars["sn_guard_3"], cur)
+
+
+async def test_false_premise_is_voided_before_setting_out(llm, world):
+    """前提不成立的远处一步：走得动的人当场作废、重新打算，不白走一趟（3.4 保证一）。"""
+    defs, state = world
+    player_off(state, defs)
+    chief = state.chars["sn_chief_b"]
+    fx(state, defs, [{"step": ["sn_chief_b", {"id": "t_far", "text": "去剑湖宫", "at": "jianhu_hall", "do": {"verb": "wait"}, "pre": {"flag": "never"}, "takes": 1}]}])
+    before = chief.loc
+    assert before != "jianhu_hall"
+    events = await offscreen.advance(state, defs, "sn_chief_b", 8)
+    assert chief.loc == before  # 没有动身
+    assert not any(e.verb in ("go", "arrive") for e in events)
+    st = next(s for s in chief.agenda.steps if s.id == "t_far")
+    assert st.state == "void"  # 没有期限也不干等
+    assert "sn_chief_b" in state.replan_queue
+
+
+async def test_premise_before_setting_out_counts_followers_as_coming_along(llm, world):
+    """前提里的「某人在身边」：跟着他的人会一起到，动身前的检查不能因此把这一步作废。"""
+    defs, state = world
+    player_off(state, defs)
+    chief = state.chars["sn_chief_b"]
+    fx(state, defs, [{"follow": ["sn_guard_3", "sn_chief_b"]}])
+    assert state.chars["sn_guard_3"].loc == chief.loc
+    step = {"id": "t_far", "text": "带人去剑湖宫", "at": "jianhu_hall", "do": {"verb": "wait"}, "takes": 1,
+            "pre": {"all": [{"at": ["self", "jianhu_hall"]}, {"same_loc": ["self", "sn_guard_3"]}]}}  # fmt: skip
+    fx(state, defs, [{"step": ["sn_chief_b", step]}])
+    before = (chief.loc, state.chars["sn_guard_3"].loc)
+    await offscreen.advance(state, defs, "sn_chief_b", 1)  # 一刻走不完一段路：只看他作不作废
+    st = next(s for s in chief.agenda.steps if s.id == "t_far")
+    assert st.state == "pending"
+    assert (chief.loc, state.chars["sn_guard_3"].loc) == before  # 试看前提没有真的挪人
+
+
+async def test_held_actor_waits_instead_of_voiding_a_remote_step(llm, world):
+    """走不动的人（被扣着）不因远处那一步的前提眼下不成立而作废：照旧原地等（D-125）。"""
+    defs, state = world
+    player_off(state, defs)
+    chief = state.chars["sn_chief_b"]
+    fx(state, defs, [{"add_status": ["sn_chief_b", "captive"]}])
+    fx(state, defs, [{"step": ["sn_chief_b", {"id": "t_far", "text": "去剑湖宫", "at": "jianhu_hall", "do": {"verb": "wait"}, "pre": {"flag": "never"}, "takes": 1}]}])
+    await offscreen.advance(state, defs, "sn_chief_b", 8)
+    st = next(s for s in chief.agenda.steps if s.id == "t_far")
+    assert st.state == "pending"
+
+
+async def test_freed_without_the_errand_duan_yu_does_not_walk_the_errand_route(llm, world):
+    """没中毒、只是被放行的人不走报信那条路：不坠崖、不得帛卷，「离营赶路」那一步在营里就作废。"""
+    defs, state = world
+    player_off(state, defs)
+    dy = state.chars["duan_yu"]
+    seen: set[str] = set()
+    passed = False
+    for _ in range(14):  # 到 144 刻
+        await hours(llm, state, defs, 1)
+        if not passed and state.tick >= 56 and dy.loc == "shennong_camp":
+            fx(state, defs, [{"add_status": ["duan_yu", "camp_pass", {"ticks": 96}]}])  # 情境里「放行」给的就是这个
+            passed = True
+        if passed:
+            seen.add(dy.loc)  # 放行之后他到过的地方（去营里的路上本来就经过后山小径）
+    assert passed
+    assert "poisoned_duanchang" not in dy.statuses and not state.flags.get("errand_sent")
+    assert not seen & {"back_trail", "valley_floor", "valley_cave", "ferry_bridge"}
+    assert state.items["silk_scroll"].holder != "duan_yu"
+    assert not any(s.id == "dy_leave_camp" and s.state == "pending" for s in dy.agenda.steps)

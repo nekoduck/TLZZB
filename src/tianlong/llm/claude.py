@@ -320,6 +320,10 @@ class ClaudeClient:
             raise ClaudeError(f'Claude HTTP {e.status_code}: {e.message}', status=e.status_code) from e
         except anthropic.APIConnectionError as e:
             raise ClaudeError('Claude connection error') from e
+        except LLMError:
+            raise
+        except Exception as e:  # noqa: BLE001 — SDK 没包装的失败（坏响应的解析错误等）也算模型失败；类型名留在录制里
+            raise ClaudeError(f'Claude request broke: {type(e).__name__}') from e
         return _to_dict(msg)
 
     async def _stream(
@@ -345,6 +349,13 @@ class ClaudeClient:
             raise ClaudeError(f'Claude HTTP {e.status_code}: {e.message}', status=e.status_code) from e
         except anthropic.APIConnectionError as e:
             raise ClaudeError('Claude connection error') from e
+        except LLMError:
+            raise
+        except Exception as e:  # noqa: BLE001
+            # SDK 只包装发请求那一步；读 SSE 正文时传输层的异常（httpx2.ReadTimeout、RemoteProtocolError、
+            # 坏事件的 JSON 错误）原样抛出。这里一律落成 ClaudeError，调用方才会走 4.3 的兜底。
+            # 调用方中途停下（GeneratorExit）、任务被取消（CancelledError）是 BaseException，不经过这里。
+            raise ClaudeError(f'Claude stream broke: {type(e).__name__}') from e
 
     # ---- JSON 调用 ----
     async def call_json(

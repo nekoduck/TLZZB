@@ -11,7 +11,8 @@
 重放按调用代号分组。同一代号里，先找「请求一模一样、还没用过」的最早一条录制（按请求的规范串
 比对）；找不到才按录制的先后取下一条。这样 `asyncio.gather` 并发出去的同类调用，完成的先后与
 录制时不同也对得上。请求与录制不一致（严格模式）或某个代号的录制用完了，抛 `ReplayMismatch`，
-并说明是哪一条、哪里不同。
+并说明是哪一条、哪里不同。`ReplayMismatch` 是 `LLMError`，调用方照模型失败兜底、游戏不中断；
+每一处同时记进 `Replayer.mismatches`，由主循环与命令行报告（`LLM.replayer`）。
 """
 
 from __future__ import annotations
@@ -201,6 +202,9 @@ class Replayer:
         self._used: dict[str, list[bool]] = {}
         self._first: dict[str, int] = {}  # 代号 → 最早一条没用过的下标
         self._by_request: dict[tuple[str, str], deque[int]] = {}  # (代号, 请求的规范串) → 下标
+        # 每一处对不上的说明（第几次调用、哪个字段）。调用方把 ReplayMismatch 当模型失败兜底、游戏照常走，
+        # 这张单子留给主循环与命令行去报告：重放离开了录制，不能悄悄当成一次成功的重放（D-018）。
+        self.mismatches: list[str] = []
         for line in read_calls(path):
             kind = str(line['kind'])
             calls = self._calls.setdefault(kind, [])
@@ -214,6 +218,11 @@ class Replayer:
         with self._lock:
             out = {k: sum(1 for u in used if not u) for k, used in self._used.items()}
         return {k: n for k, n in out.items() if n}
+
+    def mismatch(self, message: str) -> ReplayMismatch:
+        """记下一处对不上，返回要抛的异常。不取锁：``next`` 持着锁（不可重入）时也调用它。"""
+        self.mismatches.append(message)
+        return ReplayMismatch(message)
 
     def _next_unused(self, kind: str) -> int | None:
         used = self._used.get(kind)
@@ -230,7 +239,7 @@ class Replayer:
         with self._lock:
             fallback = self._next_unused(kind)
             if fallback is None:
-                raise ReplayMismatch(
+                raise self.mismatch(
                     f'replay: no more recorded calls of kind {kind!r} in {self.path} '
                     f'(the run now makes more {kind} calls than the recording)'
                 )
@@ -244,7 +253,7 @@ class Replayer:
                 i = fallback
                 rec = self._calls[kind][i]
                 if self.strict:
-                    raise ReplayMismatch(
+                    raise self.mismatch(
                         f'replay: request for {kind!r} differs from recorded call seq={rec.get("seq")}: '
                         + _describe_diff(rec.get('request'), _jsonable(request))
                     )

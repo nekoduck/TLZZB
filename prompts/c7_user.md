@@ -22,14 +22,14 @@
 {% endfor %}
 </收场时你所知的各人下落>
 <了结了的牵挂>
-{% for line in closed_threads %}
+{% for line in closed_threads_model %}
 - {{ line }}
 {% else %}
 - 无
 {% endfor %}
 </了结了的牵挂>
 <没了结的牵挂>
-{% for line in open_threads %}
+{% for line in open_threads_model %}
 - {{ line }}
 {% else %}
 - 无
