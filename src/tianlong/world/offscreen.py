@@ -3,7 +3,9 @@
 对每个离场的人，取当前这一步：
 
 1. 没到 ``start``：等。过了 ``deadline``：作废。
-2. 人不在 ``at``：沿最短路（``kernel.actions.path``）走过去，耗时按出口的 cost（坐骑按 speed 折算），
+2. 人不在 ``at``：先把 ``pre`` 当作人已经到了那里看一遍——不成立而他又走得动，这一步当场作废，不白走
+   一趟（方案 3.4 保证一；走不动的人原地等着）。成立，就沿最短路（``kernel.actions.path``）走过去，
+   耗时按出口的 cost（坐骑按 speed 折算），
    带 check 的出口照掷（走路就是一次 ``go``，由 ``resolve.apply`` 结算）。走在一段路上的时间记在
    ``Agenda.progress`` 里，走完这一段清零。
 3. 到了地方，``progress`` 累加，满 ``takes`` 时动手。
@@ -147,6 +149,11 @@ async def advance(
             out += set_state(state, defs, c, st, "void", "target gone")
             break
         if c.loc != where:
+            # 动身之前先看前提（当作人已经到了那里）：不成立而他又走得动，这一步当场作废、重新打算，
+            # 不白走一趟（3.4 保证一）。走不动的人（被扣、重伤）照旧原地等着。
+            if not _pre_at(state, defs, c, st, where) and _can_set_out(state, defs, c, where):
+                out += set_state(state, defs, c, st, "void", "pre (before setting out)")
+                break
             if budget <= 0:
                 break
             moved, evs, budget, stop = _walk(state, defs, c, st, where, budget)
@@ -172,6 +179,30 @@ async def advance(
         # （否则一个人在一个时辰里进出石洞，「有人在洞里」的情境永远开不了场）。
         break
     return out
+
+
+def _pre_at(state: WorldState, defs: Defs, c: Character, st: Step, where: str) -> bool:
+    """这一步的前提，当作此人（连同跟着他的人）已经到了 ``where`` 来看。只读：看完把位置放回去。"""
+    movers = [c] + [o for o in state.chars.values() if o.following == c.id and o.loc == c.loc and o.id != c.id]
+    before = [(o, o.loc) for o in movers]
+    try:
+        for o in movers:
+            o.loc = where
+        return bool(predicates.holds(state, defs, st.pre, Ctx(self_id=c.id)))
+    except predicates.KernelError as e:
+        LOG.warning("bad pre in %s/%s: %s", c.id, st.id, e)
+        return False
+    finally:
+        for o, loc in before:
+            o.loc = loc
+
+
+def _can_set_out(state: WorldState, defs: Defs, c: Character, where: str) -> bool:
+    """此人这会儿迈得开步吗。没有路的算迈得开（``_walk`` 自会把这一步作废）。"""
+    route = actions.path(state, defs, c.id, c.loc, where)
+    if not route:
+        return True
+    return actions.build(state, defs, c.id, "go", {"exit": route[0].to}) is not None
 
 
 def _maybe_enter(state: WorldState, defs: Defs, c: Character) -> tuple[list[Event], bool]:

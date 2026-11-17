@@ -91,7 +91,12 @@ def emit(
     if overheard:
         params["overheard"] = overheard
     if actor and not hidden and actor in state.chars and has_status(state.chars[actor], "hidden"):
-        hidden = True  # 成功躲藏者的动作，别人看不见（6.8）
+        if loud:
+            # 出声即暴露（6.9）：躲着的人自己弄出了大动静，从这一下起就藏不住了，这件事也照常有人看见
+            ac = state.chars[actor]
+            ac.statuses = [s for s in ac.statuses if s.kind != "hidden"]
+        else:
+            hidden = True  # 成功躲藏者的动作，别人看不见（6.8）
     w = perception.witnesses(state, defs, loc, actor, loud=loud, hidden=hidden)
     ev = Event(
         id=state.next_event_id,

@@ -369,7 +369,7 @@ def _apply(
         )
         return out
     step = _matching_step(state, defs, c.id, act, None)
-    if act.loud and has_status(c, "hidden"):
+    if has_status(c, "hidden") and _reveals(act):
         c.statuses = [s for s in c.statuses if s.kind != "hidden"]
     r = R(state, defs, act, c, source, step.id if step else None)
     spoke = any(e.verb == "say" and e.actor == c.id for e in out)
@@ -402,6 +402,27 @@ def _apply(
         state.step += 1
     effects.close_finished(state, defs)
     return out
+
+
+# 冲着别人去的动作（上手，或当面递、亮、照料、放开、传授）：一做就藏不住了
+_CONTACT_VERBS = frozenset({"restrain", "block", "give", "show", "help", "release", "teach"})
+
+
+def _reveals(act: ActionInst) -> bool:
+    """躲着的人做这个动作，是不是就此现了身（6.9：动作不被看见，直到出声或被搜出）。
+
+    出声的（attack）、冲着别人去的（上手拿人、拦、推人、递、亮、照料、放开、传授、对别人用东西）都算；
+    自己一个人悄悄做的（看、听、查、搜、拿、放、推机关、自己用东西、歇、读、练、等）不算。
+    偷另算：得手没有人看见，失手才现身（``R.r_steal``）。走动在 ``effects.move_char`` 里已经解除。
+    """
+    if act.loud or act.verb in _CONTACT_VERBS:
+        return True
+    t = act.params.get("target")
+    if act.verb == "push":
+        return t is not None
+    if act.verb == "use":
+        return t is not None and t != act.actor
+    return False
 
 
 # ---------------------------------------------------------------- verb resolvers
@@ -781,6 +802,9 @@ class R:
                             ),
                         ],
                         "fail": [
+                            # 被当场抓住：藏不住了。先解除再记事件——见证人在记事件的那一刻就定了，
+                            # 苦主得亲眼看见是谁（他的信任、怒气正是因这件事而变）
+                            {"remove_status": [me, "hidden"]},
                             self.say(
                                 f"⟦{me}⟧伸手去摸⟦{t}⟧的⟦{iid}⟧，被当场抓住",
                                 outcome="fail",
