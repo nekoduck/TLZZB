@@ -10,7 +10,7 @@ import json
 import pytest
 
 from tianlong import minds
-from tianlong.kernel import actions, refs, resolve
+from tianlong.kernel import actions, perception, refs, resolve
 from tianlong.kernel import speech as kspeech
 from tianlong.kernel.state import Speech
 from tianlong.storyteller import common, options, speaking, threads
@@ -397,7 +397,7 @@ async def test_no_speech_options_when_nobody_can_hear(llm, w):
 
 def test_no_asking_after_someone_the_character_has_never_seen_or_heard_of(w):
     """2.3、8.4：牵挂里对上了角色说不出的人（旧存档、内容写的牵挂），不替他开口「打听」；知道了名字才问。"""
-    assert "zhong_ling" not in w.s.known_terms and not common.referable(w.s)("zhong_ling")
+    assert "zhong_ling" not in w.s.known_terms and not perception.referable(w.s)("zhong_ling")
     threads.add_wish(w.s, w.defs, {"text": "我要找到钟灵", "refs": ["zhong_ling", "valley_cave"], "weight": 4})
     asks = [o for o in _find(_spoken(w), "ask") if o.speech.about in ("zhong_ling", "valley_cave")]
     assert asks == []

@@ -732,7 +732,7 @@ class _Builder:
         state = self.state
         seen: set[str] = set()
         here = {o.id for o in self.visible}
-        can_refer = common.referable(state)
+        can_refer = perception.referable(state)
         for th in sorted(self.threads, key=lambda t: -t.weight):
             if th.kind not in THREAD_ASK_KINDS:
                 continue

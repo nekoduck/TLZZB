@@ -198,17 +198,26 @@ def apply(
     *,
     source: str,
     offscreen: bool = False,
+    defer_train: bool = False,
 ) -> list[Event]:
     """结算一个身体动作加一句话（先话后动作）。不变量失败则整体回滚，返回空表。
 
     ``offscreen=True``：这是离场结算出来的（world 替不在玩家眼前的人走的一步），
     这次结算产生的事件全部标上 ``offscreen``（K6）。
 
+    ``defer_train=True``：读、练、教（study / practice / teach）这一下只算动了手，进度一刻也不先记
+    （6.12：进度按做了多久记；玩家的长动作可能半路被打断，6.9、8.7）。事件句里不带「有了长进」，
+    ``params`` 里给出 ``deferred``、``per_hour``（每个时辰的进度，刻）、``student``、``art``、
+    ``max_level``，调用方随着时间过去经 ``train`` 效果去记。学不进去（``outcome="fail"``）的照旧。
+    默认（角色自己的、离场的结算）仍在动手那一刻按吩咐的时辰数记满。
+
     玩家第一次尝试致命动作时只出一条警示事件，局面不变（2.4、6.10）：连同这一回合要说的话也不结算
     （K13）。叙述只拿到警示；玩家再说一遍、或再做一遍，才真的发生。
     """
     first = state.next_event_id
-    evs = _guarded(state, defs, action.signature, lambda: _apply(state, defs, action, speech, source))
+    evs = _guarded(
+        state, defs, action.signature, lambda: _apply(state, defs, action, speech, source, defer_train)
+    )
     if offscreen:
         mark_offscreen(state, first)
     return evs
@@ -301,7 +310,12 @@ def _matching_step(
 
 
 def _apply(
-    state: WorldState, defs: Defs, action: ActionInst, speech: Speech | None, source: str
+    state: WorldState,
+    defs: Defs,
+    action: ActionInst,
+    speech: Speech | None,
+    source: str,
+    defer_train: bool = False,
 ) -> list[Event]:
     c = state.chars.get(action.actor)
     if c is None or not actions.can_act(c):
@@ -371,7 +385,7 @@ def _apply(
     step = _matching_step(state, defs, c.id, act, None)
     if has_status(c, "hidden") and _reveals(act):
         c.statuses = [s for s in c.statuses if s.kind != "hidden"]
-    r = R(state, defs, act, c, source, step.id if step else None)
+    r = R(state, defs, act, c, source, step.id if step else None, defer_train=defer_train)
     spoke = any(e.verb == "say" and e.actor == c.id for e in out)
     if act.verb == "wait" and spoke:
         aevs = []  # 只说话、不动：不另记「等」的事件
@@ -432,8 +446,17 @@ class R:
     """一个动作的结算。每个 r_<verb> 只经由效果改写状态，返回产生的事件。"""
 
     def __init__(
-        self, state: WorldState, defs: Defs, action: ActionInst, actor: Any, source: str, step: str | None
+        self,
+        state: WorldState,
+        defs: Defs,
+        action: ActionInst,
+        actor: Any,
+        source: str,
+        step: str | None,
+        *,
+        defer_train: bool = False,
     ):
+        self.defer_train = defer_train  # 读、练、教不在动手时记进度，留给调用方按过去的时间记（见 apply）
         self.state = state
         self.defs = defs
         self.a = action
@@ -957,12 +980,27 @@ class R:
         max_level = None if art == growth.LITERACY else 1
         kinds = [events.kind("taught", who=me, by=teacher)] if teacher else []
         before = c.literacy if art == growth.LITERACY else c.arts.get(art, 0)
+        text = f"⟦{me}⟧研读{src}，下了一番功夫学{label}" if "item" in self.p else f"⟦{me}⟧听{src}，学{label}"
+        if self.defer_train:
+            later = self._train_later(c, art, max_level, before, teacher=teacher is not None)
+            return self.fx(pre + [self.say(text, kinds=kinds, params=later)])
         self.fx(pre + [{"train": [me, art, res.added, max_level]}])
         after = c.literacy if art == growth.LITERACY else c.arts.get(art, 0)
-        text = f"⟦{me}⟧研读{src}，下了一番功夫学{label}" if "item" in self.p else f"⟦{me}⟧听{src}，学{label}"
         if after > before:
             text += "，有了长进"
         return self.fx([self.say(text, kinds=kinds, params={"progress": res.added, "level": after})])
+
+    def _train_later(self, student: Any, art: str, max_level: int | None, level: int, *, teacher: bool) -> dict:
+        """``defer_train``：进度留给调用方按过去的时间记，事件里交代清楚记给谁、哪门本事、一个时辰记多少。"""
+        return {
+            "deferred": True,
+            "progress": 0,  # 动手这一刻没有记进度
+            "per_hour": growth.progress_for(student, 1, teacher=teacher),
+            "student": student.id,
+            "art": art,
+            "max_level": max_level,
+            "level": level,
+        }
 
     def r_practice(self) -> list[Event]:
         me, c = self.me, self.c
@@ -972,6 +1010,9 @@ class R:
         if res.blocked:
             return self.fx([self.say(f"⟦{me}⟧练了一阵⟦{art}⟧，{res.blocked}", outcome="fail")])
         before = c.arts.get(art, 0)
+        if self.defer_train:
+            later = self._train_later(c, art, None, before, teacher=False)
+            return self.fx([self.say(f"⟦{me}⟧练习⟦{art}⟧", params=later)])
         self.fx([{"train": [me, art, res.added]}])
         after = c.arts.get(art, 0)
         text = f"⟦{me}⟧练习⟦{art}⟧" + ("，又有长进" if after > before else "")
@@ -992,6 +1033,12 @@ class R:
             return self.fx(pre + [self.say(f"⟦{me}⟧向⟦{t}⟧讲解{label}，⟦{t}⟧{res.blocked}", outcome="fail")])
         max_level = None if art == growth.LITERACY else 1
         before = tc.literacy if art == growth.LITERACY else tc.arts.get(art, 0)
+        if self.defer_train:
+            later = self._train_later(tc, art, max_level, before, teacher=True)
+            return self.fx(
+                pre
+                + [self.say(f"⟦{me}⟧向⟦{t}⟧传授{label}", kinds=[events.kind("taught", who=t, by=me)], params=later)]
+            )
         self.fx(pre + [{"train": [t, art, res.added, max_level]}])
         after = tc.literacy if art == growth.LITERACY else tc.arts.get(art, 0)
         text = f"⟦{me}⟧向⟦{t}⟧传授{label}" + ("，⟦" + t + "⟧有了长进" if after > before else "")

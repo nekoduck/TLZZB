@@ -1,0 +1,19 @@
+# evals progress log
+
+- [start] 读了 prompts/jev/j5_state.md（D-356 的【玩家的话】一节）、narrator/narrate.py 的 j5_base、evalrun/checks.py、assertions.py、parser/candidates.py 的 take_place_of 两种写法。顺序：1 checks.j5_state → 2 ASK_ACTION → 3 真 Jev 重跑 J5 → 4 中英对比是否受影响。
+- [done] item 1：evalrun/checks.py 的 j5_state 把 spoken 交给模板的 spoken 变量（与 narrate.py 的 j5_base 同），【你做的事】不再夹「（原话：…）」；tests/evalrun/test_suites.py 新增 test_check_state_puts_the_player_words_where_the_narrator_does（有话的 3 个情境与模板直接渲染的结果逐字相同，没话的不出这一节）。改之前先用旧排法在真 Jev 上跑了三遍当同日基线（scratchpad old_layout_run1..3）：0.80 上 98/8、96/8、98/10，0.70 上 100/18、100/18、100/20。
+- [done] item 2：解析器对 take_place_of 有两种写法——请缨 {verb: wait, params: {ticks: 1}, volunteer: {situation, role}}（内核 speech.volunteer_spec 认）与换人 {verb: release, params: {target}, swap: player}；assertions.ASK_ACTION 的这一项改成两种都写得出的 _take_place_of，另加 ask_action(asks, state=, defs=, to=)（有场景时到解析器候选里对，用候选自己的动作）；ASK_SLOTS 挪到 assertions、scoring 引用它；evals/README.md 2.4 的表改了这一行。tests/evalrun/test_assertions.py 加 2 个测试（camp_bitten 上两种写法各验一遍并过内核；表的动词与三个场景里每条候选一致）。tests/evals/test_datasets.py 里那份 ASK_ACTION 拷贝不归本人改，仍是旧写法（拒绝集没有这种条目，不影响它的静态核对）。
+- [partial] item 3 第一步：产品排法（D-356，原话在最后的【玩家的话】一节）在真 Jev 上跑了三遍（scratchpad new_layout_run1..3）：0.80 上检出 70/72/72%、误杀 8/8/6%；0.70 上检出 80/82/82%、误杀 18/20/20%；0.75 上 74/76/76%、12/14/14%。扫描里没有门槛过闸。掉的全在玩家说了话的 25 句：其中 13 句违规，0.80 上旧排法检出 12/13，新排法 0/13；没说话的 75 句不变（35–37/37）。下一步：把正式结果写进 evals/results、报告、findings、README、ADR；另在 scratchpad 试两种改法（原话一节挪到要核对的句子之前；问题点名【要核对的句子】）给 orchestrator 作依据，不动 prompts/。
+- [done] item 3 的跑数：正式一遍已写进 evals/results/checks.json（产品排法，0.80：检出 74.0% 37/50、误杀 4.0% 2/50；0.70：82.0%、20.0%；扫描没有门槛过闸）。四次产品排法：0.80 检出 70/72/72/74%、误杀 8/8/6/4%；0.70 检出 80/82/82/82%、误杀 18/20/20/20%。细扫 0.70–0.85（步长 0.01）四次都没有交集（检出 ≥80% 要门槛 <0.72 或 <0.76，误杀 ≤10% 要门槛 ≥0.77 或 ≥0.78）。checks.py 加了「按玩家有没有说话分」一张表（summary.by_spoken，记录里多 spoken 一项），tests/evalrun/test_suites.py 补了断言。
+- [done] 诊断（scratchpad variants.py，临时拷贝的 prompts，仓库的 prompts/ 没动）：【玩家的话】一节挪到【要核对的句子】之前，五次 0.80 检出 94/98/96/98/100%、误杀 8/10/6/8/8%（都过闸），0.85 检出 90/86/88/86/86%、误杀 6/4/4/4/4%；只改问题点名那一节，三次 0.80 检出 96%、误杀 14/14/20%（不过），0.90 检出 86/82/84%、误杀 0/0/2%（过）；两样都改三次 0.80 误杀 16/16/20%（不过）。
+- [done] item 3 的文档：evals/results/checks.json（正式一遍）、evals/results/j5_layout_runs.json（各排法各次跑的门槛扫描汇总，新文件）、evals/results/findings.md（最上面新加一节，旧记录里 J5 的几处改了）、evals/report.md（eval report 重出）、README.md 的 M3 一格、docs/adr/0003 的表与「2026-11-17 补记」。config.toml 没动：没有门槛过闸，narration_flag 不改；route.check 与 prompts/jev/j5_state.md 不归本人，写进最后的报告。
+- [done] item 4：不重跑。src/tianlong/evalrun/en/ 只有三份问题（j1、j2a、j5_questions），J5 的状态模板中英共用，排法改动不涉及英文模板。zh_en.json 的 J5 一栏仍是旧排法的数（findings 里注明了）。为了看语言结论会不会变，按产品排法在 scratchpad 跑了一遍 zh_en（没写进 evals/results）：J5 中文 72.0%/8.0%、英文 72.0%/2.0%，三类合计 187/240 对 187/240，仍打平。
+- [final] 全套测试 1082 passed（7 分 14 秒，一遍）；ruff check src tests scripts 干净。四项都做完了，label 'evals' 没有待办。留给 orchestrator 定的：J5 没过闸之后 route.check 怎么走（见下面第三句的甲、乙）；tests/evals/test_datasets.py 里那份 ASK_ACTION 拷贝的 take_place_of 仍是旧写法（不归本人改）。
+
+## 给 DECISIONS.md 的决定句（由 orchestrator 编号）
+
+- 核对集（J5）评测的状态照产品的做法填模板：玩家原话交给 `jev/j5_state` 的 `spoken` 变量，由模板放进【玩家的话】一节（D-356），评测不再自己把原话接在【你做的事】后面；评测量的必须是游戏里发给 Jev 的那份提示。
+- 按产品排法重测，J5 核对没过 7.12 的闸：门槛 0.80 上检出 70% 到 74%、误杀 4% 到 8%（四次），0.50 到 0.90 没有一个门槛两项都满足；漏的全在玩家说了话的回合（13 句违规句在 0.80 上一句也没检出）。换门槛救不回来，`narration_flag` 维持 0.80 不改。
+- （二选一，待项目所有者定，本人没有动 config.toml 与 prompts/）甲：`prompts/jev/j5_state.md` 里【玩家的话】一节挪到要核对的句子之前（仍是单独标明的一节，D-356 不变），重跑核对集复核后 `check = 'jev_first'`、`narration_flag = 0.80` 维持；临时拷贝上试的五次，0.80 上检出 94% 到 100%、误杀 6% 到 10%，都过闸。乙：按 7.12 的退让，`check = 'rules_only'`，并把 C3 的长度上限调低。
+- 评测里 `take_place_of` 对应的内核动作有两种写法，随场景而定：请缨是 `{verb: wait, params: {ticks: 1}, volunteer: {situation, role}}`（内核 `speech.volunteer_spec` 认），换人是 `{verb: release, params: {target}, swap: player}`；`evalrun.assertions.ask_action` 有场景时到解析器的候选里对，`ASK_ACTION` 只作参考表。
+- J5 状态排法的改动不涉及英文问法模板（`evalrun/en/` 只有问题，状态模板中英共用），中英对比不为此重跑；`zh_en.json` 的 J5 一栏仍是评测旧排法量的。

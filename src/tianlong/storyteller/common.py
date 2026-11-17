@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import copy
 import re
-from collections.abc import Callable, Iterable
+from collections.abc import Iterable
 from typing import Any
 
 from tianlong.kernel import perception, predicates, refs, resolve, timeflow
@@ -151,30 +151,6 @@ def reveals_unknown_name(state: WorldState, defs: Defs, text: str, names: Iterab
 
 
 # ---------------------------------------------------------------- 看得见的东西
-
-
-def referable(state: WorldState) -> Callable[[str], bool]:
-    """玩家的角色说得出哪些东西（与 ``parser.wish.referable`` 同一口径；两处都够不着对方，各留一份）。
-
-    知道名字或有个叫法的；人：此刻看得见、有来往、亲见或听人当面说起过；物：此刻看得见、见过、经手过、
-    细看过；地方：眼下所在或到过。本事只凭知道名字。选项里不拿角色说不出的东西做文章（2.3、8.4）。
-    """
-    me = state.chars[state.player]
-    seen = perception.seen_entities(state, me)
-    here = {o.id for o in perception.visible_people(state, me)}
-
-    def ok(eid: str) -> bool:
-        if eid in state.known_terms or eid in state.term_alias:
-            return True
-        if eid in state.chars:
-            return eid in here or eid in me.rel or eid in seen or f"char:{eid}" in seen
-        if eid in state.items:
-            return eid in seen or f"item:{eid}" in seen or perception.item_visible(state, me, eid, seen=seen)
-        if eid in state.locations:
-            return eid == me.loc or eid in state.visited
-        return False
-
-    return ok
 
 
 def believes(c: Character, fid: str) -> bool:

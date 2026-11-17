@@ -145,7 +145,15 @@ def cannot_reason(state: WorldState, defs: Defs, verb: str) -> str:
     if has_status(me, "bound") and verb not in ("wait", "struggle"):
         return replies.BOUND
     if verb in ("go", "flee", "follow") and injury_level(me) >= 3:
-        return replies.TOO_HURT
+        # 侥幸不死之后还能逃一次（D-352：``reprieve``）：这时逃不成是因为没有路可逃，不是伤得动不了；
+        # 想照常走开的，告诉他走不动、但还逃得了，免得他以为只能等死
+        if not has_status(me, "reprieve"):
+            return replies.TOO_HURT
+        if verb == "follow":
+            return replies.TOO_HURT
+        if verb == "go":
+            can_flee = any(a.verb == "flee" for a in actions.legal_actions(state, defs, me.id))
+            return replies.HURT_CAN_FLEE if can_flee else replies.TOO_HURT
     if verb in ("go", "follow") and has_status(me, "captive"):
         return replies.CAPTIVE
     if verb in ("study", "practice", "teach", "rest") and actions.tense_for(state, me):

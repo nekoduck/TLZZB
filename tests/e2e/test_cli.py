@@ -11,16 +11,16 @@ from pathlib import Path
 
 import pytest
 
-from .conftest import CONTENT, REPO
+from .conftest import CONTENT, MINI, REPO
 
 INPUTS = ["一", "我四下看看", "/状态", "我掏出手机报警", "二"]
 
 
-def _config(tmp_path: Path) -> Path:
+def _config(tmp_path: Path, content: Path = CONTENT) -> Path:
     """临时目录里的一份 config.toml：内容库与提示词指向仓库里的，日志与存档写进临时目录。"""
     text = (REPO / "config.toml").read_text(encoding="utf-8")
     for key, value in (
-        ("content", CONTENT),
+        ("content", content),
         ("prompts", REPO / "prompts"),
         ("runs", tmp_path / "runs"),
         ("saves", tmp_path / "saves"),
@@ -96,6 +96,52 @@ def test_piped_play_session_and_replay(tmp_path: Path) -> None:
     # 读不存在的档：说清楚，退出码非零
     r4 = _run(["--config", str(cfg), "play", "--mock", "--plain", "--load", "没有这个档"], cwd=tmp_path, stdin="")
     assert r4.returncode != 0 and "Traceback" not in r4.stderr
+
+
+def test_replay_that_diverges_exits_with_1(tmp_path: Path) -> None:
+    """重放离开了录制（这里是录下的输入被改过）：游戏照常走完，标准错误里说头一处与处数，退出码 1（D-354）。"""
+    cfg = _config(tmp_path)
+    base = ["--config", str(cfg), "play", "--mock", "--plain", "--seed", "7", "--name", "阿青"]
+    r = _run([*base, "--save", "div"], cwd=tmp_path, stdin="\n".join(["一", "我四下看看", "二", "/退出"]) + "\n")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "对不上" not in r.stderr
+    run = next(iter((tmp_path / "runs").iterdir()))
+
+    # 少喂一条输入：每一次调用都对得上，但录下的调用没有用完，也算没有重现那一局
+    (run / "inputs.txt").write_text("一\n我四下看看\n", encoding="utf-8")
+    r2 = _run(["--config", str(cfg), "play", "--plain", "--replay", str(run)], cwd=tmp_path, stdin="")
+    assert r2.returncode == 1, r2.stdout + r2.stderr
+    assert "没有用到" in r2.stderr and "Traceback" not in r2.stderr
+    assert "对不上" not in r2.stdout
+
+    # 换掉输入：模型的请求变了
+    (run / "inputs.txt").write_text("二\n我在这里等上半个时辰\n一\n", encoding="utf-8")
+    r3 = _run(["--config", str(cfg), "play", "--plain", "--replay", str(run)], cwd=tmp_path, stdin="")
+    assert r3.returncode == 1, r3.stdout + r3.stderr
+    assert "Traceback" not in r3.stderr and "就此别过。" in r3.stdout
+    m = re.search(r"重放与录下的那一局对不上：共 (\d+) 处，头一处：replay: ", r3.stderr)
+    assert m is not None and int(m.group(1)) >= 1, r3.stderr
+    assert r3.stdout.count("重放与录下的那一局对不上了") == 1  # 游戏里只提示一次
+    assert "--load" in r3.stderr  # 存档那一行照旧
+
+
+def test_play_refuses_content_that_fails_validation(tmp_path: Path) -> None:
+    """内容库没有通过校验：不开局，标准错误里列出问题，退出码 2，没有 Traceback。"""
+    import shutil
+
+    import yaml
+
+    bad = tmp_path / "content"
+    shutil.copytree(MINI, bad)
+    items = yaml.safe_load((bad / "items.yaml").read_text(encoding="utf-8"))
+    items["token"]["holder"] = "nobody_here"
+    (bad / "items.yaml").write_text(yaml.safe_dump(items, allow_unicode=True), encoding="utf-8")
+    cfg = _config(tmp_path, bad)
+    r = _run(["--config", str(cfg), "play", "--mock", "--plain", "--seed", "1"], cwd=tmp_path, stdin="一\n")
+    assert r.returncode == 2, r.stdout + r.stderr
+    assert "没有通过校验" in r.stderr and "nobody_here" in r.stderr and "Traceback" not in r.stderr
+    assert "〔" not in r.stdout  # 一屏也没有开出来
+    assert not (tmp_path / "saves").exists()
 
 
 def test_eval_lists_suites_and_runs_one(tmp_path: Path) -> None:

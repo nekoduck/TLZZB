@@ -3,14 +3,13 @@
 返回的 dict 直接当作 ``{thread: …}`` 效果的参数交给内核（kernel.effects 的 thread 效果分配 id）。
 Jev 对每个候选实体问一道是非题；Jev 不可用时按名字匹配。
 
-只对到玩家的角色说得出的东西上（``referable``）：他知道名字的、此刻看得见的、见过经手过的、到过的。
+只对到玩家的角色说得出的东西上（``kernel.perception.referable``）：他知道名字的、此刻看得见的、见过经手过的、到过的。
 玩家从书里知道、角色却没听说过的名字，心愿的文字照留，但不对到任何人和物上——否则选项会顺着它
 去「打听」一个角色不该知道的人（2.3、8.4）。知道了名字以后，再写一遍心愿就对得上。
 """
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from typing import Any
 
 from tianlong import prompting
@@ -29,35 +28,11 @@ MAX_TEXT = 60
 WISH_WEIGHT = 3
 
 
-def referable(state: WorldState) -> Callable[[str], bool]:
-    """玩家的角色说得出哪些东西（与 ``storyteller.common.referable`` 同一口径，测试里对过）。
-
-    知道名字或有个叫法的；人：此刻看得见、有来往、亲见或听人当面说起过；物：此刻看得见、见过、经手过、
-    细看过；地方：眼下所在或到过。本事只凭知道名字。
-    """
-    me = state.chars[state.player]
-    seen = perception.seen_entities(state, me)
-    here = {o.id for o in perception.visible_people(state, me)}
-
-    def ok(eid: str) -> bool:
-        if eid in state.known_terms or eid in state.term_alias:
-            return True
-        if eid in state.chars:
-            return eid in here or eid in me.rel or eid in seen or f"char:{eid}" in seen
-        if eid in state.items:
-            return eid in seen or f"item:{eid}" in seen or perception.item_visible(state, me, eid, seen=seen)
-        if eid in state.locations:
-            return eid == me.loc or eid in state.visited
-        return False
-
-    return ok
-
-
 def wish_candidates(state: WorldState, defs: Defs, text: str) -> list[str]:
     """候选实体：叫法对得上、角色也说得出的，加上在场的人、身上的东西、玩家已知的专名。"""
     me = state.chars[state.player]
     ids: list[str] = []
-    can_refer = referable(state)
+    can_refer = perception.referable(state)
 
     def add(eid: str) -> None:
         if eid and eid != state.player and eid not in ids and len(ids) < MAX_CANDS:

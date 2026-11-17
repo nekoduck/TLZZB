@@ -96,10 +96,53 @@ async def test_decision_and_check_requests_follow_the_templates(cfg: EvalConfig)
     data = cfg.dataset("narration_checks")
     ctx = next(c for c in data["contexts"] if c.get("spoken"))
     state = checks.j5_state(ctx, "一句要核对的话。", set(cfg.world()[1].chars))
-    assert "【要核对的句子】一句要核对的话。" in state and ctx["spoken"] in state and ctx["facts"][0] in state
+    assert "【要核对的句子】一句要核对的话。" in state and ctx["facts"][0] in state
     assert set(checks.j5_questions()) == {"extra", "mind", "puppet"}
     recs = await checks.evaluate(cfg, data, data["items"][:6])
     assert all(set(r["p"]) == {"extra", "mind", "puppet"} and not r["failed"] for r in recs)
+    # 玩家说没说话各记一栏：【玩家的话】一节碍不碍事，从结果里直接看得出
+    by_ctx = {c["id"]: bool(c.get("spoken")) for c in data["contexts"]}
+    recs = await checks.evaluate(cfg, data, data["items"][:30])
+    assert [r["spoken"] for r in recs] == [by_ctx[r["context"]] for r in recs] and {r["spoken"] for r in recs} == {True, False}
+    res = checks.summarize(cfg, recs, len(recs))
+    split = res["summary"]["by_spoken"]
+    assert split["spoken"]["n"] == sum(r["spoken"] for r in recs) and split["spoken"]["n"] + split["silent"]["n"] == 30
+    assert split["spoken"]["detected"] + split["silent"]["detected"] == res["summary"]["at_threshold"]["detected"]
+    tab = next(t for t in res["tables"] if "有没有说话" in t["title"])
+    assert [row[1] for row in tab["rows"]] == [str(split["spoken"]["n"]), str(split["silent"]["n"])]
+
+
+def test_check_state_puts_the_player_words_where_the_narrator_does(cfg: EvalConfig) -> None:
+    """核对集的 J5 状态与叙述模块给 J5 的一样（D-356）：原话单放在标明的【玩家的话】一节，【你做的事】里不夹。
+
+    这一节排在模板的哪里由 prompts/jev/j5_state.md 定，这里不钉死先后，只钉与模板直接渲染的结果相同。
+    """
+    data = cfg.dataset("narration_checks")
+    people = set(cfg.world()[1].chars)
+    said = [c for c in data["contexts"] if c.get("spoken")]
+    silent = [c for c in data["contexts"] if not c.get("spoken")]
+    assert said and silent
+    for ctx in said:
+        state = checks.j5_state(ctx, "一句要核对的话。", people)
+        head, sep, tail = state.partition("【玩家的话】")
+        assert sep and state.count("【玩家的话】") == 1, ctx["id"]
+        note, words, *_rest = tail.split("\n")
+        assert "原话" in note and words == ctx["spoken"], ctx["id"]  # 这一节自带说明，下一行是一字不改的原话
+        lines = state.split("\n")
+        assert f"【你做的事】{ctx['action']}" in lines and "【要核对的句子】一句要核对的话。" in lines, ctx["id"]
+        assert state.count(ctx["spoken"]) == 1 + sum(t.count(ctx["spoken"]) for t in (*ctx["facts"], ctx["action"])), \
+            ctx["id"]  # 原话只在它自己那一节出现
+        # 与模板直接渲染的结果一字不差：评测量的就是产品里那份提示
+        names = [v for v in ctx["names"].values() if v != "你"]
+        there = [v for k, v in ctx["names"].items() if v != "你" and k in people]
+        assert state == prompting.render(
+            "jev/j5_state", facts=ctx["facts"], scene=ctx["scene"], present="、".join(dict.fromkeys(there)) or "无",
+            names="、".join(dict.fromkeys(names)) or "无", player_action=ctx["action"], spoken=ctx["spoken"],
+            sentence="一句要核对的话。", paragraph=""), ctx["id"]
+    for ctx in silent:
+        state = checks.j5_state(ctx, "一句要核对的话。", people)
+        assert "【玩家的话】" not in state and "原话" not in state, ctx["id"]  # 没说话就没有这一节
+        assert "【要核对的句子】一句要核对的话。" in state.split("\n"), ctx["id"]
 
 
 def test_english_templates_have_the_same_keys_and_swap_cleanly() -> None:

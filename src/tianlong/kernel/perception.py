@@ -8,6 +8,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from pydantic import BaseModel
 
 from tianlong.kernel import refs
@@ -128,6 +130,37 @@ def item_visible(
     if h is None or h.loc != viewer.loc or not h.onstage or not visible_to(viewer, h):
         return False
     return carried_openly(it) or knows_item_on(state, viewer, it, seen=seen)
+
+
+def referable(state: WorldState) -> Callable[[str], bool]:
+    """玩家的角色说得出哪些东西（2.3、8.4）。返回一个判断函数：给实体 id，答说得出说不出。
+
+    知道名字或有个叫法的，都说得出；此外——
+    人：此刻看得见、有来往（关系表里有他）、亲见或听人当面说起过、细看过；
+    物：此刻看得见（``item_visible``）、见过、经手过、细看过；
+    地方：眼下所在，或到过；
+    本事与别的专名：只凭知道名字。
+
+    ``/心愿`` 的绑定（parser.wish）与开口的选项（storyteller.speaking）都用这一个判断：
+    玩家从书里知道、角色却没见过没听说过的东西，不替他对上，也不替他开口打听。
+    一次调用里要问许多实体时，先取这个函数再逐个问（见过的实体只算一遍）。
+    """
+    me = state.chars[state.player]
+    seen = seen_entities(state, me)
+    here = {o.id for o in visible_people(state, me)}
+
+    def ok(eid: str) -> bool:
+        if eid in state.known_terms or eid in state.term_alias:
+            return True
+        if eid in state.chars:
+            return eid in here or eid in me.rel or eid in seen or f"char:{eid}" in seen
+        if eid in state.items:
+            return eid in seen or f"item:{eid}" in seen or item_visible(state, me, eid, seen=seen)
+        if eid in state.locations:
+            return eid == me.loc or eid in state.visited
+        return False
+
+    return ok
 
 
 def witnesses(

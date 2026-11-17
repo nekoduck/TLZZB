@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from tianlong.kernel import beliefs, perception, refs
-from tianlong.kernel.state import Claim
+from tianlong.kernel import beliefs, memory, perception, refs
+from tianlong.kernel.state import Claim, MemoryItem
 
 from .conftest import World
 
@@ -177,3 +177,39 @@ def test_learn_terms_from_event_helper(w: World) -> None:
     assert "cliff" in w.s.known_terms
     perception.learn_terms_from_event(w.s, w.defs, ev)  # 幂等
     assert w.s.known_terms.count("cliff") == 1
+
+
+def test_referable_is_what_the_player_character_can_name_or_point_at(w: World) -> None:
+    """玩家的角色说得出哪些东西（2.3、8.4）：这是唯一的一份判断，/心愿 的绑定与开口的选项都用它。"""
+    st = w.s
+    ok = perception.referable(st)
+    # 人：看得见的、有来往的、有个叫法的说得出；躲在梁上、没见过也没听说过的说不出
+    assert ok("fighter") and ok("guest") and not ok("girl")
+    # 物：自己身上的、看得见的人明摆着带着的说得出；别人怀里没见过的、还没上场的说不出
+    assert ok("rope") and ok("rations")
+    assert not ok("antidote") and not ok("old_manual")
+    # 地方：眼下所在与到过的；本事与别的专名：只凭知道名字；不认得的 id 一律说不出
+    assert ok("hall") and not ok("cliff")
+    assert not ok("cloud_steps") and not ok("no_such_thing") and not ok("")
+
+    # 知道了名字、有了叫法，就说得出（人不在眼前、东西没见过也一样）
+    w.fx([{"know_term": "girl"}, {"know_term": "cloud_steps"}, {"know_term": "cliff"}])
+    ok = perception.referable(st)
+    assert ok("girl") and ok("cloud_steps") and ok("cliff")
+
+    # 细看过的人身上的东西说得出；没去过的地方走到了才说得出
+    w2 = World()
+    w2.act("player", "examine", target="guest")
+    assert perception.referable(w2.s)("antidote")
+    assert not perception.referable(w2.s)("yard")
+    w2.act("player", "go", exit="yard")
+    ok2 = perception.referable(w2.s)
+    assert ok2("yard") and ok2("hall") and ok2("guest")  # 到过的地方、有来往的人，走开了照样说得出
+    # 只是同处过、没有来往也没留下记忆的人，走开之后说不出；亲见过他做事、听人当面说起过他，才说得出
+    assert not ok2("fighter") and not ok2("girl")
+    me = w2.c("player")
+    memory.write(w2.s, me, MemoryItem(tick=w2.s.tick, kind="saw", text="⟦fighter⟧练了一趟剑", entities=["fighter"], salience=3))
+    memory.write(w2.s, me, MemoryItem(tick=w2.s.tick, kind="told", text="有人说起过⟦girl⟧", entities=["girl"], salience=3))
+    memory.write(w2.s, me, MemoryItem(tick=w2.s.tick, kind="heard", text="远处一声响", entities=["sword"], salience=3))
+    ok2 = perception.referable(w2.s)
+    assert ok2("fighter") and ok2("girl") and not ok2("sword")  # 只听见响动的不算

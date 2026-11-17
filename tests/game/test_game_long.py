@@ -354,12 +354,56 @@ async def test_interrupted_practice_keeps_only_the_time_actually_spent(settings:
     assert s.game.last_turn is not None and s.game.last_turn.interrupted
     assert st.tick == t0 + 2
     assert me.arts["cloud_steps"] == 1  # 没有凭空升一层
-    assert me.art_progress.get("cloud_steps", 0) <= hour  # 至多是内核先记的头一个时辰
+    assert me.art_progress.get("cloud_steps", 0) == hour * 2 // 8 > 0  # 只有这两刻的份，没有预付的头一个时辰
+    await s.close()
+
+
+async def test_one_hour_order_interrupted_gets_no_prepaid_hour(settings: Settings) -> None:
+    """只吩咐一个时辰的也一样：两刻被打断，记两刻的份（D-360：一刻也不预付）。"""
+    s = await new_session(settings)
+    await s.play(*QUIET_YARD)
+    st = s.state
+    pid = st.player
+    me = st.chars[pid]
+    s.fx([{"spawn": ["old_manual", pid]}])
+    hour = growth.progress_for(me, 1, teacher=False)
+    s.fx([{"schedule": [2, [{"move": ["guest", "yard"]}]]}])
+    t0 = st.tick
+    evs = await _train(s, "study", item="old_manual", art="cloud_steps", hours=1)
+    assert s.game.last_turn is not None and s.game.last_turn.interrupted and st.tick == t0 + 2
+    assert me.arts.get("cloud_steps", 0) == 0
+    assert me.art_progress.get("cloud_steps", 0) == hour * 2 // 8 > 0
+    assert text_of(evs).strip() and "cloud_steps" in st.known_terms
+    await s.close()
+
+
+@pytest.mark.parametrize("hours", [1, 2, 3])
+async def test_uninterrupted_orders_credit_what_the_kernel_credits_in_one_go(settings: Settings, hours: int) -> None:
+    """没被打断：读、练、教记的总数与内核一次记满（角色自己做时）的数一刻不差。"""
+    s = await new_session(settings)
+    await s.play(*QUIET_YARD)
+    st = s.state
+    pid = st.player
+    me = st.chars[pid]
+    s.fx([{"art": [pid, "cloud_steps", 1]}])
+    t0 = st.tick
+    await _train(s, "practice", art="cloud_steps", hours=hours)
+    assert s.game.last_turn is not None and not s.game.last_turn.interrupted and st.tick == t0 + hours * 8
+    want = growth.progress_for(me, hours, teacher=False)
+    assert want < growth.stage_need(s.game.defs, "cloud_steps", 1)
+    assert me.arts["cloud_steps"] == 1 and me.art_progress.get("cloud_steps", 0) == want
+
+    student = _student_in_yard(s)
+    t1 = st.tick
+    await _train(s, "teach", target="fighter", art="literacy", hours=hours)
+    assert not s.game.last_turn.interrupted and st.tick == t1 + hours * 8
+    assert student.literacy == 0
+    assert student.art_progress.get("literacy", 0) == growth.progress_for(student, hours, teacher=True)
     await s.close()
 
 
 async def test_practice_progress_follows_elapsed_time(settings: Settings) -> None:
-    """头一个时辰之后，进度随实际过去的刻数记：二十刻被打断，记到二十刻为止。"""
+    """进度随实际过去的刻数记：二十刻被打断，记到二十刻为止。"""
     s = await new_session(settings)
     await s.play(*QUIET_YARD)
     st = s.state
@@ -399,14 +443,24 @@ async def test_uninterrupted_practice_gets_all_of_it_and_the_gain_is_told(settin
     await s.close()
 
 
+def _student_in_yard(s):  # noqa: ANN001, ANN202
+    """把雷猛挪到前院、认玩家作上司，并让他在这里等着（不然他转身就回演武堂去了）。"""
+    pid = s.state.player
+    stay = {"id": "w1", "text": "在这里等着", "at": "yard", "do": {"verb": "wait"}, "takes": 400}
+    s.fx([
+        {"move": ["fighter", "yard"]},
+        {"superior": ["fighter", pid]},
+        {"agenda": ["fighter", {"goal": "听讲", "steps": [stay]}]},
+    ])
+    return s.state.chars["fighter"]
+
+
 async def test_interrupted_teaching_credits_the_student_for_time_spent(settings: Settings) -> None:
     """教人也一样：进度记在徒弟身上，按实际教了多久算。"""
     s = await new_session(settings)
     await s.play(*QUIET_YARD)
     st = s.state
-    pid = st.player
-    s.fx([{"move": ["fighter", "yard"]}, {"superior": ["fighter", pid]}])
-    student = st.chars["fighter"]
+    student = _student_in_yard(s)
     assert student.literacy == 0
     hour = growth.progress_for(student, 1, teacher=True)
     s.fx([{"schedule": [12, [{"move": ["guest", "yard"]}]]}])
@@ -415,4 +469,21 @@ async def test_interrupted_teaching_credits_the_student_for_time_spent(settings:
     assert st.tick == t0 + 12 and s.game.last_turn is not None and s.game.last_turn.interrupted
     assert student.literacy == 0
     assert student.art_progress.get("literacy", 0) == hour * 12 // 8
+    await s.close()
+
+
+async def test_lesson_stops_when_the_student_walks_off(settings: Settings) -> None:
+    """徒弟在头一轮反应里就走开了：这一课上不成，时间不白过，人不在跟前也不记进度。"""
+    s = await new_session(settings)
+    await s.play(*QUIET_YARD)
+    st = s.state
+    pid = st.player
+    s.fx([{"move": ["fighter", "yard"]}, {"superior": ["fighter", pid]}])  # 他自己的打算是回演武堂
+    student = st.chars["fighter"]
+    t0 = st.tick
+    evs = await _train(s, "teach", target="fighter", art="literacy", hours=6)
+    assert student.loc == "hall" and st.chars[pid].loc == "yard"
+    assert st.tick == t0 and s.game.last_turn is not None and s.game.last_turn.interrupted
+    assert student.literacy == 0 and student.art_progress.get("literacy", 0) == 0
+    assert_full_turn(evs)
     await s.close()

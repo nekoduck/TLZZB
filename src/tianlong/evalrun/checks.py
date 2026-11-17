@@ -28,20 +28,23 @@ nar = importlib.import_module("tianlong.narrator.narrate")  # 包里同名的 na
 
 SWEEP = (0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90)
 LABEL_NAME = {"extra": "extra（多写）", "mind": "mind（读心）", "puppet": "puppet（替玩家做主）"}
+SPOKEN_NAME = {"spoken": "玩家说了话（状态里有【玩家的话】一节）", "silent": "玩家没说话"}
 
 
 def j5_state(ctx: Mapping[str, Any], sentence: str, people: set[str] | None = None) -> str:
-    """7.3 的 J5 状态：该 context 的 facts、names、action（与 spoken）、scene，加上要核对的句子。"""
+    """7.3 的 J5 状态：该 context 的 facts、names、action、scene，加上要核对的句子。
+
+    玩家的原话（spoken）照叙述模块的做法（``narrate.py`` 的 ``j5_base``，D-356）交给模板的 ``spoken`` 变量，
+    由模板放进单独标明的【玩家的话】一节（排在哪里由模板定）；【你做的事】一行只有动作的事实句，不夹原话。
+    """
     names = dict(ctx.get("names") or {})
     shown = [v for v in names.values() if v and v != "你"]
     present = [v for k, v in names.items() if v and v != "你" and (people is None or k in people)]
-    action = str(ctx.get("action") or "无")
-    if ctx.get("spoken"):
-        action += f"（原话：{ctx['spoken']}）"
     return prompting.render(
         "jev/j5_state", facts=list(ctx.get("facts") or []), scene=str(ctx.get("scene") or ""),
         present="、".join(dict.fromkeys(present)) or "无", names="、".join(dict.fromkeys(shown)) or "无",
-        player_action=action, sentence=sentence.strip(), paragraph="")
+        player_action=str(ctx.get("action") or "无"), spoken=str(ctx.get("spoken") or "").strip(),
+        sentence=sentence.strip(), paragraph="")
 
 
 def j5_questions() -> dict[str, Any]:
@@ -70,7 +73,7 @@ async def evaluate(cfg: EvalConfig, data: Mapping[str, Any], items: Sequence[Map
 
     async def one(item: Mapping[str, Any]) -> dict[str, Any]:
         ctx = contexts[item["context"]]
-        rec: dict[str, Any] = {"id": item["id"], "context": item["context"],
+        rec: dict[str, Any] = {"id": item["id"], "context": item["context"], "spoken": bool(ctx.get("spoken")),
                                "labels": {k: bool(item["labels"].get(k)) for k in scoring.CHECK_LABELS},
                                "p": {}, "failed": False}
         with tagged(str(item["id"])):
@@ -103,6 +106,13 @@ def summarize(cfg: EvalConfig, recs: Sequence[Mapping[str, Any]], n: int) -> dic
         "各标签（同一门槛）", ["标签", "精确率", "召回率", "准确率", "TP", "FP", "FN", "TN"],
         [[LABEL_NAME[k], pct(v["precision"]), pct(v["recall"]), pct(v["accuracy"]), v["tp"], v["fp"], v["fn"], v["tn"]]
          for k, v in st["labels"].items()]))
+    # 玩家说了话的回合，状态里多出【玩家的话】一节（D-356）：两种回合分开看，这一节碍不碍事一目了然
+    groups = {"spoken": [r for r in recs if r.get("spoken")], "silent": [r for r in recs if not r.get("spoken")]}
+    by_spoken = {k: scoring.checks_stats(rs, th) for k, rs in groups.items()}
+    tables.append(table(
+        "按这一回合玩家有没有说话分（同一门槛）", ["回合", "句数", "检出率", "误杀率"],
+        [[SPOKEN_NAME[k], v["n"], frac(v["detected"], v["violating"]), frac(v["false_kills"], v["clean"])]
+         for k, v in by_spoken.items()]))
     sw = scoring.checks_sweep(recs, SWEEP)
     tables.append(table(
         "门槛扫描", ["narration_flag", "检出率", "误杀率", "过闸"],
@@ -130,7 +140,7 @@ def summarize(cfg: EvalConfig, recs: Sequence[Mapping[str, Any]], n: int) -> dic
         detail += " 扫描的门槛里没有一个同时满足两项。"
     lat = [r["seconds"] for r in recs if r.get("seconds") is not None]
     failed = sum(1 for r in recs if r.get("failed"))
-    summary = {"at_threshold": st, "sweep": sw, "recommended": best, "failed": failed,
+    summary = {"at_threshold": st, "by_spoken": by_spoken, "sweep": sw, "recommended": best, "failed": failed,
                "latency": {"median_s": median(lat), "p95_s": percentile(lat, 95)}}
     notes = [f"J5 请求时延中位 {secs(median(lat))}、P95 {secs(percentile(lat, 95))}；没答上来 {failed} 条。"]
     gates = [gate("J5 核对（7.12）", passed, detail, "只留字符串检查（route.check = 'rules_only'），并把 C3 的长度上限调低")]

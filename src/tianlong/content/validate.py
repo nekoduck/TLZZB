@@ -4,6 +4,9 @@
 - 谓词与效果的语法：5.2、5.3 的每个键都按参数形状检查（``PREDICATE_SHAPES`` / ``EFFECT_SHAPES``）。
 - 地图连通：每个不是图外的地点都能从玩家的开局地点走到（隐藏出口、要判定的出口也算）。
 - 开局时不变量成立。
+
+开新局时 ``game.Game.new`` 调 ``require_valid``：有问题就抛 ``ContentInvalid``（列出问题），不拿坏了的内容开局。
+整份校验在随附的内容上不到 10 毫秒（读内容本身约半秒）。
 """
 
 from __future__ import annotations
@@ -11,6 +14,7 @@ from __future__ import annotations
 from collections import deque
 from typing import Any
 
+from tianlong.content.loader import ContentError
 from tianlong.kernel import invariants, mood, predicates, refs
 from tianlong.kernel.actions import VERBS
 from tianlong.kernel.defs import Defs
@@ -475,6 +479,30 @@ def _raw_tables(c: _Checker) -> None:
             if isinstance(o, dict):
                 c.pred(o.get("pre"), f"opportunities.{oid}.pre")
                 c.effects(o.get("effects"), f"opportunities.{oid}.effects", None)
+
+
+SHOWN_PROBLEMS = 20  # ContentInvalid 的说明里至多列出这么多条（完整的在 problems 里）
+
+
+class ContentInvalid(ContentError):
+    """内容库读得进来，但没有通过校验。``problems`` 是完整的问题清单，``where`` 是内容库的位置。"""
+
+    def __init__(self, problems: list[str], where: str = "") -> None:
+        self.problems = list(problems)
+        self.where = where
+        head = f"内容库没有通过校验（{where + '，' if where else ''}共 {len(self.problems)} 个问题）："
+        lines = [head] + [f"  - {p}" for p in self.problems[:SHOWN_PROBLEMS]]
+        if len(self.problems) > SHOWN_PROBLEMS:
+            lines.append(f"  …… 另有 {len(self.problems) - SHOWN_PROBLEMS} 个")
+        lines.append("用 python -m tianlong pipeline p7 --mock 看完整的校验结果。")
+        super().__init__("\n".join(lines))
+
+
+def require_valid(defs: Defs, state: WorldState, *, where: str = "") -> None:
+    """校验一遍；有问题就抛 ``ContentInvalid``。``state`` 要是刚读出来的开局状态。"""
+    problems = validate(defs, state)
+    if problems:
+        raise ContentInvalid(problems, where)
 
 
 def validate(defs: Defs, state: WorldState) -> list[str]:

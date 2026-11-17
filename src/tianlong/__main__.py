@@ -7,6 +7,9 @@
     python -m tianlong eval <套件名|all|report> [--mock] [--limit N] [--lang zh|en] [--model jev-…] [--out 目录]
 
 ``--config`` 指明 config.toml（默认取当前目录下的）。密钥只从环境变量与 .env 读，从不打印。
+
+``play`` 的退出码：0 正常；1 是 ``--replay`` 与录下的那一局对不上（游戏照常走完，标准错误里说头一处与处数）；
+2 是没能开局（要重放的那一局找不到、存档读不回来、内容库读不进来或没有通过校验）；130 是 Ctrl-C。
 """
 
 from __future__ import annotations
@@ -89,6 +92,7 @@ def _replay_info(path: str) -> tuple[Path, dict[str, Any], list[str] | None]:
 
 def cmd_play(args: argparse.Namespace) -> int:
     from tianlong import store
+    from tianlong.content.loader import ContentError
     from tianlong.game import Game
     from tianlong.ui import repl
 
@@ -131,10 +135,38 @@ def cmd_play(args: argparse.Namespace) -> int:
     except store.SaveError as e:
         print(str(e), file=sys.stderr)
         return 2
+    except ContentError as e:
+        # 内容库读不进来，或没有通过开局前的校验：列出问题，不开局
+        print(str(e), file=sys.stderr)
+        return 2
     game = holder.get("game")
     if game is not None:
         print(f"本局存档：{game.save_name}（接着玩：--load {game.save_name}）；日志：{game.run_dir}", file=sys.stderr)
+        diverged = _replay_report(game, scripted=inputs is not None and code == 0)
+        if diverged and code == 0:
+            code = 1
     return code
+
+
+def _replay_report(game: Any, *, scripted: bool) -> bool:
+    """重放有没有离开录制（D-354）：对不上的调用游戏里已经兜底了，这里把头一处与处数打到标准错误。
+
+    ``scripted``：录下的输入已经全部喂完。这时录制里还有没用到的调用，也是没有重现那一局（少调用了模型）。
+    返回是否要以退出码 1 报告。
+    """
+    rp = getattr(game.llm, "replayer", None)
+    if rp is None:
+        return False
+    found = list(rp.mismatches)
+    if found:
+        print(f"重放与录下的那一局对不上：共 {len(found)} 处，头一处：{found[0]}", file=sys.stderr)
+        return True
+    left = rp.remaining() if scripted else {}
+    if left:
+        kinds = "、".join(f"{k}×{n}" for k, n in sorted(left.items()))
+        print(f"重放与录下的那一局对不上：录下的调用还有 {sum(left.values())} 次没有用到（{kinds}）", file=sys.stderr)
+        return True
+    return False
 
 
 # ---------------------------------------------------------------- pipeline

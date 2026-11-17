@@ -31,6 +31,7 @@ from typing import Any
 from tianlong import minds, narrator, parser, store, storyteller, world
 from tianlong.config import Settings
 from tianlong.content.loader import load as load_content
+from tianlong.content.validate import require_valid
 from tianlong.kernel import actions, danger, growth, perception, refs, resolve, timeflow
 from tianlong.kernel.actions import ActionInst
 from tianlong.kernel.defs import Defs
@@ -61,7 +62,7 @@ YES_WORDS = frozenset({"是", "是的", "对", "好", "确定", "走", "嗯", "y
 NO_WORDS = frozenset({"否", "不", "不是", "不了", "不走", "算了", "留下", "n", "no"})
 LONG_VERBS = ("wait", "rest", "study", "practice", "teach")  # 时间成段过去的动作（6.9、8.7）
 TRAVEL_VERBS = ("go", "flee")
-TRAIN_VERBS = ("study", "practice", "teach")  # 进度按做了多久记的动作（6.12，见 Game._hour_one）
+TRAIN_VERBS = ("study", "practice", "teach")  # 进度按做了多久记的动作（6.12，见 Game._train_plan）
 QUIET_VERBS = frozenset({"wait", "look", "listen", "examine", "rest", "study", "practice"})  # 算不上「动静」
 # 静下来做的长动作：做满一个时辰以上时，旁人之间的闲话与小动作不打断它（见 _breaks_quiet）
 QUIET_LONG_VERBS = ("wait", "rest", "study", "practice")
@@ -94,6 +95,12 @@ TEXT_BUDGET_ASK = (
 TEXT_BUDGET_RULES = "这一局此后改用规则与模板，不再调用模型。"
 TEXT_BUDGET_MORE = "预算已追加到 ${budget:.2f}，接着用模型。"
 TEXT_NO_KEYS = "没有找到模型的密钥：这一局只用规则与模板。想看替身模型的效果，加 --mock。"
+TEXT_REPLAY_DIVERGED = (
+    "重放与录下的那一局对不上了（到这一回合已有 {n} 处；头一处：{first}）。"
+    "对不上的调用按规则与模板兜底，这一局照常进行，但此后不再是那一局的逐字重现。"
+)
+REPLAY_QUOTE_MAX = 160  # 提示里引的头一处对不上的说明至多这么长（完整的在 Replayer.mismatches 里）
+REPLAY_QUOTE_CUT = ": recorded "  # 说明里从这里起是请求的内容（可能是别人心里的事），不给玩家看
 TEXT_WAKE = "⟦{me}⟧被一阵动静惊醒了"
 TEXT_GAIN = "⟦{who}⟧在{label}上有了长进"  # 读、练、教到半路升了一层（叙述模板会接成「你……，又在……上有了长进」）
 LABEL_LITERACY = "识字"
@@ -119,13 +126,14 @@ def _unique_dir(root: Path, name: str) -> tuple[str, Path]:
 
 @dataclass
 class _Train:
-    """一回合里读、练、教还没记完的进度：头一个时辰内核已经记了，后面的按过去的刻数补。"""
+    """一回合里读、练、教的进度：内核动手时一刻也没记（``defer_train``），全按过去的刻数记。"""
 
     student: str
     art: str
-    per_hour: int  # 每个时辰的进度（刻），取自内核结算头一个时辰时算出的数
+    per_hour: int  # 每个时辰的进度（刻），内核结算时算好、放在事件 params 里的数
     max_level: int | None
-    credited: int = 0  # 头一个时辰之后已经补记的
+    partner: str | None = None  # 教与学的另一方（听讲时是讲的人，传授时是教的人）；自己读、自己练没有
+    credited: int = 0  # 这一回合已经记了的
 
 
 @dataclass
@@ -186,6 +194,7 @@ class Game:
         self._budget_notes: list[str] = []
         self._budget_ask = False
         self._rules_mode = False
+        self._replay_warned = False  # 「重放对不上了」已经提示过（一局只提示一次，D-354）
         self._pending_leave: tuple[ActionInst, Speech | None] | None = None
         self._prev_tail = ""
         self._mark = state.next_event_id
@@ -213,9 +222,18 @@ class Game:
         replay_dir: str | Path | None = None,
         debug: bool = False,
         save_name: str | None = None,
+        validate: bool = True,
     ) -> Game:
-        """开一局新的。``replay_dir`` 给出时按那一局录下的模型调用返回（同一种子、同样的输入即逐字重现）。"""
-        defs, state = load_content(settings.path("content"), player_name=player_name, seed=seed)
+        """开一局新的。``replay_dir`` 给出时按那一局录下的模型调用返回（同一种子、同样的输入即逐字重现）。
+
+        开局前把内容库校验一遍（``content.validate``，引用、语法、地图连通、开局不变量）：有问题就抛
+        ``ContentInvalid``，列出问题，不建日志与存档。读档（``load``）不再校验：存档对的是同一份内容
+        （``content_hash``）。``validate=False`` 留给故意用残缺内容的测试。
+        """
+        content_dir = settings.path("content")
+        defs, state = load_content(content_dir, player_name=player_name, seed=seed)
+        if validate:
+            require_valid(defs, state, where=str(content_dir))
         return cls._build(
             settings, state, defs, mock=mock, run_id=run_id, replay_dir=replay_dir, debug=debug,
             save_name=save_name, loaded=False,
@@ -437,6 +455,9 @@ class Game:
             for ev in self._budget_events():
                 shown.append(ev)
                 yield ev
+            for ev in self._replay_events(rec):
+                shown.append(ev)
+                yield ev
             ok = True
         finally:
             st = self.state  # /读档 之后是新的状态
@@ -609,9 +630,8 @@ class Game:
         fresh = actions.is_legal(st, df, act)
         cost = fresh.cost if fresh is not None else act.cost
         waits = self._wait_marks()
-        # 2 结算玩家的动作（读、练、教的多时辰吩咐：内核只先结算头一个时辰，其余随时间过去再记）
-        first = self._hour_one(act)
-        evs = self._collect(resolve.apply(st, df, first, speech, source="player"))
+        # 2 结算玩家的动作（读、练、教：内核这时不记进度，随时间过去再记，见 _train_plan）
+        evs = self._collect(resolve.apply(st, df, act, speech, source="player", defer_train=True))
         if not evs or all(e.outcome == "blocked" and e.verb != "warn_danger" for e in evs):
             self._rec.kind = "reply"
             async for ev in self._still(TEXT_CANNOT):
@@ -636,7 +656,7 @@ class Game:
         # 3 在场的人各自反应
         await self._micro_rounds(evs, int(self.settings.limits.max_micro_rounds))
         self._add_credit(waits)
-        self._train = self._train_plan(act, first, evs)
+        self._train = self._train_plan(evs)
         async for ev in self._advance(act, cost, speech=speech):
             yield ev
 
@@ -771,6 +791,9 @@ class Game:
         quiet = act.verb in QUIET_LONG_VERBS and ticks >= TICKS_PER_HOUR
         danger0 = self._danger()
         sits0 = self._situations_here()
+        if train is not None and not self._train_on(train):
+            # 教与学的另一方在刚才那一轮反应里已经走开（或倒下）了：这一课上不成，时间不白过
+            interrupted = True
         while elapsed < ticks and st.ended is None and not interrupted:
             span = min(ticks - elapsed, TICKS_PER_HOUR - st.tick % TICKS_PER_HOUR)
             done = 0
@@ -824,41 +847,59 @@ class Game:
 
     # ---- 读、练、教的进度
 
-    def _hour_one(self, act: ActionInst) -> ActionInst:
-        """读、练、教吩咐了不止一个时辰的：交给内核结算的只是头一个时辰的那一份。
+    def _train_plan(self, evs: list[Event]) -> _Train | None:
+        """玩家这一下是读、练、教：进度按做了多久记（6.12），不在动手那一刻预付。
 
-        内核的结算在动手那一刻就把吩咐的时辰数全记成进度；可这段时间还没过去，可能两刻就被打断（6.9、8.7），
-        进度却要按做了多久记（6.12）。所以先只结算一个时辰，后面的在 ``_pass_time`` 里随时间过去再记。
-        耗时仍按吩咐的时辰数算。
+        长动作可能两刻就被打断（6.9、8.7）。所以结算时给内核 ``defer_train=True``：它不执行 ``train``，
+        只把每个时辰的进度、记给谁、哪门本事、最多到第几层放进事件的 params；这里据此列一张单子，
+        ``_pass_time`` 每走一段就照过去的刻数记一次（``_train_credit``）。耗时仍按吩咐的时辰数算。
         """
-        if act.verb not in TRAIN_VERBS or int(act.params.get("hours", 1) or 1) <= 1:
-            return act
-        one = actions.build(self.state, self.defs, act.actor, act.verb, {**act.params, "hours": 1})
-        return one if one is not None else act
-
-    def _train_plan(self, act: ActionInst, first: ActionInst, evs: list[Event]) -> _Train | None:
-        """头一个时辰结算完了：记下每个时辰的进度（取内核事件里算好的数），余下的时辰随时间去记。"""
-        if first is act:
-            return None
+        pid = self.state.player
         ev = next(
-            (e for e in evs if e.actor == act.actor and e.verb == act.verb and e.outcome == "ok" and "progress" in e.params),
+            (
+                e for e in evs
+                if e.actor == pid and e.verb in TRAIN_VERBS and e.outcome == "ok" and e.params.get("deferred")
+            ),
             None,
         )
-        per_hour = int(ev.params.get("progress") or 0) if ev is not None else 0
+        if ev is None:
+            return None  # 不是读、练、教，或学不进去（看不懂、已到头）：没有进度可记
+        per_hour = int(ev.params.get("per_hour") or 0)
         if per_hour <= 0:
-            return None  # 学不进去（看不懂、已到头）：没有进度可记
-        art = str(act.params["art"])
-        student = str(act.params["target"]) if act.verb == "teach" else act.actor
-        capped = act.verb != "practice" and art != growth.LITERACY  # 读与听讲只能下到第一层（6.12）
-        return _Train(student=student, art=art, per_hour=per_hour, max_level=1 if capped else None)
+            return None
+        student = str(ev.params.get("student") or pid)
+        max_level = ev.params.get("max_level")
+        other = ev.params.get("target")
+        partner = pid if student != pid else (str(other) if other else None)
+        return _Train(
+            student=student, art=str(ev.params["art"]), per_hour=per_hour,
+            max_level=int(max_level) if max_level is not None else None, partner=partner,
+        )
 
-    def _train_credit(self, train: _Train, elapsed: int) -> None:
-        """这一回合已经过去 ``elapsed`` 刻：把头一个时辰之后该记的进度补上（整数除法，做满时一刻不差）。"""
+    def _train_on(self, train: _Train) -> bool:
+        """这一课还上得下去：学的人在；有另一方的（听讲、传授），两人还在一处、都醒着。"""
         st = self.state
         c = st.chars.get(train.student)
-        if c is None or st.ended is not None:
+        if c is None or not perception.on_map(c):
+            return False
+        if train.partner is None:
+            return True
+        other = st.chars.get(train.partner)
+        return (
+            other is not None and other.loc == c.loc and perception.conscious(other) and perception.conscious(c)
+        )
+
+    def _train_credit(self, train: _Train, elapsed: int) -> None:
+        """这一回合已经过去 ``elapsed`` 刻：把到此刻为止该记的进度记上。
+
+        一刻一刻地算（每个时辰的进度 × 刻数 ÷ 8，向下取整）：做满时与一次记满的数一刻不差，
+        两刻被打断就只有两刻的份。教与学的另一方不在跟前了（走了、倒下了），就到此为止。
+        """
+        st = self.state
+        c = st.chars.get(train.student)
+        if c is None or st.ended is not None or not self._train_on(train):
             return
-        due = train.per_hour * max(0, elapsed - TICKS_PER_HOUR) // TICKS_PER_HOUR - train.credited
+        due = train.per_hour * max(0, elapsed) // TICKS_PER_HOUR - train.credited
         if due <= 0:
             return
         literacy = train.art == growth.LITERACY
@@ -1125,6 +1166,27 @@ class Game:
             self._budget_ask = True
             out.append(Notice(TEXT_BUDGET_ASK.format(spent=led.spent, budget=led.budget_usd), "warn"))
         return out
+
+    # ---- 重放对不上（4.3、D-354）
+
+    def _replay_events(self, rec: TurnRecord) -> list[UIEvent]:
+        """重放离开了录制：提示玩家一次（头一处的说明与到此为止的处数），并记进这一回合的记账。
+
+        对不上的调用各模块已经照模型失败兜底了，这里只报告，不抛异常、不改局面。
+        """
+        rp = getattr(self.llm, "replayer", None)
+        if rp is None or self._replay_warned:
+            return []
+        found = list(getattr(rp, "mismatches", ()) or ())
+        if not found:
+            return []
+        self._replay_warned = True
+        # 只引「哪一次调用、哪个字段」：字段的内容是给模型的状态描述，里面可能有玩家角色不知道的事（4.4）
+        first = " ".join(str(found[0]).split()).split(REPLAY_QUOTE_CUT, 1)[0]
+        if len(first) > REPLAY_QUOTE_MAX:
+            first = first[:REPLAY_QUOTE_MAX] + "…"
+        rec.notes.append(f"replay diverged: {len(found)} mismatch(es); first: {first}")
+        return [Notice(TEXT_REPLAY_DIVERGED.format(n=len(found), first=first), "warn")]
 
     def _use_rules_only(self) -> None:
         """这一局余下的部分不再调用模型：全部路由改成 rules_only（叙述与选项用模板）。"""

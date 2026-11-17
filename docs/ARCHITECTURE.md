@@ -23,7 +23,7 @@ src/tianlong/
   __main__.py          命令行（方案 10.4）
   config.py            读 config.toml 与 .env → Settings
   game.py              回合主循环（方案 4.2），与界面无关，测试可直接驱动
-  content/loader.py    读 content/ → (Defs, WorldState)；content/validate.py：P7 的校验
+  content/loader.py    读 content/ → (Defs, WorldState)；content/validate.py：P7 的校验（`validate` 返回问题清单；`require_valid` 有问题就抛 `ContentInvalid`，开新局时调一次）
   kernel/              纯函数；不 import 本包任何其他模块；无网络、文件、时钟、全局可变状态
   llm/  parser/  minds/  world/  storyteller/  narrator/  store/  ui/  pipeline/
 ```
@@ -42,13 +42,13 @@ src/tianlong/
 | `effects.py` | `apply_effects(state, defs, effects, ctx, *, source, step=None, offscreen=False) -> list[Event]`：方案 5.3 的全部效果。**这是改写状态的唯一入口** |
 | `events.py` | `emit(...) -> Event`：唯一造 `Event` 的地方。分配连续 id；算见证者（`perception.witnesses`）；给见证者写记忆（`memory.write`）；按 5.5 改情绪与关系（`mood.on_event`）；放进 `events_tail`（保留最近 200 条） |
 | `actions.py` | 动词表 `VERBS`（方案 6.1）；`ActionInst`；`legal_actions(state, defs, actor, *, for_model=False) -> list[ActionInst]`（方案 6.2）|
-| `resolve.py` | `apply(state, defs, action, speech=None, *, source, offscreen=False) -> list[Event]`：方案 6.3 的七步；不变量失败则整体回滚。`offscreen=True`：离场结算出来的，事件全部标 `offscreen` |
+| `resolve.py` | `apply(state, defs, action, speech=None, *, source, offscreen=False, defer_train=False) -> list[Event]`：方案 6.3 的七步；不变量失败则整体回滚。`offscreen=True`：离场结算出来的，事件全部标 `offscreen`。`defer_train=True`：`study`、`practice`、`teach` 动手时不记进度，事件 `params` 里给 `deferred`、`per_hour`、`student`、`art`、`max_level`，由调用方随时间经 `train` 效果去记（只有 `game` 结算玩家的动作时这样传） |
 | `bottom.py` | 人物底线（方案 5.4 的 `blocks`）的匹配：`legal_actions`、开口、请求裁决三处共用 |
 | `checks.py` | 方案 6.4 的各项成功率与判定 |
 | `conflict.py` | 方案 6.5 |
 | `speech.py` | 方案 6.6：言语行为、`Request` 的建立与裁决；`speech_options(state, defs, actor) -> SpeechOptions` |
 | `beliefs.py` | 方案 6.7：断言结论与信念更新的公式 |
-| `perception.py` | 方案 6.8：`witnesses(...)`；方案 4.4：`player_view(state, defs, events) -> PlayerView`；称呼表 |
+| `perception.py` | 方案 6.8：`witnesses(...)`；方案 4.4：`player_view(state, defs, events) -> PlayerView`；称呼表；`referable(state) -> (id -> bool)`：玩家的角色说得出哪些人、物、地方、本事（知道名字或有叫法、看得见、见过经手过、到过），`/心愿` 的绑定与开口的选项共用这一份 |
 | `memory.py` | 方案 5.6 的写入、salience 表、上限与淘汰（检索在 `minds/memory.py`） |
 | `mood.py` | 方案 5.5 的表；情绪衰减；关系与 regard 的档位文字（给模型看的） |
 | `growth.py` | 方案 6.12：`power(state, defs, char)`、研读与练习的进度、内力档 |
@@ -166,6 +166,8 @@ class LLM:                     # llm/__init__.py
     jev: JevClient | MockJev
     claude: ClaudeClient | MockClaude
     recorder: Recorder         # calls.jsonl；--replay 时按录制返回
+    replayer: Replayer | None  # 只在 --replay 时有：录制源。mismatches 是与录制对不上的各处（每处一句说明），
+                               # remaining() 是还没用到的录制调用（代号 → 次数）
     ledger: Ledger             # 记账与预算护栏
 
 # Jev：async。hints 只给 Mock 用，真客户端忽略它。timeout_s：这一次调用最多等多久，到点抛 JevTimeout
@@ -228,7 +230,7 @@ texts = await narrator.phrase_options(llm, state, defs, options) # C4 + 模板�
 
 - 身体动作的选项：`action` 是内核的 `ActionInst`，其余三项照它填。
 - 开口的选项（方案 2.1 的「低声劝……赔个不是」）：`speech` 是内核的 `Speech`，`action` 是 1 刻的 `wait`；`id` 在这一组候选里唯一（J4、C4 用它对号），`signature` 用来去重和记「上回合选过」，`desc` 是一句中性的意图（实体写成 `⟦id⟧`）。候选由 `storyteller/speaking.py` 按规则列出，与身体动作同一张计分表。
-- 结算一律是 `resolve.apply(state, defs, option.action, option.speech, source='player')`；`game` 把三个选项经 `offer` 效果存进 `state.pending_options`（读档后原样恢复）。
+- 结算一律是 `resolve.apply(state, defs, option.action, option.speech, source='player')`（`game` 另加 `defer_train=True`：玩家读、练、教的进度不预付，在 `_pass_time` 里按实际过去的刻数记，被打断即止）；`game` 把三个选项经 `offer` 效果存进 `state.pending_options`（读档后原样恢复）。
 - `narrator.phrase_options` 两种都认：开口的选项给 C4 的事实句写明言语行为、对谁说、要旨；模板句按言语行为取。
 
 **结算次序（方案 4.3）。** `minds.order`：本轮事件里话是冲着他说的人最先（先答话，别人再出手），其余当事人次之，旁观者最后；同级按 `initiative` 从高到低。会让情境散场的那一招（`MindDecision.closing`）整体排在不散场的招之后，免得它一落下，同场其他人这一拍想好的事全都落空。在场的抉择里话是「答应」而所求之事此刻做得出的，动作就是那件事（答应即照做；「住手」类的请求是等）。
@@ -274,7 +276,9 @@ class Game:
     state: WorldState; defs: Defs
     @classmethod
     async def new(cls, settings, *, seed, mock, player_name=None, run_id=None, replay_dir=None,
-                  debug=False, save_name=None) -> Game
+                  debug=False, save_name=None, validate=True) -> Game
+        # 开局前跑一遍 content.validate；有问题抛 ContentInvalid（ContentError 的子类，problems 是清单），不开局。
+        # load 不校验（存档按 content_hash 对的是同一份内容）。validate=False 留给故意用残缺内容的测试。
     @classmethod
     async def load(cls, settings, save_name, *, mock, debug=False, run_id=None, replay_dir=None) -> Game
     last_turn: TurnRecord | None    # 上一回合的记录：kind（turn / reply / command / warn / confirm）、interrupted、notes
@@ -285,5 +289,7 @@ class Game:
 ```
 
 `game.Game` 另管：逐刻打断的长动作（动静传到玩家耳目的那一刻停）、每回合末的自动存档、每日之始与大险之前的检查点、`runs/<id>/` 下的 `transcript.md`、`events.jsonl`、`calls.jsonl`，以及 `--replay` 的逐字重放。
+
+重放对不上录制时（`llm.replayer.mismatches` 不空），对不上的调用照 4.3 兜底、游戏不中断；`Game` 在头一个对不上的回合末尾出一条 `warn` 的 `Notice`（处数、头一处是哪一次调用的哪个字段，不带请求内容），一局只出一次，并记进 `TurnRecord.notes`；`python -m tianlong play --replay` 跑完后把头一处与处数打到标准错误，以退出码 1 结束（录下的输入喂完而录制的调用没有用完，同样算对不上）。
 
 斜杠命令（方案 2.7）由 `game` 分派：只读的画面（`/状态 /物品 /人物 /本事 /回顾 /帮助`）由 `ui/commands.py` 的纯函数 `(state, defs) -> str` 渲染；`/牵挂 /年谱` 由 `storyteller` 渲染；`/存档 /读档` 走 `store`；`/心愿` 走 `parser.map_wish` 加 `storyteller.threads`；`/收笔` 走收场；`/debug` 只在 `--debug` 下可用。

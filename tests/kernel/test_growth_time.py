@@ -184,3 +184,70 @@ def test_mood_decays_ten_percent_per_hour(w: World) -> None:
 def test_scheduled_from_opening(w: World) -> None:
     timeflow.advance_time(w.s, w.defs, 8)
     assert w.s.flags.get("bell_rang") is True and w.s.scheduled == []
+
+
+# ---- defer_train：进度留给调用方按过去的时间记（D-360）
+
+
+def _deferred(w: World, actor: str, verb: str, **params):  # noqa: ANN003, ANN202
+    from tianlong.kernel import resolve
+
+    a = w.build(actor, verb, **params)
+    assert a is not None
+    return resolve.apply(w.s, w.defs, a, None, source="player", defer_train=True)
+
+
+def test_defer_train_study_records_nothing_up_front(w: World) -> None:
+    w.fx([{"spawn": ["old_manual", "player"]}])
+    c = w.c("player")
+    evs = _deferred(w, "player", "study", item="old_manual", art="cloud_steps", hours=2)
+    assert len(evs) == 1 and evs[0].outcome == "ok" and "长进" not in evs[0].fact_text
+    assert "cloud_steps" not in c.arts and c.art_progress.get("cloud_steps", 0) == 0
+    p = evs[0].params
+    assert p["deferred"] is True and p["progress"] == 0 and p["level"] == 0
+    assert (p["student"], p["art"], p["max_level"]) == ("player", "cloud_steps", 1)
+    assert p["per_hour"] == growth.progress_for(c, 1, teacher=False) == 10
+    assert p["hours"] == 2 and p["item"] == "old_manual"  # 动作自己的参数照旧在
+    assert "cloud_steps" in w.s.known_terms  # 翻开书就知道它叫什么：这一条不等
+    # 调用方照这几个数一点点记，记满时与一次记满的结果相同
+    w.fx([{"train": [p["student"], p["art"], p["per_hour"] * 2, p["max_level"]]}])
+    assert c.arts["cloud_steps"] == 1
+
+
+def test_defer_train_practice_and_teach(w: World) -> None:
+    c = w.c("player")
+    w.fx([{"art": ["player", "cloud_steps", 1]}])
+    evs = _deferred(w, "player", "practice", art="cloud_steps", hours=3)
+    p = evs[0].params
+    assert evs[0].outcome == "ok" and "长进" not in evs[0].fact_text
+    assert c.art_progress.get("cloud_steps", 0) == 0 and c.arts["cloud_steps"] == 1
+    assert p["deferred"] is True and (p["student"], p["art"], p["max_level"]) == ("player", "cloud_steps", None)
+    assert p["per_hour"] == 10 and p["level"] == 1
+
+    w.fx([{"superior": ["fighter", "player"]}])
+    f = w.c("fighter")
+    f.literacy = 0
+    evs = _deferred(w, "player", "teach", target="fighter", art="literacy", hours=2)
+    p = evs[0].params
+    assert evs[0].outcome == "ok" and "长进" not in evs[0].fact_text
+    assert f.literacy == 0 and f.art_progress.get("literacy", 0) == 0
+    assert p["deferred"] is True and (p["student"], p["art"], p["max_level"]) == ("fighter", "literacy", None)
+    assert p["per_hour"] == growth.progress_for(f, 1, teacher=True)
+    assert any(k.get("k") == "taught" and k.get("who") == "fighter" for k in evs[0].kinds)  # 得人传授照记
+
+
+def test_defer_train_blocked_study_is_unchanged(w: World) -> None:
+    w.c("player").literacy = 0
+    w.fx([{"spawn": ["old_manual", "player"]}])
+    evs = _deferred(w, "player", "study", item="old_manual", art="cloud_steps", hours=4)
+    assert evs[0].outcome == "fail" and "不认得" in evs[0].fact_text and "deferred" not in evs[0].params
+
+
+def test_without_defer_train_progress_is_recorded_at_once(w: World) -> None:
+    """角色自己的、离场的结算不传 defer_train：照旧在动手那一刻按吩咐的时辰数记满。"""
+    w.fx([{"art": ["guest", "cloud_steps", 1]}])
+    g = w.c("guest")
+    evs = w.act("guest", "practice", art="cloud_steps", hours=2)
+    assert evs[0].params["progress"] == growth.progress_for(g, 2, teacher=False) > 0
+    assert "deferred" not in evs[0].params
+    assert g.art_progress.get("cloud_steps", 0) == evs[0].params["progress"] or g.arts["cloud_steps"] == 2

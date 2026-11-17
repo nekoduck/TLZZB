@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from tianlong import parser
-from tianlong.kernel import effects, refs
+from tianlong.kernel import effects, perception, refs
 from tianlong.llm import JevError
 
 from .conftest import Scene
@@ -48,7 +48,7 @@ async def test_wish_does_not_bind_what_the_character_cannot_refer_to(scene: Scen
     girl = st.chars["zhong_ling"]
     assert girl.loc == st.chars[st.player].loc and "zhong_ling" not in st.known_terms  # 就躲在梁上，他不知道
     for text in ("我要找到钟灵", "我要去谷底石洞", "我要拿到闪电貂", "我要找到梁上那少女", "想去看看一个石洞"):
-        assert not wish_mod.referable(st)("zhong_ling")
+        assert not perception.referable(st)("zhong_ling")
         cands = wish_mod.wish_candidates(st, df, text)
         assert not {"zhong_ling", "valley_cave", "lightning_marten"} & set(cands), text
         for llm in (None, scene.llm):  # 按名字的退路、Jev 的路都一样
@@ -71,14 +71,17 @@ async def test_wish_binds_a_visible_stranger_only_by_what_the_character_calls_hi
     assert w["refs"] == ["duan_yu"]
 
 
-def test_parser_and_storyteller_agree_on_what_can_be_referred_to(scene: Scene) -> None:
-    """两处各留了一份同样的判断（谁也够不着谁）：对每个实体的答案必须一致。"""
+async def test_wish_binding_follows_the_kernel_referable_rule(scene: Scene) -> None:
+    """心愿的候选只用内核那一份判断（``perception.referable``）：按名字对得上、角色却说不出的不进候选，知道名字后才进。"""
     from tianlong.parser import wish as wish_mod
-    from tianlong.storyteller import common
 
     st, df = scene.state, scene.defs
-    effects.apply_effects(st, df, [{"know_term": "zhong_ling"}, {"move": [st.player, "jianhu_gate"]}], source="rule")
-    a, b = wish_mod.referable(st), common.referable(st)
-    ids = list(st.chars) + list(st.items) + list(df.arts) + list(st.locations)
-    assert [e for e in ids if a(e) != b(e)] == []
-    assert any(a(e) for e in ids) and not all(a(e) for e in ids)
+    text = "我要找到钟灵，去谷底石洞看看"
+    assert not {"zhong_ling", "valley_cave"} & set(wish_mod.wish_candidates(st, df, text))
+    effects.apply_effects(st, df, [{"know_term": "zhong_ling"}], source="rule")
+    ok = perception.referable(st)
+    assert ok("zhong_ling") and not ok("valley_cave")
+    cands = wish_mod.wish_candidates(st, df, text)
+    assert "zhong_ling" in cands and "valley_cave" not in cands
+    assert all(ok(e) or e in df.arts for e in cands)
+

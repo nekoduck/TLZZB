@@ -11,8 +11,26 @@ from typing import Any
 from tianlong.kernel import predicates
 from tianlong.kernel.defs import Defs
 from tianlong.kernel.state import Ctx, Event, Request, WorldState
+from tianlong.parser import candidates
 
 OPS = (">=", "<=", ">", "<", "==", "!=")
+ASK_SLOTS = ("target", "item", "art", "place")  # asks 里拿来对解析器候选的要点（README 2.4）
+
+
+def _take_place_of(a: Mapping[str, Any]) -> dict[str, Any]:
+    """「让我替下某人」：解析器有两种写法（``parser/candidates.py``），随场景而定。
+
+    - 由我来：对方主事的一场情境正收人请缨（情境定义的 ``volunteer`` 一节，如 ``poison_errand``），``target`` 是
+      本来会被点到的那个人。所求写成对方等一等，带 ``volunteer`` 说明；内核的 ``speech.volunteer_spec`` 认它，
+      答应了请缨的人就得到那个身份。标注的 asks 里没有情境与角色位，``a`` 带了 ``volunteer`` 才写得出这一种。
+    - 换人：放了被扣着的 ``target``、由请求者顶替，写成 ``release`` 加 ``swap`` 说明（内核按 ``release`` 裁决）。
+
+    哪一种要看场景：手里有场景时用 ``ask_action``，它去解析器的候选里对。
+    """
+    if a.get("volunteer"):
+        return {"verb": "wait", "params": {"ticks": 1}, "volunteer": dict(a["volunteer"])}
+    return {"verb": "release", "params": {"target": a["target"]}, "swap": "player"}
+
 
 ASK_ACTION = {
     # asks.type → 内核 Request.action（README 2.4）；requester 是玩家
@@ -24,7 +42,7 @@ ASK_ACTION = {
     "tell_about": lambda a: {"verb": "say", "params": {"act": "tell", "fact": a.get("fact")}},
     "come_along": lambda a: {"verb": "follow", "params": {"target": "player"}},
     "stop_doing": lambda a: {"verb": "wait", "params": {}},
-    "take_place_of": lambda a: {"verb": "release", "params": {"target": a["target"]}},
+    "take_place_of": _take_place_of,
     "let_pass": lambda a: {"verb": "wait", "params": {}},
     "accompany": lambda a: {"verb": "wait", "params": {}},
     "help": lambda a: {"verb": "help", "params": {"target": a["target"]}},
@@ -32,6 +50,22 @@ ASK_ACTION = {
     "protect": lambda a: {"verb": "block", "params": {"target": a["target"]}},
     "other": lambda a: {"verb": "wait", "params": {}},
 }
+
+
+def ask_action(asks: Mapping[str, Any], *, state: WorldState | None = None, defs: Defs | None = None,
+               to: str | None = None) -> dict[str, Any]:
+    """标注的 ``asks`` 对应的内核 ``Request.action``（不带描述文字）；请求者是玩家。
+
+    给了场景（``state``、``defs`` 与被求的人 ``to``）就去解析器的请求候选里按 ``type`` 加要点对，用候选自己的动作：
+    同一种 ``type`` 的写法可以随场景而定（``take_place_of`` 有请缨与换人两种），只有候选说得准。
+    没给场景，或候选里没有这件事（对方做不到、不在场），用 ``ASK_ACTION`` 的参考写法。
+    """
+    if state is not None and defs is not None and to is not None:
+        for c in candidates.request_candidates(state, defs, state.player, to, limit=10_000):
+            if c.type == asks.get("type") and all(c.slots.get(k) == asks[k] for k in ASK_SLOTS
+                                                  if asks.get(k) is not None):
+                return {k: v for k, v in c.action.items() if k != "desc"}
+    return ASK_ACTION[str(asks["type"])](asks)
 
 
 def resolve_path(st: Any, path: str) -> Any:

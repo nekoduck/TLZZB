@@ -215,3 +215,26 @@ async def test_going_somewhere_further_takes_the_first_step(scene: Scene) -> Non
     _, b = await scene.bind("我去下山石径")  # 不相邻：先往山门走
     assert b.kind == "action" and b.action is not None
     assert b.action.signature == "go:exit=jianhu_gate"
+
+
+async def test_reprieve_flee_is_not_refused_as_too_hurt(scene: Scene) -> None:
+    """侥幸不死之后还能逃一次（D-352）：这时的「逃」绑定成 flee；逃不成也不拿「伤得太重」来回。"""
+    from tianlong.parser import binding, replies
+
+    scene.fx([{"injure": ["player", 3]}])
+    st, df = scene.state, scene.defs
+    for verb in ("go", "flee", "follow"):  # 没有那一口气：重伤走不动
+        assert binding.cannot_reason(st, df, verb) == replies.TOO_HURT
+
+    scene.fx([{"add_status": ["player", "reprieve", {"ticks": 2, "source": "gong_guangjie"}]}])
+    _, b = await scene.bind("我逃往山门")
+    assert b.kind == "action" and b.action is not None and b.action.signature == "flee:exit=jianhu_gate"
+    assert binding.cannot_reason(st, df, "flee") == replies.CANNOT  # 没有路可逃时：不说伤得太重
+    _, b2 = await scene.bind("我逃到龚光杰身后去")  # 逃的去处对不上出口：同样不说伤得太重
+    assert b2.kind != "action" and b2.reply != replies.TOO_HURT
+    # 走与跟仍不行（D-352）；想走开的，回话里说还逃得了
+    assert binding.cannot_reason(st, df, "go") == replies.HURT_CAN_FLEE
+    assert binding.cannot_reason(st, df, "follow") == replies.TOO_HURT
+    # 被缚的照旧先说被缚
+    scene.fx([{"add_status": ["player", "bound", {"source": "gong_guangjie"}]}])
+    assert binding.cannot_reason(st, df, "flee") == replies.BOUND

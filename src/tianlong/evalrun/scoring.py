@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
 
-from tianlong.evalrun.assertions import action_matches
+from tianlong.evalrun.assertions import ASK_SLOTS, action_matches
 
 # ---------------------------------------------------------------- 归类集
 
@@ -15,7 +15,6 @@ GOLD_DEFAULTS: dict[str, Any] = {
 }
 FIELDS = ("kind", "verb", "target", "act", "to", "asks", "claims", "cls", "urgent")
 CORE = ("kind", "verb", "target", "act", "to", "asks")  # 决定「做了什么、对谁说了什么、求了什么」的六项
-ASK_SLOTS = ("target", "item", "art", "place")
 BUCKETS = ((0.0, 0.55), (0.55, 0.70), (0.70, 0.85), (0.85, 1.0001))
 SPOKEN = ("act", "say", "both")
 

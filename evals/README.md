@@ -122,7 +122,7 @@ asks: {type: other, note: 替他给家里捎信}
 | `tell_about` | 告诉我某件事 | `{verb: say, params: {act: tell, fact}}` |
 | `come_along` | 跟我一道走（我领头） | `{verb: follow, params: {target: player}}` |
 | `stop_doing` | 别再做某事（`target` 是正在做的人，可省） | `{verb: wait, params: {}}` |
-| `take_place_of` | 让我替下某个人质 | `{verb: release, params: {target}}`，另加玩家顶替（见 `poison_errand` 的 `errand_volunteer`） |
+| `take_place_of` | 让我替下某个人（`target` 是被替下的人） | 两种，随场景而定。请缨：对方主事的一场事正在找人、`target` 是本来会被点到的那个人，`{verb: wait, params: {ticks: 1}, volunteer: {situation, role}}`（见 `poison_errand` 的 `volunteer` 一节；内核 `speech.volunteer_spec` 认它，答应了玩家得 `errand_volunteer` 身份）。换人：放了被扣着的 `target`、玩家顶替，`{verb: release, params: {target}, swap: player}` |
 | `let_pass` | 放我过去（`place` 是我要去的地方） | `{verb: wait, params: {}}`，另带放行 |
 | `accompany` | 让我跟某人一道走（`target` 是那个人，对方不拦着） | `{verb: wait, params: {}}`，另带放行 |
 | `help` | 照料某人 | `{verb: help, params: {target}}` |
@@ -130,7 +130,7 @@ asks: {type: other, note: 替他给家里捎信}
 | `protect` | 替我挡住某人（`target` 是对我有敌意的人） | `{verb: block, params: {target}}` |
 | `other` | 候选里没有的事 | `{verb: wait, params: {}}` |
 
-种类与要点的名字和解析器的请求候选（`parser/candidates.py` 的 `AskCand.type` 与 `slots`）一致，跑手按 `type` 加 `target`、`item`、`art`、`place` 去对候选；`fact`、`note` 只供人读。对应表的右栏只是参考，`tests/evals/test_datasets.py` 的 `ASK_ACTION` 照它写；候选里本来没有的事（比如对方手里没有那件东西），所有 `ask_<i>` 都应答「否」。
+种类与要点的名字和解析器的请求候选（`parser/candidates.py` 的 `AskCand.type` 与 `slots`）一致，跑手按 `type` 加 `target`、`item`、`art`、`place` 去对候选；`fact`、`note` 只供人读。对应表的右栏只是参考，`evalrun/assertions.py` 的 `ASK_ACTION` 照它写（`tests/evals/test_datasets.py` 里另有一份，只拿来静态核对拒绝集，那里没有 `take_place_of` 的条目）；同一种 `type` 的写法随场景而定时（`take_place_of`），`evalrun.assertions.ask_action(asks, state=, defs=, to=)` 去解析器的候选里对，用候选自己的动作；候选里本来没有的事（比如对方手里没有那件东西），所有 `ask_<i>` 都应答「否」。
 
 `cls` 的标注口径：不费什么事（指路、让一让、说句话、给看一眼）为 `trivial`；要花工夫（带路、教寻常手艺、跑腿）为 `effort`；舍掉自己的东西或好处（给值钱的东西、放走人质）为 `costly`；要对方担性命之险（替你动手、陪你闯营）为 `risky`；要对方违背自己所属的一方（外传门派武功、违抗上头的号令、私放敌人）为 `betray`。拿不准的条目在 `skip` 里列了 `cls`。
 
@@ -221,9 +221,9 @@ items:
 
 100 句，50 句至少一项为真。
 
-**出题。** 每句一个 J5 请求，状态是该 context 的 `facts`、`names`、`action`（与 `spoken`）与 `scene`，问三道 noul（`extra`、`mind`、`puppet`），门槛取 `settings.jev.thresholds`（种子 0.7）。
+**出题。** 每句一个 J5 请求，状态用叙述模块自己的模板 `prompts/jev/j5_state.md` 渲染，填法与游戏里相同（`narrator/narrate.py` 的 `j5_base`）：该 context 的 `facts`、`names`、`scene`，`action` 填【你做的事】，`spoken` 交给模板的 `spoken` 变量、由模板放进单独标明的【玩家的话】一节（D-356），不接在【你做的事】后面。问三道 noul（`extra`、`mind`、`puppet`），门槛取 `settings.jev.thresholds.narration_flag`。
 
-**计分。** 7.12 的闸：对违规句（任一标签为真）的检出率不低于 80%，对干净句的误杀率（任一项过门槛）不高于 10%。另报各标签的准确率与召回率。
+**计分。** 7.12 的闸：对违规句（任一标签为真）的检出率不低于 80%，对干净句的误杀率（任一项过门槛）不高于 10%。另报各标签的准确率与召回率，以及按这一回合玩家有没有说话（`spoken` 有没有）分开的检出与误杀。
 
 ## 5. 防作弊集 `anticheat.yaml`
 
