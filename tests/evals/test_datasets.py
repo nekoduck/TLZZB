@@ -17,6 +17,7 @@ import pytest
 import yaml
 
 from tianlong.content.loader import load
+from tianlong.evalrun import assertions
 from tianlong.kernel import actions, effects, growth, mood, perception, predicates, speech
 from tianlong.kernel.defs import Defs
 from tianlong.kernel.state import Ctx, Request, WorldState, is_alive
@@ -377,24 +378,7 @@ def test_classify_coverage() -> None:
 
 # ---------------------------------------------------------------- 请求的写法（归类集与拒绝集共用）
 
-ASK_ACTION = {
-    # asks.type → 内核 Request.action（README 2.4）；requester 是玩家
-    "release": lambda a: {"verb": "release", "params": {"target": a["target"]}},
-    "give_item": lambda a: {"verb": "give", "params": {"item": a["item"], "target": "player"}},
-    "show_item": lambda a: {"verb": "show", "params": {"item": a["item"], "target": "player"}},
-    "teach_art": lambda a: {"verb": "teach", "params": {"art": a.get("art"), "target": "player"}},
-    "take_to": lambda a: {"verb": "go", "params": {"exit": a["place"]}},
-    "tell_about": lambda a: {"verb": "say", "params": {"act": "tell", "fact": a.get("fact")}},
-    "come_along": lambda a: {"verb": "follow", "params": {"target": "player"}},
-    "stop_doing": lambda a: {"verb": "wait", "params": {}},
-    "take_place_of": lambda a: {"verb": "release", "params": {"target": a["target"]}},
-    "let_pass": lambda a: {"verb": "wait", "params": {}},
-    "accompany": lambda a: {"verb": "wait", "params": {}},
-    "help": lambda a: {"verb": "help", "params": {"target": a["target"]}},
-    "cure": lambda a: {"verb": "use", "params": {"item": a["item"], "target": a["target"]}},
-    "protect": lambda a: {"verb": "block", "params": {"target": a["target"]}},
-    "other": lambda a: {"verb": "wait", "params": {}},
-}
+ASK_ACTION = assertions.ASK_ACTION  # asks.type → 内核 Request.action（README 2.4），只此一份
 
 
 def check_asks(defs: Defs, st: WorldState, a: dict, where: str) -> None:

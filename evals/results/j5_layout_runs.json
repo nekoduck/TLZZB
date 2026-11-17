@@ -1,5 +1,5 @@
 {
- "note": "J5 核对集在真 Jev 上按几种状态排法各跑几次的汇总（2026-11-17）。sweep 里是各门槛的检出句数与误杀句数；by_spoken 是 [检出, 违规句数, 误杀, 干净句数]，按这一回合玩家有没有说话分。逐条概率只有 results/checks.json 那一次留着。",
+ "note": "J5 核对集在真 Jev 上按几种状态排法各跑几次的汇总（2026-11-17）。sweep 里是各门槛的检出句数与误杀句数；by_spoken 是 [检出, 违规句数, 误杀, 干净句数]，按这一回合玩家有没有说话分。逐条概率只有 results/checks.json 那一次（现用排法的正式一遍）留着。",
  "gate": "检出不低于 80% 且误杀不高于 10%（方案 7.12）",
  "layouts": {
   "eval_old_layout": {
@@ -377,7 +377,7 @@
    ]
   },
   "production_layout": {
-   "what": "产品排法（D-356）：原话在最后的【玩家的话】一节；最后一次就是 results/checks.json",
+   "what": "D-356 起初的排法：原话在模板最后的【玩家的话】一节（已弃用，见 adopted_layout）；最后一次是当时的 results/checks.json",
    "runs": [
     {
      "generated": "2026-11-17T00:59:12+00:00",
@@ -860,6 +860,503 @@
         0,
         13,
         0,
+        12
+       ],
+       "silent": [
+        33,
+        37,
+        1,
+        38
+       ]
+      }
+     }
+    }
+   ]
+  },
+  "adopted_layout": {
+   "what": "现用排法（D-367）：【玩家的话】一节排在【要核对的句子】之前，要核对的句子在最后；仓库里的 prompts/jev/j5_state.md。最后一次就是 results/checks.json",
+   "runs": [
+    {
+     "generated": "2026-11-17T01:40:14+00:00",
+     "jev_model": "jev-1.14.0",
+     "failed": 0,
+     "sweep": [
+      {
+       "threshold": 0.5,
+       "detected": 50,
+       "violating": 50,
+       "false_kills": 28,
+       "clean": 50,
+       "gate": false
+      },
+      {
+       "threshold": 0.55,
+       "detected": 50,
+       "violating": 50,
+       "false_kills": 24,
+       "clean": 50,
+       "gate": false
+      },
+      {
+       "threshold": 0.6,
+       "detected": 50,
+       "violating": 50,
+       "false_kills": 19,
+       "clean": 50,
+       "gate": false
+      },
+      {
+       "threshold": 0.65,
+       "detected": 50,
+       "violating": 50,
+       "false_kills": 13,
+       "clean": 50,
+       "gate": false
+      },
+      {
+       "threshold": 0.7,
+       "detected": 50,
+       "violating": 50,
+       "false_kills": 10,
+       "clean": 50,
+       "gate": false
+      },
+      {
+       "threshold": 0.75,
+       "detected": 50,
+       "violating": 50,
+       "false_kills": 6,
+       "clean": 50,
+       "gate": false
+      },
+      {
+       "threshold": 0.8,
+       "detected": 48,
+       "violating": 50,
+       "false_kills": 4,
+       "clean": 50,
+       "gate": true
+      },
+      {
+       "threshold": 0.85,
+       "detected": 43,
+       "violating": 50,
+       "false_kills": 2,
+       "clean": 50,
+       "gate": true
+      },
+      {
+       "threshold": 0.9,
+       "detected": 32,
+       "violating": 50,
+       "false_kills": 0,
+       "clean": 50,
+       "gate": false
+      }
+     ],
+     "by_spoken": {
+      "0.70": {
+       "spoken": [
+        13,
+        13,
+        2,
+        12
+       ],
+       "silent": [
+        37,
+        37,
+        8,
+        38
+       ]
+      },
+      "0.80": {
+       "spoken": [
+        13,
+        13,
+        1,
+        12
+       ],
+       "silent": [
+        35,
+        37,
+        3,
+        38
+       ]
+      },
+      "0.85": {
+       "spoken": [
+        11,
+        13,
+        1,
+        12
+       ],
+       "silent": [
+        32,
+        37,
+        1,
+        38
+       ]
+      }
+     }
+    },
+    {
+     "generated": "2026-11-17T01:40:13+00:00",
+     "jev_model": "jev-1.14.0",
+     "failed": 0,
+     "sweep": [
+      {
+       "threshold": 0.5,
+       "detected": 50,
+       "violating": 50,
+       "false_kills": 30,
+       "clean": 50,
+       "gate": false
+      },
+      {
+       "threshold": 0.55,
+       "detected": 50,
+       "violating": 50,
+       "false_kills": 23,
+       "clean": 50,
+       "gate": false
+      },
+      {
+       "threshold": 0.6,
+       "detected": 50,
+       "violating": 50,
+       "false_kills": 20,
+       "clean": 50,
+       "gate": false
+      },
+      {
+       "threshold": 0.65,
+       "detected": 50,
+       "violating": 50,
+       "false_kills": 13,
+       "clean": 50,
+       "gate": false
+      },
+      {
+       "threshold": 0.7,
+       "detected": 50,
+       "violating": 50,
+       "false_kills": 10,
+       "clean": 50,
+       "gate": false
+      },
+      {
+       "threshold": 0.75,
+       "detected": 50,
+       "violating": 50,
+       "false_kills": 7,
+       "clean": 50,
+       "gate": false
+      },
+      {
+       "threshold": 0.8,
+       "detected": 48,
+       "violating": 50,
+       "false_kills": 3,
+       "clean": 50,
+       "gate": true
+      },
+      {
+       "threshold": 0.85,
+       "detected": 44,
+       "violating": 50,
+       "false_kills": 3,
+       "clean": 50,
+       "gate": true
+      },
+      {
+       "threshold": 0.9,
+       "detected": 33,
+       "violating": 50,
+       "false_kills": 1,
+       "clean": 50,
+       "gate": false
+      }
+     ],
+     "by_spoken": {
+      "0.70": {
+       "spoken": [
+        13,
+        13,
+        2,
+        12
+       ],
+       "silent": [
+        37,
+        37,
+        8,
+        38
+       ]
+      },
+      "0.80": {
+       "spoken": [
+        12,
+        13,
+        1,
+        12
+       ],
+       "silent": [
+        36,
+        37,
+        2,
+        38
+       ]
+      },
+      "0.85": {
+       "spoken": [
+        11,
+        13,
+        1,
+        12
+       ],
+       "silent": [
+        33,
+        37,
+        2,
+        38
+       ]
+      }
+     }
+    },
+    {
+     "generated": "2026-11-17T01:40:14+00:00",
+     "jev_model": "jev-1.14.0",
+     "failed": 0,
+     "sweep": [
+      {
+       "threshold": 0.5,
+       "detected": 50,
+       "violating": 50,
+       "false_kills": 28,
+       "clean": 50,
+       "gate": false
+      },
+      {
+       "threshold": 0.55,
+       "detected": 50,
+       "violating": 50,
+       "false_kills": 24,
+       "clean": 50,
+       "gate": false
+      },
+      {
+       "threshold": 0.6,
+       "detected": 50,
+       "violating": 50,
+       "false_kills": 17,
+       "clean": 50,
+       "gate": false
+      },
+      {
+       "threshold": 0.65,
+       "detected": 50,
+       "violating": 50,
+       "false_kills": 12,
+       "clean": 50,
+       "gate": false
+      },
+      {
+       "threshold": 0.7,
+       "detected": 50,
+       "violating": 50,
+       "false_kills": 9,
+       "clean": 50,
+       "gate": false
+      },
+      {
+       "threshold": 0.75,
+       "detected": 50,
+       "violating": 50,
+       "false_kills": 6,
+       "clean": 50,
+       "gate": false
+      },
+      {
+       "threshold": 0.8,
+       "detected": 50,
+       "violating": 50,
+       "false_kills": 4,
+       "clean": 50,
+       "gate": true
+      },
+      {
+       "threshold": 0.85,
+       "detected": 42,
+       "violating": 50,
+       "false_kills": 3,
+       "clean": 50,
+       "gate": true
+      },
+      {
+       "threshold": 0.9,
+       "detected": 34,
+       "violating": 50,
+       "false_kills": 1,
+       "clean": 50,
+       "gate": false
+      }
+     ],
+     "by_spoken": {
+      "0.70": {
+       "spoken": [
+        13,
+        13,
+        2,
+        12
+       ],
+       "silent": [
+        37,
+        37,
+        7,
+        38
+       ]
+      },
+      "0.80": {
+       "spoken": [
+        13,
+        13,
+        1,
+        12
+       ],
+       "silent": [
+        37,
+        37,
+        3,
+        38
+       ]
+      },
+      "0.85": {
+       "spoken": [
+        11,
+        13,
+        1,
+        12
+       ],
+       "silent": [
+        31,
+        37,
+        2,
+        38
+       ]
+      }
+     }
+    },
+    {
+     "generated": "2026-11-17T01:40:37+00:00",
+     "jev_model": "jev-1.14.0",
+     "failed": 0,
+     "sweep": [
+      {
+       "threshold": 0.5,
+       "detected": 50,
+       "violating": 50,
+       "false_kills": 29,
+       "clean": 50,
+       "gate": false
+      },
+      {
+       "threshold": 0.55,
+       "detected": 50,
+       "violating": 50,
+       "false_kills": 23,
+       "clean": 50,
+       "gate": false
+      },
+      {
+       "threshold": 0.6,
+       "detected": 50,
+       "violating": 50,
+       "false_kills": 20,
+       "clean": 50,
+       "gate": false
+      },
+      {
+       "threshold": 0.65,
+       "detected": 50,
+       "violating": 50,
+       "false_kills": 14,
+       "clean": 50,
+       "gate": false
+      },
+      {
+       "threshold": 0.7,
+       "detected": 50,
+       "violating": 50,
+       "false_kills": 10,
+       "clean": 50,
+       "gate": false
+      },
+      {
+       "threshold": 0.75,
+       "detected": 50,
+       "violating": 50,
+       "false_kills": 7,
+       "clean": 50,
+       "gate": false
+      },
+      {
+       "threshold": 0.8,
+       "detected": 48,
+       "violating": 50,
+       "false_kills": 3,
+       "clean": 50,
+       "gate": true
+      },
+      {
+       "threshold": 0.85,
+       "detected": 44,
+       "violating": 50,
+       "false_kills": 2,
+       "clean": 50,
+       "gate": true
+      },
+      {
+       "threshold": 0.9,
+       "detected": 33,
+       "violating": 50,
+       "false_kills": 0,
+       "clean": 50,
+       "gate": false
+      }
+     ],
+     "by_spoken": {
+      "0.70": {
+       "spoken": [
+        13,
+        13,
+        2,
+        12
+       ],
+       "silent": [
+        37,
+        37,
+        8,
+        38
+       ]
+      },
+      "0.80": {
+       "spoken": [
+        12,
+        13,
+        1,
+        12
+       ],
+       "silent": [
+        36,
+        37,
+        2,
+        38
+       ]
+      },
+      "0.85": {
+       "spoken": [
+        11,
+        13,
+        1,
         12
        ],
        "silent": [
