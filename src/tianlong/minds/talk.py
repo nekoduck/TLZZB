@@ -315,7 +315,12 @@ def compose(
     gist: str | None = None,
     request_ref: str | None = None,
 ) -> Speech | None:
-    """把一组选择拼成一句合规的话；拼不成返回 None（不开口）。"""
+    """把一组选择拼成一句合规的话；拼不成返回 None（不开口）。
+
+    模型给的要旨（``gist``）只在内核没改动这句话时才用：答复被改判、还价（条件是内核挑的）、
+    或「告知／提醒」的事实编号被删改过，要旨一律照内核定下来的话重写（方案 1.1 第 1 条、7.6）。
+    """
+    asked = act
     allowed = model_acts(state, defs, c, opts)
     views = {v.request.id: v for v in opts.requests}
     replies = replies or {}
@@ -389,7 +394,15 @@ def compose(
     # ★ 的那一步写明了所求之事的，要旨照所求之事写（「请对方……」）；没写的才借那一步的说明
     star = star_text(state, defs, c) if (opts.star or {}).get("act") == act and not wrote_ask else None
     sp.gist = (gist or "").strip()[:GIST_MAX] or make_gist(state, c, sp, view=view, star=star)
-    return validate(state, defs, c, sp, opts)
+    out = validate(state, defs, c, sp, opts)
+    if out is not None and (
+        out.act != asked
+        or out.act == "bargain"
+        or (out.act in ("tell", "warn") and set(out.fact_refs) != set(facts))
+    ):
+        # 内核改了这句话是什么：模型写的要旨说的已经不是它了
+        out.gist = make_gist(state, c, out, view=view, star=star)
+    return out
 
 
 def _knows(c: Character, other: str) -> bool:

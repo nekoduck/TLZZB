@@ -740,8 +740,11 @@ class Game:
         """推进 ``ticks`` 刻：逐个时辰边界走，每跨一个时辰做一次 ``world.tick``（6.9、8.1、8.7）。
 
         长动作（等、歇、读、练）期间，在场的人每个时辰照常抉择一轮；有动静传到玩家耳目、险情加重、
-        眼前有情境开场，就在那一刻打断。赶路只在后两种情形停下。等、歇、读、练满一个时辰以上时，
-        旁人之间的闲话与小动作不算动静（``_breaks_quiet``）。返回（实际过去的刻数，是否被打断）。
+        眼前有情境开场，就在那一刻打断。赶路不打断：一次 ``go`` 是地图上的一条边，人已经落在那头了，
+        中途停下只会把剩下的路程白白免掉（2.5）；那头有情境开场、险情加重，是走完这段路、到了才碰上的。
+        等、歇、读、练满一个时辰以上时，旁人之间的闲话与小动作不算动静（``_breaks_quiet``）。
+        恰好在时辰边界上被打断的，这个时辰的 ``world.tick`` 照做（8.1），只省掉在场的人那一轮和第二次打断判断。
+        返回（实际过去的刻数，是否被打断）。
         """
         st, df = self.state, self.defs
         elapsed = 0
@@ -771,16 +774,20 @@ class Game:
             for cid, n in credited.items():  # 这一段没抵完的，留到下一段
                 if n > done:
                     self._credit[cid] = n - done
-            if st.ended is not None or interrupted:
+            if st.ended is not None:
                 break
             if st.tick % TICKS_PER_HOUR == 0:
+                # 跨过了时辰边界：世界照走一步，哪怕玩家正好在这一刻被打断（8.1：每过一个时辰一次）
                 hour = self._collect(await world.tick(self.llm, st, df, decide=self._decide))
-                if long and elapsed < ticks and st.ended is None:
-                    waits = self._wait_marks()
-                    hour += await self._micro_rounds(evs + hour, 1)  # 玩家忙着，在场的人照常过他们的日子
-                    self._add_credit(waits)
-                if interruptible and elapsed < ticks and self._interrupts(act, hour, danger0, sits0, quiet=quiet):
-                    interrupted = True
+                if not interrupted:
+                    if long and elapsed < ticks and st.ended is None:
+                        waits = self._wait_marks()
+                        hour += await self._micro_rounds(evs + hour, 1)  # 玩家忙着，在场的人照常过他们的日子
+                        self._add_credit(waits)
+                    if interruptible and elapsed < ticks and self._interrupts(act, hour, danger0, sits0, quiet=quiet):
+                        interrupted = True
+            if interrupted:
+                break
             if stop_when_able and self._can_act():
                 break
         if interrupted and st.ended is None and has_status(self.player, "asleep"):
@@ -808,12 +815,12 @@ class Game:
         me = self.player
         if not perception.on_map(me):
             return False
+        if act.verb in TRAVEL_VERBS:
+            return False  # 赶路不打断：人已经在那头了，停下只是白免路程；那头的事到了再碰上
         if self._danger() > danger0:
             return True
         if self._situations_here() - sits0:
             return True
-        if act.verb in TRAVEL_VERBS:
-            return False
         asleep = not perception.conscious(me)
         for ev in evs:
             if ev.actor == pid or ev.outcome == "blocked":

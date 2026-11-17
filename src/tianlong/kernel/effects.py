@@ -274,6 +274,17 @@ class Run:
             )
         )
 
+    def implicit_about(self, c: Character, **kw: Any) -> None:
+        """说的是某人身上的变化（受伤、中毒、被捆、脱困、死）的自带事件。
+
+        他不在图上（还没上场，或已离开地图）：那里没有人看得见，不单独记一条——
+        他留下的 ``loc`` 只是离图前最后站的地方（6.8、6.11）。本列表写了 emit 的，性质照旧并入：
+        那是内容作者有意安排、有人见证的叙述。
+        """
+        if not c.onstage and not (self._merge and self._merge[-1]):
+            return
+        self.implicit(**kw)
+
     # ------------------------------------------------------------ emit
 
     def _emit(self, arg: dict, extra_kinds: list[dict]) -> Event:
@@ -483,7 +494,8 @@ class Run:
             return
         c.statuses = [s for s in c.statuses if s.kind != kind]
         if kind in CAPTURE_KINDS or kind.startswith("poisoned"):
-            self.implicit(
+            self.implicit_about(
+                c,
                 actor=None,
                 verb="relieved",
                 text=_RELIEF_TEXT.get(kind, "⟦{c}⟧脱了困").format(c=c.id),
@@ -1006,7 +1018,8 @@ def add_status(run: Run, c: Character, kind: str, opts: dict | None = None) -> N
     c.statuses.append(Status(kind=kind, until=until, level=level, source=source))
     if kind in CAPTURE_KINDS:
         text = "⟦{c}⟧被捆了起来" if kind == "bound" else "⟦{c}⟧被看押起来"
-        run.implicit(
+        run.implicit_about(
+            c,
             actor=source if source in state.chars else None,
             verb="captured",
             text=text.format(c=c.id),
@@ -1014,7 +1027,8 @@ def add_status(run: Run, c: Character, kind: str, opts: dict | None = None) -> N
             kinds=[events.kind("captured", who=c.id, by=source)],
         )
     elif kind.startswith("poisoned"):
-        run.implicit(
+        run.implicit_about(
+            c,
             actor=None,
             verb="poisoned",
             text=f"⟦{c.id}⟧中了毒",
@@ -1022,7 +1036,8 @@ def add_status(run: Run, c: Character, kind: str, opts: dict | None = None) -> N
             kinds=[events.kind("poisoned", who=c.id, by=source)],
         )
     elif kind == "unconscious":
-        run.implicit(
+        run.implicit_about(
+            c,
             actor=None,
             verb="faint",
             text=f"⟦{c.id}⟧昏了过去",
@@ -1041,13 +1056,17 @@ def injure(run: Run, c: Character, level: int, *, by: str | None) -> None:
         s.source = by or s.source
     lvl = get_status(c, "injured").level  # type: ignore[union-attr]
     text = f"⟦{c.id}⟧受了伤" if lvl < INJURY_MAX else f"⟦{c.id}⟧受了重伤"
-    run.implicit(
-        actor=None, verb="injured", text=text, loc=c.loc, kinds=[events.kind("harmed", who=c.id, by=by)]
+    run.implicit_about(
+        c, actor=None, verb="injured", text=text, loc=c.loc, kinds=[events.kind("harmed", who=c.id, by=by)]
     )
 
 
 def kill(run: Run, c: Character, *, by: str | None, cause: str | None = None) -> None:
-    """死亡（ARCHITECTURE 2.1）。对玩家：同一来源第一次降级为重伤（中毒到期除外）。"""
+    """死亡（ARCHITECTURE 2.1）。对玩家：同一来源第一次降级为重伤（中毒到期除外）。
+
+    死在图外的人（已离开地图，或还没上场）：账照记（打算作废、请求过期、许诺了结、相关的人重新打算），
+    但没有人看见——不单独记「死了」的事件，身上的东西也不落回他离图前站的地方，仍在他身上。
+    """
     state = run.state
     if not is_alive(c):
         return
@@ -1060,7 +1079,8 @@ def kill(run: Run, c: Character, *, by: str | None, cause: str | None = None) ->
                 c.statuses.append(Status(kind="injured", level=INJURY_MAX, source=by))
             else:
                 s.level = INJURY_MAX
-            run.implicit(
+            run.implicit_about(
+                c,
                 actor=None,
                 verb="injured",
                 text=f"⟦{c.id}⟧受了重伤，险些丧命",
@@ -1082,12 +1102,13 @@ def kill(run: Run, c: Character, *, by: str | None, cause: str | None = None) ->
     for p in state.promises.values():
         if p.status == "open" and c.id in (p.frm, p.to):
             p.status = "broken"
-    for iid in list(c.inventory):
-        it = state.items[iid]
-        it.holder = None
-        it.loc = loc
-        it.feature = None
-    c.inventory.clear()
+    if c.onstage:
+        for iid in list(c.inventory):
+            it = state.items[iid]
+            it.holder = None
+            it.loc = loc
+            it.feature = None
+        c.inventory.clear()
     c.following = None
     for o in state.chars.values():
         if o.following == c.id:
@@ -1096,8 +1117,8 @@ def kill(run: Run, c: Character, *, by: str | None, cause: str | None = None) ->
             events.queue_replan(state, o.id)
     if c.id in state.replan_queue:
         state.replan_queue.remove(c.id)
-    run.implicit(
-        actor=None, verb="die", text=f"⟦{c.id}⟧死了", loc=loc, kinds=[events.kind("death", who=c.id, by=by)]
+    run.implicit_about(
+        c, actor=None, verb="die", text=f"⟦{c.id}⟧死了", loc=loc, kinds=[events.kind("death", who=c.id, by=by)]
     )
     if c.id == state.player:
         state.ended = "dead"

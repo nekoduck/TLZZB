@@ -2,8 +2,9 @@
 
 **条目由规则生成**（``record``，每回合或每次世界推进后调用）：``salience`` 不低于 7 的事件；每个情境的开场
 与了结；玩家每次身份与本事的变化；每条分岔。文字用事件的事实句。条目经 ``chronicle`` 效果写入，
-``known_to_player`` 取「玩家亲见或听见」或「玩家相信这件事」。哪些是亲见的，另记在 teller 的
-``chron_seen``（条目下标）里；年谱分三栏时据此区分「亲见的」与「听说的」。
+``known_to_player`` 取「玩家亲见」或「玩家相信这件事」。只听见隔壁一阵响动的不算知道（听见的人只得到
+声响那一句话，方案 6.8）：那一条留在「当时不知道的」里，等玩家后来听人说起（相信了 ``E<号>``）才挪到
+「听说的」。哪些是亲见的，另记在 teller 的 ``chron_seen``（条目下标）里；年谱分三栏时据此区分。
 
 **分岔只读不判**：对照参照点、认定分岔是世界时钟的事（``world.baseline.check``，每个时辰一次，方案 8.1
 第 5 步，经 ``diverge`` 效果写进 ``state.divergences``，带起因与玩家知不知道）。这里只读
@@ -31,11 +32,11 @@ ATTITUDE_CAP = 12
 
 
 def _knows_event(state: WorldState, ev: Event) -> tuple[bool, bool]:
-    """（玩家知道这件事，玩家亲眼见到）。"""
-    how = ev.witnesses.get(state.player)
+    """（玩家知道这件事，玩家亲眼见到）。只听见响动（``heard``）不算知道。"""
+    saw = ev.witnesses.get(state.player) == "saw"
     p = common.player(state)
     heard = p is not None and common.believes(p, f"E{ev.id}")
-    return (how is not None or heard), how == "saw"
+    return (saw or heard), saw
 
 
 def _situation_text(state: WorldState, defs: Defs, info: dict[str, Any], *, opened: bool) -> str:
@@ -250,7 +251,7 @@ def _player_knows_death(state: WorldState, cid: str) -> bool:
     p = common.player(state)
     for ev in state.events_tail:
         if any(k.get("k") == "death" and k.get("who") == cid for k in ev.kinds):
-            if ev.witnesses.get(state.player) or (p is not None and common.believes(p, f"E{ev.id}")):
+            if ev.witnesses.get(state.player) == "saw" or (p is not None and common.believes(p, f"E{ev.id}")):
                 return True
     return False
 

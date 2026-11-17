@@ -492,10 +492,20 @@ class R:
             )
         return self.fx(pre + [self.say(depart), {"move": [me, e.to]}, self.say(arrive, verb="arrive")])
 
+    def _blockers(self) -> list[Any]:
+        """拦着、追着自己的人（``danger.blockers``）：有他们在，走开就是逃（6.1）。"""
+        return danger.blockers(self.state, self.me)
+
     def r_go(self) -> list[Event]:
         e = actions.find_exit(self.state, self.defs, self.c, self.p["exit"])
         assert e is not None
         me = self.me
+        blockers = self._blockers()
+        if blockers:
+            # 有人拦着、追着：这一步按逃跑判定（6.4），成了照常过出口（含出图、要判定的出口），不成被追上
+            seen = {o.id for o in blockers}
+            pursuers = blockers + [o for o in self._pursuers() if o.id not in seen]
+            return self._flee_to(e, pursuers, f"⟦{me}⟧想走，被⟦{{top}}⟧拦了下来")
         return self._traverse(e, f"⟦{me}⟧往⟦{e.to}⟧去了", f"⟦{me}⟧来到⟦{e.to}⟧")
 
     def r_follow(self) -> list[Event]:
@@ -517,8 +527,11 @@ class R:
     def r_flee(self) -> list[Event]:
         e = actions.find_exit(self.state, self.defs, self.c, self.p["exit"])
         assert e is not None
+        return self._flee_to(e, self._pursuers(), f"⟦{self.me}⟧想逃，被⟦{{top}}⟧追上")
+
+    def _flee_to(self, e: Exit, pursuers: list[Any], caught_lead: str) -> list[Event]:
+        """逃跑判定（6.4）：成了过出口；不成，有人追就被追上（下场按追者的意图），没人追只是没逃开。"""
         me = self.me
-        pursuers = self._pursuers()
         chance = checks.flee_chance(self.state, self.defs, self.c, pursuers, unguarded=not pursuers)
         res = checks.roll_against(self.state, "flee", chance)
         if res.ok:
@@ -534,7 +547,7 @@ class R:
             conflict.outcome_effects(f)
             + [
                 self.say(
-                    conflict.fight_text(f, f"⟦{me}⟧想逃，被⟦{top.id}⟧追上"),
+                    conflict.fight_text(f, caught_lead.format(top=top.id)),
                     outcome="fail",
                     kinds=[events.kind("harmed", who=me, by=top.id)] if f.outcome != "push" else [],
                     params={"chance": chance, "winner": top.id, "outcome": f.outcome},

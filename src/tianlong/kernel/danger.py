@@ -74,6 +74,25 @@ def hostiles_toward(state: WorldState, cid: str) -> list[Character]:
     ]
 
 
+def blockers(state: WorldState, cid: str) -> list[Character]:
+    """拦着、追着 cid 的人（6.1：有人拦阻或追赶时走开要判定）：同处、清醒、没被捆住扣住、看得见他，
+    而且眼下的打算就是冲他来的捉拿、攻击，或刚把他挡住、推开、逼退（他身上 impeded 的来源）。
+
+    只是好感低、门派对头的人不算（那是 ``hostiles_toward``）：否则从仇家身边走过也成了逃命。
+    """
+    c = state.chars[cid]
+    held_by = {s.source for s in c.statuses if s.kind == "impeded" and s.source}
+    return [
+        o
+        for o in perception.present(state, c.loc, exclude=cid)
+        if perception.conscious(o)
+        and not has_status(o, "bound")
+        and not has_status(o, "captive")
+        and perception.visible_to(o, c)
+        and (intends(state, o, cid) or o.id in held_by)
+    ]
+
+
 def any_hostility_at(state: WorldState, loc: str) -> bool:
     people = [c for c in perception.present(state, loc) if perception.conscious(c)]
     ids = [c.id for c in people]

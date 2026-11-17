@@ -1,0 +1,4 @@
+- [1] done: talk.compose 在内核改判/还价/删改事实编号后用模板重写要旨（src/tianlong/minds/talk.py；tests/minds/test_minds_decide.py 4 条）。决定：C2 的要旨只在动作与事实编号都没被内核改动时才用（修订 D-111）。
+- [3] done: chronicle._knows_event/_player_knows_death 只认 saw 或相信 E<号>（src/tianlong/storyteller/chronicle.py；tests/storyteller/test_chronicle.py 2 条）。决定：只听见响动的事件在年谱里不算玩家知道，留在「当时不知道的」，听说后才挪到「听说的」（与 D-053 一致）。耳语旁观那一类未做（无复现）。
+- [4] done: Game._interrupts 里赶路的 early-return 提到险情/情境判断之前（src/tianlong/game.py；tests/game/test_game_long.py::test_travel_always_costs_the_whole_edge）。决定：一次 go 是一条地图边、没有半路位置，赶路一律走完边上的耗时；那头的情境与险情到了才碰上（取代 D-246 里赶路那一句）。
+- [5] done: Game._pass_time 恰在时辰边界被打断时仍做 world.tick，只省微轮与第二次打断判断（src/tianlong/game.py；tests/game/test_game_long.py::test_interrupt_on_the_hour_still_runs_world_tick）。决定同上句。

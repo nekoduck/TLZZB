@@ -279,3 +279,50 @@ async def test_debug_tick_and_player_death(settings: Settings) -> None:
     assert end is not None and end.reason == "dead" and st.ended == "dead"
     assert "到这里就断了" in text_of(evs)
     await s.close()
+
+
+async def test_travel_always_costs_the_whole_edge(real_settings: Settings) -> None:
+    """2.5：赶路按地图边上标的耗时走完；到的地方有情境开场，是到了才碰上的，不是半路提前到。"""
+    from tianlong.kernel import actions
+
+    s = await new_session(real_settings)
+    st, df = s.state, s.game.defs
+    pid = st.player
+    s.fx([{"move": [pid, "mountain_path"]}])
+    act = actions.build(st, df, pid, "go", {"exit": "crag_foot"})
+    assert act is not None and act.cost == 24
+    t0 = st.tick
+    evs = [ev async for ev in s.game._logged("go", "turn", s.game._play(act, None))]
+    assert st.chars[pid].loc == "crag_foot"
+    assert st.tick == t0 + 24  # 三个时辰的路，不因为那头有事就只算一个时辰
+    assert s.game.last_turn is not None and not s.game.last_turn.interrupted
+    assert any(x.kind == "zhuha" and x.loc == "crag_foot" for x in st.situations.values())  # 到了才碰上
+    assert text_of(evs).strip()
+    await s.close()
+
+
+async def test_interrupt_on_the_hour_still_runs_world_tick(settings: Settings, monkeypatch: pytest.MonkeyPatch) -> None:
+    """8.1：恰好在时辰边界上被打断，这个时辰的 world.tick 也照做，不漏掉一个时辰。"""
+    import tianlong.world as world
+
+    s = await new_session(settings)
+    await s.play(*QUIET_YARD)
+    st = s.state
+    ran: list[int] = []
+    real_tick = world.tick
+
+    async def spy(llm, state, defs, **kw):  # noqa: ANN001, ANN003, ANN202
+        ran.append(state.tick)
+        return await real_tick(llm, state, defs, **kw)
+
+    monkeypatch.setattr(world, "tick", spy)
+    t0 = st.tick
+    to_boundary = 8 - t0 % 8
+    s.fx([{"schedule": [to_boundary, [{"move": ["guest", "yard"]}]]}])  # 恰好在时辰边界上有人走进来
+    await s.send("我在这里等上一天")
+    assert s.game.last_turn is not None and s.game.last_turn.interrupted
+    assert st.tick == t0 + to_boundary and st.tick % 8 == 0
+    assert ran == [st.tick]
+    await s.send("我在这里等上一个时辰")
+    assert ran == [t for t in range(t0 + 1, st.tick + 1) if t % 8 == 0]
+    await s.close()

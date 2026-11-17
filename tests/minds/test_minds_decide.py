@@ -222,6 +222,74 @@ def test_compose_and_kernel_turn_agree_into_refuse(world):
     assert state.requests[rid].status == "refused"
 
 
+def _c2_out(**kw: Any) -> SpeechOut:
+    base: dict[str, Any] = {"to": ["player"], "stance": "warm", "fact_refs": [], "request_ref": None, "whisper": False}
+    return SpeechOut(**{**base, **kw})
+
+
+def test_c2_gist_is_dropped_when_kernel_turns_agree_into_refuse(world):
+    """C2 硬说「答应」、要旨也写的是答应：内核改判成拒绝，要旨跟着改（7.6 校验表、1.1 第 1 条）。"""
+    defs, state = world
+    from tianlong.kernel import speech as kspeech
+
+    rid = _no_verdict_request(defs, state)
+    c = state.chars["zuo_zimu"]
+    opts = kspeech.speech_options(state, defs, "zuo_zimu")
+    said = "爽快答应，愿意立刻随对方下山"
+    sp = talk.from_out(state, defs, c, _c2_out(act="agree", gist=said, request_ref=rid), opts, state.events_tail[-1:])
+    assert sp is not None and sp.act == "refuse"
+    assert "答应" not in sp.gist and said not in sp.gist
+    w = actions.build(state, defs, "zuo_zimu", "wait", {"ticks": 1})
+    evs = resolve.apply(state, defs, w, sp, source="mind")
+    assert state.requests[rid].status == "refused"
+    assert all(said not in e.fact_text for e in evs)
+
+
+def test_c2_gist_is_dropped_when_fact_refs_are_stripped(world):
+    """不许说的事实编号被删掉了，要旨里也不能还带着那件事。"""
+    defs, state = world
+    from tianlong.kernel import speech as kspeech
+
+    c = state.chars["zuo_zimu"]
+    opts = kspeech.speech_options(state, defs, "zuo_zimu")
+    assert "F_tea_gift" not in opts.facts
+    secret = state.facts["F_tea_gift"].text[:30]
+    out = _c2_out(act="tell", gist="告诉对方一桩他本不该知道的秘事：" + secret, fact_refs=["F_tea_gift"])
+    sp = talk.from_out(state, defs, c, out, opts, [])
+    assert sp is not None and sp.act == "tell" and sp.fact_refs == []
+    assert secret not in sp.gist
+
+
+def test_c2_gist_is_kept_when_kernel_changes_nothing(world):
+    """动作和事实编号都没被改：照 C2 的要旨（D-111）。"""
+    defs, state = world
+    from tianlong.kernel import speech as kspeech
+
+    rid = _no_verdict_request(defs, state)
+    c = state.chars["zuo_zimu"]
+    opts = kspeech.speech_options(state, defs, "zuo_zimu")
+    said = "冷冷回绝，说无量剑的掌门不跟外人走"
+    sp = talk.from_out(state, defs, c, _c2_out(act="refuse", gist=said, request_ref=rid), opts, state.events_tail[-1:])
+    assert sp is not None and sp.act == "refuse" and sp.gist == said
+
+
+def test_c2_bargain_gist_states_the_kernel_condition(world):
+    """还价的条件是内核挑的（SpeechOut 没有条件栏）：要旨照内核的条件写。"""
+    defs, state = world
+    from tianlong.kernel import speech as kspeech
+
+    sp0 = Speech(act="request", to=["ma_wude"], ask_action={"verb": "follow", "params": {"target": "player"}})
+    rid = _player_says(defs, state, sp0)[0].speech.request
+    c = state.chars["ma_wude"]
+    opts = kspeech.speech_options(state, defs, "ma_wude")
+    view = next(v for v in opts.requests if v.request.id == rid)
+    assert "bargain" in view.allowed_replies and view.counter_options and "bargain" in opts.acts
+    said = "要对方先把身上的银子都交出来"
+    sp = talk.from_out(state, defs, c, _c2_out(act="bargain", gist=said, request_ref=rid), opts, state.events_tail[-1:])
+    assert sp is not None and sp.act == "bargain" and sp.condition == view.counter_options[0]
+    assert sp.gist == talk.make_gist(state, c, sp, view=view) and said not in sp.gist
+
+
 async def test_may_verdict_reply_is_agree_under_mock(world, llm):
     defs, state = world
     sp = Speech(act="request", to=["ma_wude"], ask_action={"verb": "wait", "params": {}}, action_class="trivial")

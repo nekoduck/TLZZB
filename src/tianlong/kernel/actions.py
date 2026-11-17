@@ -338,6 +338,8 @@ def _v(state: WorldState, defs: Defs, c: Character, verb: str, p: dict) -> _B | 
                 "climb": f"攀上去，往⟦{e.to}⟧",
                 "leap": f"纵身跃向⟦{e.to}⟧",
             }.get(e.check, desc)
+        if danger.blockers(state, c.id):
+            desc = "夺路" + desc  # 有人拦着、追着：这一步要按逃跑判定（resolve.r_go）
         return _B(cost=travel_cost(state, c, e), desc=desc, lethal=exit_lethal(state, defs, c, e))
     if verb == "flee":
         if inj >= 3 or not flee_available(state, c):

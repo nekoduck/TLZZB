@@ -39,6 +39,64 @@ def test_columns_seen_heard_unknown(w):
     assert len(cols["heard"]) == 1 and not cols["unknown"]
 
 
+NOISE = "⟦wl_disciple_1⟧一剑刺伤了⟦wl_disciple_2⟧"
+
+
+def _loud_next_door(w) -> list:
+    """隔壁（声音传得过来的地方）出了一桩大事：玩家只听见响动。"""
+    here = w.p.loc
+    there = next(lid for lid, loc in w.s.locations.items() if here in loc.loud_to and lid != here)
+    w.fx([{"move": ["wl_disciple_1", there]}, {"move": ["wl_disciple_2", there]}], source="agenda")
+    effs = [
+        {"injure": ["wl_disciple_2", 2, "wl_disciple_1"]},
+        {"emit": {"actor": "wl_disciple_1", "verb": "attack", "loud": True, "salience": 9, "text": NOISE}},
+    ]
+    evs = w.fx(effs, source="agenda")
+    assert evs[-1].witnesses.get(w.s.player) == "heard"
+    return evs
+
+
+def test_a_noise_next_door_is_not_a_known_event(w):
+    """只听见隔壁的响动：年谱里不算知道那件事（方案 6.8、8.6，D-053）；后来听人说起才挪到「听说的」。"""
+    chronicle.record(w.s, w.defs, [])
+    evs = _loud_next_door(w)
+    chronicle.record(w.s, w.defs, evs)
+    idx = next(i for i, e in enumerate(w.s.chronicle) if e.text == NOISE)
+    assert w.s.chronicle[idx].known_to_player is False
+    cols = chronicle.columns(w.s)
+    assert idx in cols["unknown"] and idx not in cols["heard"] and idx not in cols["saw"]
+    shown = chronicle.render(w.s, w.defs)
+    assert "刺伤" not in shown
+    w.fx([{"learn": ["player", f"E{evs[-1].id}", 0.8, "told:ma_wude"]}])
+    assert idx in chronicle.columns(w.s)["heard"]
+    assert "刺伤" in chronicle.render(w.s, w.defs)
+
+
+def test_death_heard_as_a_noise_is_not_known(w):
+    here = w.p.loc
+    there = next(lid for lid, loc in w.s.locations.items() if here in loc.loud_to and lid != here)
+    w.fx([{"move": ["wl_disciple_1", there]}, {"move": ["wl_disciple_2", there]}], source="agenda")
+    effs = [
+        {"kill": ["wl_disciple_2", "wl_disciple_1"]},
+        {
+            "emit": {
+                "actor": "wl_disciple_1",
+                "verb": "attack",
+                "loud": True,
+                "salience": 10,
+                "text": "⟦wl_disciple_1⟧一剑刺死了⟦wl_disciple_2⟧",
+                "kinds": [{"k": "death", "who": "wl_disciple_2", "by": "wl_disciple_1"}],
+            }
+        },
+    ]
+    evs = w.fx(effs, source="agenda")
+    ev = next(e for e in evs if any(k.get("k") == "death" for k in e.kinds) and e.witnesses.get(w.s.player))
+    assert ev.witnesses[w.s.player] == "heard"
+    assert chronicle._player_knows_death(w.s, "wl_disciple_2") is False
+    w.fx([{"learn": ["player", f"E{ev.id}", 0.8, "told:ma_wude"]}])
+    assert chronicle._player_knows_death(w.s, "wl_disciple_2") is True
+
+
 def test_record_is_idempotent(w):
     chronicle.record(w.s, w.defs, [])
     evs = w.fx(SLAP)
